@@ -260,7 +260,7 @@ function Layout() {
             </header>
 
             {/* Main Content */}
-            <main className="max-w-4xl mx-auto px-4 py-4 min-h-[calc(100vh-140px)]">
+            <main className="max-w-4xl mx-auto px-4 py-4 pb-24 md:pb-8 min-h-[calc(100vh-140px)]">
                 <Outlet />
             </main>
 
