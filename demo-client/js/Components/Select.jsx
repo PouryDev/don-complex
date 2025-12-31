@@ -96,14 +96,18 @@ function Select({
                 if (buttonRef.current) {
                     const rect = buttonRef.current.getBoundingClientRect();
                     setDropdownPosition({
-                        top: rect.bottom + 8, // 8px margin (mt-2)
+                        top: rect.bottom + 8, // 8px margin, fixed positioning is relative to viewport
                         left: rect.left,
                         width: rect.width
                     });
                 }
             };
 
-            updatePosition();
+            // Use requestAnimationFrame to ensure DOM is ready
+            requestAnimationFrame(() => {
+                updatePosition();
+            });
+
             window.addEventListener('resize', updatePosition);
             window.addEventListener('scroll', updatePosition, true);
 
@@ -111,6 +115,9 @@ function Select({
                 window.removeEventListener('resize', updatePosition);
                 window.removeEventListener('scroll', updatePosition, true);
             };
+        } else if (!isOpen) {
+            // Reset position when closed
+            setDropdownPosition({ top: 0, left: 0, width: 0 });
         }
     }, [isOpen]);
 
@@ -126,7 +133,19 @@ function Select({
                 <button
                     ref={buttonRef}
                     type="button"
-                    onClick={() => !disabled && setIsOpen(!isOpen)}
+                    onClick={() => {
+                        if (!disabled) {
+                            if (!isOpen && buttonRef.current) {
+                                const rect = buttonRef.current.getBoundingClientRect();
+                                setDropdownPosition({
+                                    top: rect.bottom + 8,
+                                    left: rect.left,
+                                    width: rect.width
+                                });
+                            }
+                            setIsOpen(!isOpen);
+                        }
+                    }}
                     onKeyDown={handleKeyDown}
                     disabled={disabled}
                     className={`
@@ -172,11 +191,12 @@ function Select({
                     </motion.svg>
                 </button>
 
-                <AnimatePresence>
-                    {isOpen && createPortal(
+                {isOpen && createPortal(
+                    <AnimatePresence>
                         <>
                             {/* Backdrop */}
                             <motion.div
+                                key="backdrop"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
@@ -186,98 +206,102 @@ function Select({
                             />
                             
                             {/* Dropdown - Portal to body to escape stacking context */}
-                            <motion.div
-                                ref={dropdownRef}
-                                initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                                transition={{ 
-                                    type: "spring",
-                                    damping: 25,
-                                    stiffness: 300,
-                                    duration: 0.2
-                                }}
-                                className="fixed z-[9999] bg-gray-800 rounded-xl shadow-2xl border-2 border-red-500/20 overflow-hidden"
-                                style={{ 
-                                    top: `${dropdownPosition.top}px`,
-                                    left: `${dropdownPosition.left}px`,
-                                    width: `${dropdownPosition.width}px`,
-                                    maxHeight: 'min(300px, calc(100vh - 200px))',
-                                }}
-                            >
-                            <div 
-                                className="overflow-y-auto scrollbar-thin scrollbar-thumb-red-600 scrollbar-track-gray-700"
-                                style={{ maxHeight: 'min(300px, calc(100vh - 200px))' }}
-                            >
-                                {options.length === 0 ? (
-                                    <div className="px-4 py-8 text-center text-gray-400">
-                                        گزینه‌ای موجود نیست
-                                    </div>
-                                ) : (
-                                    options.map((option, index) => {
-                                        const isSelected = value === option.value;
-                                        const isFocused = focusedIndex === index;
-                                        
-                                        return (
-                                            <motion.button
-                                                key={option.value}
-                                                data-index={index}
-                                                type="button"
-                                                onClick={() => handleSelect(option)}
-                                                onMouseEnter={() => setFocusedIndex(index)}
-                                                className={`
-                                                    w-full px-4 py-3.5
-                                                    text-right
-                                                    transition-all duration-150
-                                                    flex items-center justify-between
-                                                    border-b border-red-500/20 last:border-b-0
-                                                    ${isSelected
-                                                        ? 'bg-gradient-to-r from-gray-700 to-gray-800 text-red-400 font-semibold'
-                                                        : isFocused
-                                                            ? 'bg-gray-700 text-gray-300'
-                                                            : 'text-gray-300 hover:bg-gray-700'
-                                                    }
-                                                `}
-                                                whileHover={{ x: -4 }}
-                                                whileTap={{ scale: 0.98 }}
-                                            >
-                                                <span className="flex items-center gap-2 flex-1">
-                                                    {option.icon && (
-                                                        <span className="text-xl">{option.icon}</span>
-                                                    )}
-                                                    <span>{option.label}</span>
-                                                </span>
-                                                {isSelected && (
-                                                    <motion.div
-                                                        initial={{ scale: 0 }}
-                                                        animate={{ scale: 1 }}
-                                                        className="w-6 h-6 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center flex-shrink-0"
-                                                    >
-                                                        <svg
-                                                            className="w-4 h-4 text-white"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
+                            {dropdownPosition.width > 0 && (
+                                <motion.div
+                                    key="dropdown"
+                                    ref={dropdownRef}
+                                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                    transition={{ 
+                                        type: "spring",
+                                        damping: 25,
+                                        stiffness: 300,
+                                        duration: 0.2
+                                    }}
+                                    className="fixed z-[9999] bg-gray-800 rounded-xl shadow-2xl border-2 border-red-500/20 overflow-hidden"
+                                    style={{ 
+                                        top: `${dropdownPosition.top}px`,
+                                        left: `${dropdownPosition.left}px`,
+                                        width: `${dropdownPosition.width}px`,
+                                        maxHeight: 'min(300px, calc(100vh - 200px))',
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                <div 
+                                    className="overflow-y-auto scrollbar-thin scrollbar-thumb-red-600 scrollbar-track-gray-700"
+                                    style={{ maxHeight: 'min(300px, calc(100vh - 200px))' }}
+                                >
+                                    {options.length === 0 ? (
+                                        <div className="px-4 py-8 text-center text-gray-400">
+                                            گزینه‌ای موجود نیست
+                                        </div>
+                                    ) : (
+                                        options.map((option, index) => {
+                                            const isSelected = value === option.value;
+                                            const isFocused = focusedIndex === index;
+                                            
+                                            return (
+                                                <motion.button
+                                                    key={option.value}
+                                                    data-index={index}
+                                                    type="button"
+                                                    onClick={() => handleSelect(option)}
+                                                    onMouseEnter={() => setFocusedIndex(index)}
+                                                    className={`
+                                                        w-full px-4 py-3.5
+                                                        text-right
+                                                        transition-all duration-150
+                                                        flex items-center justify-between
+                                                        border-b border-red-500/20 last:border-b-0
+                                                        ${isSelected
+                                                            ? 'bg-gradient-to-r from-gray-700 to-gray-800 text-red-400 font-semibold'
+                                                            : isFocused
+                                                                ? 'bg-gray-700 text-gray-300'
+                                                                : 'text-gray-300 hover:bg-gray-700'
+                                                        }
+                                                    `}
+                                                    whileHover={{ x: -4 }}
+                                                    whileTap={{ scale: 0.98 }}
+                                                >
+                                                    <span className="flex items-center gap-2 flex-1">
+                                                        {option.icon && (
+                                                            <span className="text-xl">{option.icon}</span>
+                                                        )}
+                                                        <span>{option.label}</span>
+                                                    </span>
+                                                    {isSelected && (
+                                                        <motion.div
+                                                            initial={{ scale: 0 }}
+                                                            animate={{ scale: 1 }}
+                                                            className="w-6 h-6 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center flex-shrink-0"
                                                         >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth={3}
-                                                                d="M5 13l4 4L19 7"
-                                                            />
-                                                        </svg>
-                                                    </motion.div>
-                                                )}
-                                            </motion.button>
-                                        );
-                                    })
-                                )}
-                            </div>
-                        </motion.div>
-                        </>,
-                        document.body
-                    )}
-                </AnimatePresence>
+                                                            <svg
+                                                                className="w-4 h-4 text-white"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                viewBox="0 0 24 24"
+                                                            >
+                                                                <path
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    strokeWidth={3}
+                                                                    d="M5 13l4 4L19 7"
+                                                                />
+                                                            </svg>
+                                                        </motion.div>
+                                                    )}
+                                                </motion.button>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </motion.div>
+                            )}
+                        </>
+                    </AnimatePresence>,
+                    document.body
+                )}
             </div>
 
             {error && (

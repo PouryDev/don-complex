@@ -158,7 +158,7 @@ function Menu() {
 
             {/* Branch Selector */}
             {branches.length > 0 && (
-                <div className="cafe-card rounded-xl p-4">
+                <div className="cafe-card rounded-xl p-4 relative z-10">
                     <Select
                         label="انتخاب شعبه"
                         value={branchId || ''}
@@ -173,7 +173,7 @@ function Menu() {
             )}
 
             {/* Category Filter */}
-            <div className="relative z-0 flex gap-2 overflow-x-auto pb-2 scrollbar-hide py-3 px-1">
+            <div className="relative flex gap-2 overflow-x-auto pb-2 scrollbar-hide py-3 px-1">
                 <button
                     onClick={() => setSelectedCategory('all')}
                     className={`flex-shrink-0 px-4 py-2 rounded-full font-medium transition-all duration-200 flex items-center gap-2 ${
