@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import Cart from './Cart';
+import { CalendarIcon, MySessionsIcon, NewsIcon } from './Icons';
 
 // SVG Icon Components
 const HomeIcon = ({ active }) => (
