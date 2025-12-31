@@ -20,26 +20,34 @@ function Select({
 
     useEffect(() => {
         const handleClickOutside = (event) => {
+            // Check if click is outside both select button and dropdown
             if (
                 selectRef.current && 
                 !selectRef.current.contains(event.target) &&
                 dropdownRef.current &&
                 !dropdownRef.current.contains(event.target)
             ) {
-                setIsOpen(false);
-                setFocusedIndex(-1);
+                // Only close if it's an actual click, not mouse move events
+                if (event.type === 'mousedown' || event.type === 'touchstart') {
+                    setIsOpen(false);
+                    setFocusedIndex(-1);
+                }
             }
         };
 
         if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-            document.addEventListener('touchstart', handleClickOutside);
-        }
+            // Use a small delay to prevent immediate closing on mouse re-entry
+            const timeoutId = setTimeout(() => {
+                document.addEventListener('mousedown', handleClickOutside, true);
+                document.addEventListener('touchstart', handleClickOutside, true);
+            }, 100);
 
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-            document.removeEventListener('touchstart', handleClickOutside);
-        };
+            return () => {
+                clearTimeout(timeoutId);
+                document.removeEventListener('mousedown', handleClickOutside, true);
+                document.removeEventListener('touchstart', handleClickOutside, true);
+            };
+        }
     }, [isOpen]);
 
     const handleSelect = (option) => {
@@ -87,7 +95,7 @@ function Select({
     }, [focusedIndex, isOpen]);
 
     return (
-        <div className={`relative z-50 ${className}`}>
+        <div className={`relative z-[100] ${className}`}>
             {label && (
                 <label className="block text-sm font-bold text-white mb-3">
                     {label}
@@ -152,8 +160,13 @@ function Select({
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: 0.15 }}
-                                className="fixed inset-0 z-[100] bg-black/10"
-                                onClick={() => setIsOpen(false)}
+                                className="fixed inset-0 z-[9998] bg-black/10 pointer-events-auto"
+                                onMouseDown={(e) => {
+                                    // Only close if clicking directly on backdrop, not when mouse enters
+                                    if (e.target === e.currentTarget) {
+                                        setIsOpen(false);
+                                    }
+                                }}
                             />
                             
                             {/* Dropdown */}
@@ -168,7 +181,13 @@ function Select({
                                     stiffness: 300,
                                     duration: 0.2
                                 }}
-                                className="absolute z-[110] w-full mt-2 bg-gray-800 rounded-xl shadow-2xl border-2 border-red-500/20 overflow-hidden"
+                                className="absolute z-[9999] w-full mt-2 bg-gray-800 rounded-xl shadow-2xl border-2 border-red-500/20 overflow-hidden pointer-events-auto"
+                                onMouseEnter={() => {
+                                    // Keep dropdown open when mouse enters
+                                }}
+                                onMouseLeave={() => {
+                                    // Don't close on mouse leave, only on click outside
+                                }}
                                 style={{ 
                                     maxHeight: 'min(300px, calc(100vh - 200px))',
                                     top: '100%'
