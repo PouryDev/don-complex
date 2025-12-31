@@ -18,8 +18,6 @@ class SessionTemplateResource extends JsonResource
             'max_participants' => $this->max_participants,
             'is_active' => $this->is_active,
             'hall' => $this->whenLoaded('hall', new HallResource($this->hall)),
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
         ];
     }
 }

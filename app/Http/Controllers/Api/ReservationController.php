@@ -23,7 +23,7 @@ class ReservationController extends Controller
         $this->paymentService = $paymentService;
     }
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request)
     {
         $query = Reservation::query()->with(['session', 'user', 'paymentTransaction']);
 
@@ -37,7 +37,8 @@ class ReservationController extends Controller
             });
         }
 
-        $reservations = $query->orderBy('created_at', 'desc')->get();
+        $perPage = $request->get('per_page', 15);
+        $reservations = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         return ReservationResource::collection($reservations);
     }

@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('reservations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('session_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('session_id')->constrained('game_sessions')->cascadeOnDelete();
             $table->integer('number_of_people');
             $table->string('payment_status')->default('pending');
-            $table->foreignId('payment_transaction_id')->nullable()->constrained()->nullOnDelete();
+            $table->unsignedBigInteger('payment_transaction_id')->nullable();
             $table->timestamp('validated_at')->nullable();
             $table->foreignId('validated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('cancelled_at')->nullable();

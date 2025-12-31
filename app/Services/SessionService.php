@@ -97,5 +97,20 @@ class SessionService
             return $session;
         });
     }
+
+    /**
+     * Get paginated sessions with availability information
+     */
+    public function getPaginatedSessionsWithAvailability($query, int $perPage = 15)
+    {
+        $paginated = $query->paginate($perPage);
+        
+        $paginated->getCollection()->transform(function ($session) {
+            $session->available_spots = $this->getAvailableSpots($session);
+            return $session;
+        });
+
+        return $paginated;
+    }
 }
 

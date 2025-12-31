@@ -11,7 +11,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class BranchController extends Controller
 {
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request)
     {
         $query = Branch::query();
 
@@ -20,12 +20,13 @@ class BranchController extends Controller
             $query->where('game_master_id', $request->user()->id);
         }
 
-        $branches = $query->with('gameMaster')->get();
+        $perPage = $request->get('per_page', 15);
+        $branches = $query->with('gameMaster')->paginate($perPage);
 
         return BranchResource::collection($branches);
     }
 
-    public function show(Branch $branch): BranchResource
+    public function show(Request $request, Branch $branch): BranchResource
     {
         $this->authorize('view', $branch);
 

@@ -24,8 +24,6 @@ class SessionResource extends JsonResource
             'branch' => $this->whenLoaded('branch', new BranchResource($this->branch)),
             'hall' => $this->whenLoaded('hall', new HallResource($this->hall)),
             'session_template' => $this->whenLoaded('sessionTemplate', new SessionTemplateResource($this->sessionTemplate)),
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
         ];
     }
 }

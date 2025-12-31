@@ -15,8 +15,6 @@ class HallResource extends JsonResource
             'name' => $this->name,
             'capacity' => $this->capacity,
             'branch' => $this->whenLoaded('branch', new BranchResource($this->branch)),
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
         ];
     }
 }

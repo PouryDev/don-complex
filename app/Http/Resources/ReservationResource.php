@@ -35,8 +35,6 @@ class ReservationResource extends JsonResource
                     'status' => $this->paymentTransaction->status->value,
                 ];
             }),
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
         ];
     }
 }

@@ -12,6 +12,8 @@ class Session extends Model
 {
     use HasFactory;
 
+    protected $table = 'game_sessions';
+
     protected $fillable = [
         'branch_id',
         'hall_id',

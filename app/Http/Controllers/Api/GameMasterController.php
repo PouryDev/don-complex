@@ -26,7 +26,7 @@ class GameMasterController extends Controller
         });
     }
 
-    public function sessions(Request $request): AnonymousResourceCollection
+    public function sessions(Request $request)
     {
         $branch = $request->user()->branch;
 
@@ -44,23 +44,28 @@ class GameMasterController extends Controller
             $query->where('status', $request->status);
         }
 
-        $sessions = $this->sessionService->getSessionsWithAvailability($query->orderBy('date')->orderBy('start_time'));
+        $perPage = $request->get('per_page', 15);
+        $sessions = $this->sessionService->getPaginatedSessionsWithAvailability(
+            $query->orderBy('date')->orderBy('start_time'),
+            $perPage
+        );
 
         return SessionResource::collection($sessions);
     }
 
-    public function sessionReservations(Request $request, Session $session): AnonymousResourceCollection
+    public function sessionReservations(Request $request, Session $session)
     {
         // Ensure the session belongs to the game master's branch
         if ($session->branch_id !== $request->user()->branch->id) {
             abort(403, 'You can only view reservations for sessions in your branch');
         }
 
+        $perPage = $request->get('per_page', 15);
         $reservations = $session->reservations()
             ->with(['user', 'paymentTransaction'])
             ->whereNull('cancelled_at')
             ->orderBy('created_at')
-            ->get();
+            ->paginate($perPage);
 
         return ReservationResource::collection($reservations);
     }

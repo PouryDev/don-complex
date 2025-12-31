@@ -12,11 +12,12 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class SessionTemplateController extends Controller
 {
-    public function index(Request $request, Hall $hall): AnonymousResourceCollection
+    public function index(Request $request, Hall $hall)
     {
         $this->authorize('update', $hall->branch);
 
-        $templates = $hall->sessionTemplates;
+        $perPage = $request->get('per_page', 15);
+        $templates = $hall->sessionTemplates()->paginate($perPage);
 
         return SessionTemplateResource::collection($templates);
     }

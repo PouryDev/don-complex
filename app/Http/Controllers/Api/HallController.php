@@ -11,11 +11,12 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class HallController extends Controller
 {
-    public function index(Request $request, Branch $branch): AnonymousResourceCollection
+    public function index(Request $request, Branch $branch)
     {
         $this->authorize('view', $branch);
 
-        $halls = $branch->halls;
+        $perPage = $request->get('per_page', 15);
+        $halls = $branch->halls()->paginate($perPage);
 
         return HallResource::collection($halls);
     }

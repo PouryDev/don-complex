@@ -20,7 +20,7 @@ class SessionController extends Controller
         $this->sessionService = $sessionService;
     }
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request)
     {
         $query = Session::query()->with(['branch', 'hall', 'sessionTemplate']);
 
@@ -54,7 +54,11 @@ class SessionController extends Controller
             $query->where('branch_id', $request->user()->branch->id);
         }
 
-        $sessions = $this->sessionService->getSessionsWithAvailability($query->orderBy('date')->orderBy('start_time'));
+        $perPage = $request->get('per_page', 15);
+        $sessions = $this->sessionService->getPaginatedSessionsWithAvailability(
+            $query->orderBy('date')->orderBy('start_time'),
+            $perPage
+        );
 
         return SessionResource::collection($sessions);
     }
@@ -101,7 +105,7 @@ class SessionController extends Controller
         return new SessionResource($session);
     }
 
-    public function branchSessions(Request $request, Branch $branch): AnonymousResourceCollection
+    public function branchSessions(Request $request, Branch $branch)
     {
         $this->authorize('view', $branch);
 
@@ -111,7 +115,11 @@ class SessionController extends Controller
             $query->where('date', $request->date);
         }
 
-        $sessions = $this->sessionService->getSessionsWithAvailability($query->orderBy('date')->orderBy('start_time'));
+        $perPage = $request->get('per_page', 15);
+        $sessions = $this->sessionService->getPaginatedSessionsWithAvailability(
+            $query->orderBy('date')->orderBy('start_time'),
+            $perPage
+        );
 
         return SessionResource::collection($sessions);
     }
