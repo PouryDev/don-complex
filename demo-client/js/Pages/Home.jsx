@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { orderService, discountService } from '../services/api';
+// Removed orderService and discountService imports as they're not needed for booking system
 import { CoffeeCupIcon, OrdersListIcon, UserIcon, ShoppingCartIcon, CheckIcon, StarIcon, CelebrationIcon } from '../Components/Icons';
 
 function Home() {
@@ -32,27 +32,15 @@ function Home() {
     const fetchData = async () => {
         try {
             setDataLoading(true);
-            const [ordersData, campaignsData] = await Promise.all([
-                user ? orderService.getOrders().catch(() => []) : Promise.resolve([]),
-                discountService.getCampaigns().catch(() => []),
-            ]);
-
-            // Calculate stats
-            const activeOrders = ordersData.filter(order => 
-                ['pending_payment', 'preparing', 'ready'].includes(order.status)
-            ).length;
-
-            const paidInvoices = ordersData.filter(order => 
-                order.invoice && order.invoice.status === 'paid'
-            ).length;
-
+            // Since this is a booking system, we don't need orders/campaigns
+            // Set default stats for booking system
             setStats({
-                activeOrders,
-                paidInvoices,
-                totalOrders: ordersData.length,
+                activeOrders: 0,
+                paidInvoices: 0,
+                totalOrders: 0,
             });
 
-            setCampaigns(campaignsData);
+            setCampaigns([]);
         } catch (err) {
             console.error('Error fetching home data:', err);
         } finally {
@@ -62,17 +50,17 @@ function Home() {
 
     const quickActions = [
         {
-            title: 'مشاهده منو',
-            description: 'دیدن منوی کامل کافه',
+            title: 'رزرو وقت',
+            description: 'رزرو سانس مورد نظر',
             icon: CoffeeCupIcon,
-            path: '/menu',
+            path: '/book',
             gradient: 'from-red-500 to-red-600',
         },
         {
-            title: 'سفارشات من',
-            description: 'پیگیری سفارشات شما',
+            title: 'سانس‌های من',
+            description: 'مشاهده رزروهای شما',
             icon: OrdersListIcon,
-            path: '/orders',
+            path: '/my-sessions',
             gradient: 'from-red-500 to-red-600',
         },
         {
@@ -85,9 +73,9 @@ function Home() {
     ];
 
     const displayStats = [
-        { label: 'سفارشات فعال', value: stats.activeOrders.toString(), icon: ShoppingCartIcon },
-        { label: 'فاکتورهای پرداخت شده', value: stats.paidInvoices.toString(), icon: CheckIcon },
-        { label: 'کل سفارشات', value: stats.totalOrders.toString(), icon: StarIcon },
+        { label: 'رزروهای فعال', value: stats.activeOrders.toString(), icon: ShoppingCartIcon },
+        { label: 'پرداخت شده', value: stats.paidInvoices.toString(), icon: CheckIcon },
+        { label: 'کل رزروها', value: stats.totalOrders.toString(), icon: StarIcon },
     ];
 
     return (

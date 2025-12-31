@@ -192,7 +192,7 @@ function Admin() {
 
             {/* Quick Stats */}
             <div className="cafe-card rounded-xl p-6">
-                <h3 className="text-xl font-semibold text-gray-800 mb-4">آمار سریع</h3>
+                <h3 className="text-xl font-semibold text-white mb-4">آمار سریع</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div className="text-center">
                         <div className="text-3xl font-bold text-red-400 mb-1">
@@ -259,7 +259,7 @@ function Admin() {
                         <div className="flex items-center justify-between mb-4">
                             <div>
                                 <div className="flex items-center gap-2">
-                                    <h3 className="text-lg font-semibold text-gray-800">
+                                    <h3 className="text-lg font-semibold text-white">
                                         سفارش #{order.id}
                                     </h3>
                                     {/* Cash payment indicator */}

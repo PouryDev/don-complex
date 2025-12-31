@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { sessionService, branchService } from '../services/api';
 import Loading from '../Components/Loading';
+import Input from '../Components/Input';
 import { CalendarIcon, WarningIcon, EmptyBoxIcon } from '../Components/Icons';
 
 function BranchSessions() {
@@ -110,15 +111,12 @@ function BranchSessions() {
 
             {/* Date Filter */}
             <div className="cafe-card rounded-xl p-4">
-                <label className="block text-sm font-semibold text-white mb-2">
-                    تاریخ
-                </label>
-                <input
+                <Input
+                    label="تاریخ"
                     type="date"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-3 border border-red-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-800 text-white"
                 />
             </div>
 

@@ -78,7 +78,7 @@ function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel, confirmTex
 
                             {/* Content */}
                             <div className="p-6">
-                                <p className="text-gray-700 text-base leading-relaxed mb-6">
+                                <p className="text-gray-300 text-base leading-relaxed mb-6">
                                     {message}
                                 </p>
 
@@ -86,7 +86,7 @@ function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel, confirmTex
                                 <div className="flex gap-3">
                                     <button
                                         onClick={onCancel}
-                                        className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors"
+                                        className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-xl transition-colors"
                                     >
                                         {cancelText}
                                     </button>

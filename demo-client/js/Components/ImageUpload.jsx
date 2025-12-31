@@ -58,7 +58,7 @@ function ImageUpload({ label, value, onChange, error, className = '' }) {
     return (
         <div className={`mb-5 ${className}`}>
             {label && (
-                <label className="block text-sm font-bold text-gray-700 mb-3">
+                <label className="block text-sm font-bold text-white mb-3">
                     {label}
                 </label>
             )}

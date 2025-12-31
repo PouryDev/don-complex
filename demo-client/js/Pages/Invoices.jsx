@@ -134,7 +134,7 @@ function Invoices() {
                     >
                         <div className="flex items-center justify-between mb-4">
                             <div>
-                                <h3 className="text-lg font-semibold text-gray-800">
+                                <h3 className="text-lg font-semibold text-white">
                                     فاکتور #{invoice.invoice_number || invoice.id}
                                 </h3>
                                 <p className="text-sm text-gray-500">

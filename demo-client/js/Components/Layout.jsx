@@ -88,11 +88,6 @@ const navItems = [
         icon: CalendarIcon,
     },
     {
-        path: '/my-sessions',
-        label: 'سانس‌های من',
-        icon: MySessionsIcon,
-    },
-    {
         path: '/news',
         label: 'اخبار',
         icon: NewsIcon,

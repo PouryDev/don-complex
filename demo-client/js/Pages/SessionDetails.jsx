@@ -179,7 +179,6 @@ function SessionDetails() {
                     value={numberOfPeople}
                     onChange={(e) => setNumberOfPeople(parseInt(e.target.value) || 1)}
                     required
-                    className="bg-gray-800 text-white"
                 />
 
                 {/* Total Price */}

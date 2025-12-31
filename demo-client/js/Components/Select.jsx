@@ -89,7 +89,7 @@ function Select({
     return (
         <div className={`relative ${className}`}>
             {label && (
-                <label className="block text-sm font-bold text-gray-700 mb-3">
+                <label className="block text-sm font-bold text-white mb-3">
                     {label}
                 </label>
             )}
@@ -103,20 +103,20 @@ function Select({
                     className={`
                         w-full px-4 py-3.5 
                         border-2 rounded-xl 
-                        bg-white 
+                        bg-gray-800 
                         font-medium text-right
                         transition-all duration-200
                         flex items-center justify-between
-                        ${error ? 'border-red-400' : 'border-red-900/50'}
+                        ${error ? 'border-red-500' : 'border-red-500/20'}
                         ${disabled 
-                            ? 'opacity-50 cursor-not-allowed bg-gray-50' 
+                            ? 'opacity-50 cursor-not-allowed bg-gray-700' 
                             : isOpen
-                                ? 'border-red-600 ring-2 ring-red-600/20 shadow-md'
-                                : 'hover:border-red-800 focus:border-red-600 focus:ring-2 focus:ring-red-600/20'
+                                ? 'border-red-500 ring-2 ring-red-500/30 shadow-md'
+                                : 'hover:border-red-500/40 focus:border-red-500 focus:ring-2 focus:ring-red-500/30'
                         }
                     `}
                 >
-                    <span className={`flex-1 text-right ${selectedOption ? 'text-gray-800' : 'text-gray-400'}`}>
+                    <span className={`flex-1 text-right ${selectedOption ? 'text-white' : 'text-gray-400'}`}>
                         {selectedOption ? (
                             <span className="flex items-center gap-2">
                                 {selectedOption.icon && <span className="text-xl">{selectedOption.icon}</span>}
@@ -168,7 +168,7 @@ function Select({
                                     stiffness: 300,
                                     duration: 0.2
                                 }}
-                                className="absolute z-[60] w-full mt-2 bg-gray-800 rounded-xl shadow-2xl border-2 border-red-900/50 overflow-hidden"
+                                className="absolute z-[60] w-full mt-2 bg-gray-800 rounded-xl shadow-2xl border-2 border-red-500/20 overflow-hidden"
                                 style={{ 
                                     maxHeight: 'min(300px, calc(100vh - 200px))',
                                     top: '100%'
@@ -198,7 +198,7 @@ function Select({
                                                         text-right
                                                         transition-all duration-150
                                                         flex items-center justify-between
-                                                        border-b border-red-900/50 last:border-b-0
+                                                        border-b border-red-500/20 last:border-b-0
                                                         ${isSelected
                                                             ? 'bg-gradient-to-r from-gray-700 to-gray-800 text-red-400 font-semibold'
                                                             : isFocused
@@ -251,7 +251,7 @@ function Select({
                 <motion.p
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mt-2 text-sm text-red-600 flex items-center gap-1"
+                    className="mt-2 text-sm text-red-400 flex items-center gap-1"
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

@@ -6,7 +6,8 @@ import { useToast } from '../contexts/ToastContext';
 import Loading from '../Components/Loading';
 import ConfirmDialog from '../Components/ConfirmDialog';
 import Input from '../Components/Input';
-import { EditIcon } from '../Components/Icons';
+import { EditIcon, CalendarIcon, CashIcon } from '../Components/Icons';
+import MySessions from './MySessions';
 
 // Icon Components
 const InvoiceIcon = () => (
@@ -85,13 +86,23 @@ function Profile() {
         }
     };
 
+    const [showMySessions, setShowMySessions] = useState(false);
+
     const menuItems = [
+        {
+            title: 'سانس‌های من',
+            description: 'مشاهده رزروهای شما و مجموع پرداختی‌ها',
+            icon: CalendarIcon,
+            path: '#',
+            color: 'from-red-500 to-red-600',
+            onClick: () => setShowMySessions(!showMySessions),
+        },
         {
             title: 'فاکتورها',
             description: 'مشاهده و مدیریت فاکتورهای شما',
             icon: InvoiceIcon,
             path: '/invoices',
-            color: 'from-red-500 to-red-600',
+            color: 'from-blue-500 to-cyan-500',
         },
     ];
 
@@ -157,7 +168,6 @@ function Profile() {
                             value={editData.name}
                             onChange={(e) => setEditData({ ...editData, name: e.target.value })}
                             required
-                            className="bg-gray-800 text-white"
                         />
                         <Input
                             label="شماره تلفن"
@@ -168,7 +178,6 @@ function Profile() {
                                 setEditData({ ...editData, phone: value });
                             }}
                             placeholder="09123456789"
-                            className="bg-gray-800 text-white"
                         />
                         <div className="flex gap-3">
                             <button
@@ -196,34 +205,45 @@ function Profile() {
                 <h3 className="text-lg font-semibold text-white px-2">منوی دسترسی</h3>
                 {menuItems.map((item, index) => {
                     const IconComponent = item.icon;
+                    const Component = item.onClick ? 'button' : Link;
+                    const props = item.onClick 
+                        ? { onClick: item.onClick, className: "block cafe-card rounded-xl p-5 hover:scale-[1.02] transition-transform duration-200 w-full text-right" }
+                        : { to: item.path, className: "block cafe-card rounded-xl p-5 hover:scale-[1.02] transition-transform duration-200" };
+                    
                     return (
-                        <Link
+                        <Component
                             key={index}
-                            to={item.path}
-                            className="block cafe-card rounded-xl p-5 hover:scale-[1.02] transition-transform duration-200"
+                            {...props}
                         >
                             <div className="flex items-center gap-4">
                                 <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-md`}>
                                     <IconComponent />
                                 </div>
-                            <div className="flex-1">
-                                <h4 className="text-lg font-semibold text-gray-800 mb-1">
-                                    {item.title}
-                                </h4>
-                                <p className="text-sm text-gray-600">
-                                    {item.description}
-                                </p>
+                                <div className="flex-1">
+                                    <h4 className="text-lg font-semibold text-white mb-1">
+                                        {item.title}
+                                    </h4>
+                                    <p className="text-sm text-gray-300">
+                                        {item.description}
+                                    </p>
+                                </div>
+                                <div className="text-gray-400">
+                                    <svg className="w-6 h-6 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </div>
                             </div>
-                            <div className="text-gray-400">
-                                <svg className="w-6 h-6 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                            </div>
-                        </div>
-                    </Link>
+                        </Component>
                     );
                 })}
             </div>
+
+            {/* My Sessions Section */}
+            {showMySessions && (
+                <div className="mt-6">
+                    <MySessions />
+                </div>
+            )}
 
             {/* Logout Button */}
             <div className="cafe-card rounded-xl p-5">
@@ -242,8 +262,8 @@ function Profile() {
                         <InfoIcon />
                     </div>
                     <div>
-                        <h4 className="font-semibold text-gray-800 mb-1">درباره اپلیکیشن</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed">
+                        <h4 className="font-semibold text-white mb-1">درباره اپلیکیشن</h4>
+                        <p className="text-sm text-gray-300 leading-relaxed">
                             از طریق این بخش می‌توانید به تمامی بخش‌های مدیریتی و اطلاعاتی دسترسی داشته باشید.
                         </p>
                     </div>

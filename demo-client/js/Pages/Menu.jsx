@@ -8,7 +8,7 @@ function Menu() {
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [categories, setCategories] = useState([]);
     const [menuItems, setMenuItems] = useState([]);
-    const { addToCart, cartCount, setShowCart } = useCart();
+    const { addToCart } = useCart();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [imageErrors, setImageErrors] = useState(new Set());
@@ -21,12 +21,32 @@ function Menu() {
         try {
             setLoading(true);
             setError(null);
-            const [categoriesData, menuItemsData] = await Promise.all([
-                menuService.getCategories(),
-                menuService.getMenuItems(),
-            ]);
-            setCategories(categoriesData);
-            setMenuItems(menuItemsData);
+            // Try public endpoints first, fallback to admin endpoints
+            let categoriesData = [];
+            let menuItemsData = [];
+            
+            try {
+                categoriesData = await menuService.getCategories();
+            } catch (err) {
+                try {
+                    categoriesData = await menuService.getCategoriesPublic();
+                } catch (err2) {
+                    console.error('Error fetching categories:', err2);
+                }
+            }
+            
+            try {
+                menuItemsData = await menuService.getMenuItems();
+            } catch (err) {
+                try {
+                    menuItemsData = await menuService.getMenuItemsPublic();
+                } catch (err2) {
+                    console.error('Error fetching menu items:', err2);
+                }
+            }
+            
+            setCategories(Array.isArray(categoriesData) ? categoriesData : (categoriesData.data || []));
+            setMenuItems(Array.isArray(menuItemsData) ? menuItemsData : (menuItemsData.data || []));
         } catch (err) {
             setError('خطا در بارگذاری منو. لطفا دوباره تلاش کنید.');
             console.error('Error fetching menu:', err);
@@ -34,7 +54,6 @@ function Menu() {
             setLoading(false);
         }
     };
-
 
     const getCategoryIconComponent = (categoryName) => {
         return getCategoryIcon(categoryName);
@@ -49,8 +68,8 @@ function Menu() {
         ? menuItems
         : menuItems.filter(item => {
             if (selectedCategory === 'all') return true;
-            const category = categories.find(cat => cat.id === selectedCategory);
-            return category && item.category_id === category.id;
+            const category = categories.find(cat => cat.id === selectedCategory || cat.id === parseInt(selectedCategory));
+            return category && (item.category_id === category.id || item.category_id === parseInt(category.id));
         });
 
     const formatPrice = (price) => {
@@ -86,15 +105,14 @@ function Menu() {
                 <p className="text-gray-300">انتخاب کنید و لذت ببرید</p>
             </div>
 
-
             {/* Category Filter */}
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide py-3 px-1">
                 <button
                     onClick={() => setSelectedCategory('all')}
                     className={`flex-shrink-0 px-4 py-2 rounded-full font-medium transition-all duration-200 flex items-center gap-2 ${
                         selectedCategory === 'all'
-                            ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg scale-105'
-                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-red-900/50'
+                            ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg scale-105'
+                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-red-500/20'
                     }`}
                 >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -109,9 +127,9 @@ function Menu() {
                             key={category.id}
                             onClick={() => setSelectedCategory(category.id)}
                             className={`flex-shrink-0 px-4 py-2 rounded-full font-medium transition-all duration-200 flex items-center gap-2 ${
-                                selectedCategory === category.id
-                                    ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg scale-105'
-                                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-red-900/50'
+                                selectedCategory === category.id || selectedCategory === category.id.toString()
+                                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg scale-105'
+                                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-red-500/20'
                             }`}
                         >
                             <CategoryIcon className="w-5 h-5" />
@@ -140,7 +158,7 @@ function Menu() {
                                         }}
                                     />
                                 ) : (() => {
-                                    const CategoryIcon = getCategoryIconComponent(item.category?.name);
+                                    const CategoryIcon = getCategoryIconComponent(item.category?.name || '');
                                     return <CategoryIcon className="w-10 h-10 text-red-400" />;
                                 })()}
                             </div>
@@ -160,7 +178,6 @@ function Menu() {
                                             try {
                                                 await addToCart(item);
                                             } catch (err) {
-                                                // Error is handled in CartContext
                                                 console.error('Error adding to cart:', err);
                                             }
                                         }}
@@ -188,4 +205,3 @@ function Menu() {
 }
 
 export default Menu;
-

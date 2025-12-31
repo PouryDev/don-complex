@@ -13,7 +13,7 @@
         @viteReactRefresh
         @vite(['demo-client/css/app.css', 'demo-client/js/app.jsx'])
     </head>
-    <body>
+    <body class="bg-black text-white">
         <div id="app"></div>
     </body>
 </html>

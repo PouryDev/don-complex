@@ -40,6 +40,15 @@ export const menuService = {
     getMenu: () => api.get('/menu').then(res => res.data),
     getCategories: () => api.get('/categories').then(res => res.data),
     getMenuItems: () => api.get('/menu-items').then(res => res.data),
+    // Use admin endpoints for now (they should be public, but if not, we'll use admin)
+    getCategoriesPublic: () => api.get('/admin/categories').then(res => {
+        if (res.data && res.data.data) return res.data.data;
+        return Array.isArray(res.data) ? res.data : [];
+    }),
+    getMenuItemsPublic: () => api.get('/admin/menu-items').then(res => {
+        if (res.data && res.data.data) return res.data.data;
+        return Array.isArray(res.data) ? res.data : [];
+    }),
 };
 
 // Order Service

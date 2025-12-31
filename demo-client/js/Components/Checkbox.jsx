@@ -53,7 +53,7 @@ function Checkbox({
                     >
                         <motion.div
                             className={`
-                                w-5 h-5 rounded-full bg-white
+                                w-5 h-5 rounded-full bg-gray-700
                                 shadow-md absolute
                                 ${error && checked ? 'bg-red-50' : ''}
                             `}
@@ -76,7 +76,7 @@ function Checkbox({
                 {/* Label */}
                 {label && (
                     <span className={`
-                        text-sm font-bold text-gray-700
+                        text-sm font-bold text-white
                         select-none
                         ${disabled ? 'text-gray-400' : ''}
                     `}>

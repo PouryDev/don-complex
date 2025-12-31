@@ -145,7 +145,7 @@ function MenuManagement() {
                         className="space-y-4"
                     >
                         <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-semibold text-gray-800">آیتم‌های منو</h2>
+                            <h2 className="text-xl font-semibold text-white">آیتم‌های منو</h2>
                             <button
                                 onClick={handleAddItem}
                                 className="cafe-button px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2"
@@ -174,7 +174,7 @@ function MenuManagement() {
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <h3 className="text-lg font-semibold text-gray-800 mb-1 truncate">
+                                                <h3 className="text-lg font-semibold text-white mb-1 truncate">
                                                     {item.name}
                                                 </h3>
                                                 <p className="text-sm text-gray-600 mb-2">
@@ -232,7 +232,7 @@ function MenuManagement() {
                         className="space-y-4"
                     >
                         <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-semibold text-gray-800">دسته‌بندی‌ها</h2>
+                            <h2 className="text-xl font-semibold text-white">دسته‌بندی‌ها</h2>
                             <button
                                 onClick={handleAddCategory}
                                 className="cafe-button px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2"
@@ -251,7 +251,7 @@ function MenuManagement() {
                                     className="cafe-card rounded-xl p-5 hover:scale-[1.02] transition-all duration-200"
                                 >
                                     <div className="flex items-center justify-between mb-3">
-                                        <h3 className="text-lg font-semibold text-gray-800">
+                                        <h3 className="text-lg font-semibold text-white">
                                             {category.name}
                                         </h3>
                                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
@@ -317,7 +317,7 @@ function MenuManagement() {
                             exit={{ y: '100%', opacity: 0 }}
                             transition={{ type: "spring", damping: 30, stiffness: 300 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-full sm:w-full sm:max-w-2xl bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden"
+                            className="w-full sm:w-full sm:max-w-2xl bg-gray-800 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden"
                         >
                             <MenuItemForm
                                 menuItem={editingItem}
@@ -353,7 +353,7 @@ function MenuManagement() {
                             exit={{ y: '100%', opacity: 0 }}
                             transition={{ type: "spring", damping: 30, stiffness: 300 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-full sm:w-full sm:max-w-2xl bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden"
+                            className="w-full sm:w-full sm:max-w-2xl bg-gray-800 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden"
                         >
                             <CategoryForm
                                 category={editingCategory}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import Input from '../Components/Input';
 
 function Auth() {
     const navigate = useNavigate();
@@ -108,7 +109,7 @@ function Auth() {
                             className={`flex-1 py-3 font-semibold transition-all duration-300 relative z-10 ${
                                 activeTab === 'login'
                                     ? 'text-red-500'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                    : 'text-gray-400 hover:text-gray-300'
                             }`}
                         >
                             ورود
@@ -127,7 +128,7 @@ function Auth() {
                             className={`flex-1 py-3 font-semibold transition-all duration-300 relative z-10 ${
                                 activeTab === 'register'
                                     ? 'text-red-500'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                    : 'text-gray-400 hover:text-gray-300'
                             }`}
                         >
                             ثبت نام
@@ -170,7 +171,7 @@ function Auth() {
                             initial={{ opacity: 0, y: -5 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.2, delay: 0.1 }}
-                            className="text-gray-600 text-sm"
+                            className="text-gray-300 text-sm"
                         >
                             {activeTab === 'login' ? 'خوش آمدید به دن کلاب' : 'حساب کاربری جدید ایجاد کنید'}
                         </motion.p>
@@ -196,39 +197,29 @@ function Auth() {
                                     onSubmit={handleLogin}
                                     className="space-y-4"
                                 >
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    شماره تلفن
-                                </label>
-                                <input
-                                    type="tel"
-                                    value={loginData.phone}
-                                    onChange={(e) => {
-                                        // Only allow digits and limit to 11 characters
-                                        const value = e.target.value.replace(/\D/g, '').slice(0, 11);
-                                        setLoginData({ ...loginData, phone: value });
-                                    }}
-                                    required
-                                    pattern="09\d{9}"
-                                    maxLength={11}
-                                    className="w-full px-4 py-3 border border-red-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-800 text-white placeholder-gray-400"
-                                    placeholder="09123456789"
-                                />
-                            </div>
+                            <Input
+                                label="شماره تلفن"
+                                type="tel"
+                                value={loginData.phone}
+                                onChange={(e) => {
+                                    // Only allow digits and limit to 11 characters
+                                    const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+                                    setLoginData({ ...loginData, phone: value });
+                                }}
+                                required
+                                pattern="09\d{9}"
+                                maxLength={11}
+                                placeholder="09123456789"
+                            />
 
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    رمز عبور
-                                </label>
-                                <input
-                                    type="password"
-                                    value={loginData.password}
-                                    onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                                    required
-                                    className="w-full px-4 py-3 border border-red-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-800 text-white placeholder-gray-400"
-                                    placeholder="••••••••"
-                                />
-                            </div>
+                            <Input
+                                label="رمز عبور"
+                                type="password"
+                                value={loginData.password}
+                                onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                                required
+                                placeholder="••••••••"
+                            />
 
                             <button
                                 type="submit"
@@ -250,69 +241,49 @@ function Auth() {
                                     onSubmit={handleRegister}
                                     className="space-y-4"
                                 >
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    نام
-                                </label>
-                                <input
-                                    type="text"
-                                    value={registerData.name}
-                                    onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
-                                    required
-                                    className="w-full px-4 py-3 border border-red-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-800 text-white placeholder-gray-400"
-                                    placeholder="نام و نام خانوادگی"
-                                />
-                            </div>
+                            <Input
+                                label="نام"
+                                type="text"
+                                value={registerData.name}
+                                onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
+                                required
+                                placeholder="نام و نام خانوادگی"
+                            />
 
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    شماره تلفن
-                                </label>
-                                <input
-                                    type="tel"
-                                    value={registerData.phone}
-                                    onChange={(e) => {
-                                        // Only allow digits and limit to 11 characters
-                                        const value = e.target.value.replace(/\D/g, '').slice(0, 11);
-                                        setRegisterData({ ...registerData, phone: value });
-                                    }}
-                                    required
-                                    pattern="09\d{9}"
-                                    maxLength={11}
-                                    className="w-full px-4 py-3 border border-red-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-800 text-white placeholder-gray-400"
-                                    placeholder="09123456789"
-                                />
-                            </div>
+                            <Input
+                                label="شماره تلفن"
+                                type="tel"
+                                value={registerData.phone}
+                                onChange={(e) => {
+                                    // Only allow digits and limit to 11 characters
+                                    const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+                                    setRegisterData({ ...registerData, phone: value });
+                                }}
+                                required
+                                pattern="09\d{9}"
+                                maxLength={11}
+                                placeholder="09123456789"
+                            />
 
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    رمز عبور
-                                </label>
-                                <input
-                                    type="password"
-                                    value={registerData.password}
-                                    onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
-                                    required
-                                    minLength={8}
-                                    className="w-full px-4 py-3 border border-red-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-800 text-white placeholder-gray-400"
-                                    placeholder="حداقل ۸ کاراکتر"
-                                />
-                            </div>
+                            <Input
+                                label="رمز عبور"
+                                type="password"
+                                value={registerData.password}
+                                onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                                required
+                                minLength={8}
+                                placeholder="حداقل ۸ کاراکتر"
+                            />
 
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    تکرار رمز عبور
-                                </label>
-                                <input
-                                    type="password"
-                                    value={registerData.password_confirmation}
-                                    onChange={(e) => setRegisterData({ ...registerData, password_confirmation: e.target.value })}
-                                    required
-                                    minLength={8}
-                                    className="w-full px-4 py-3 border border-red-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-800 text-white placeholder-gray-400"
-                                    placeholder="تکرار رمز عبور"
-                                />
-                            </div>
+                            <Input
+                                label="تکرار رمز عبور"
+                                type="password"
+                                value={registerData.password_confirmation}
+                                onChange={(e) => setRegisterData({ ...registerData, password_confirmation: e.target.value })}
+                                required
+                                minLength={8}
+                                placeholder="تکرار رمز عبور"
+                            />
 
                             <button
                                 type="submit"

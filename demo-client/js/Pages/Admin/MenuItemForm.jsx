@@ -229,7 +229,7 @@ function MenuItemForm({ menuItem, categories, onSuccess, onCancel }) {
                         type="button"
                         onClick={onCancel}
                         disabled={loading}
-                        className="hidden sm:block px-6 py-3 rounded-xl text-sm font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors disabled:opacity-50"
+                        className="hidden sm:block px-6 py-3 rounded-xl text-sm font-semibold bg-gray-700 text-white hover:bg-gray-600 transition-colors disabled:opacity-50"
                     >
                         لغو
                     </button>

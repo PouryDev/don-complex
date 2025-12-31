@@ -37,7 +37,7 @@ function MainApp() {
                     {/* All routes with layout */}
                     <Route element={<Layout />}>
                         <Route path="/" element={<Home />} />
-                        <Route path="/menu" element={<Menu />} />
+                        <Route path="/menu" element={<ProtectedRoute><Menu /></ProtectedRoute>} />
                         
                         {/* Auth routes - public but inside layout */}
                         <Route path="/login" element={<Auth />} />
@@ -71,6 +71,7 @@ function MainApp() {
                                 </ProtectedRoute>
                             } 
                         />
+                        {/* MySessions is now in Profile page, but keep route for direct access */}
                         <Route 
                             path="/my-sessions" 
                             element={
