@@ -1,0 +1,795 @@
+{
+	"info": {
+		"_postman_id": "mafia-cafe-platform-api",
+		"name": "Mafia Cafe Platform API",
+		"description": "API Collection for Mafia Cafe Platform",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Customer Test\",\n    \"email\": \"customer@test.com\",\n    \"password\": \"password\",\n    \"password_confirmation\": \"password\",\n    \"phone\": \"09123456789\",\n    \"role\": \"customer\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "register"]
+						}
+					}
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.environment.set(\"auth_token\", jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"customer1@test.com\",\n    \"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "login"]
+						}
+					}
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/user",
+							"host": ["{{base_url}}"],
+							"path": ["api", "user"]
+						}
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/logout",
+							"host": ["{{base_url}}"],
+							"path": ["api", "logout"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Branches",
+			"item": [
+				{
+					"name": "List Branches",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/branches",
+							"host": ["{{base_url}}"],
+							"path": ["api", "branches"]
+						}
+					}
+				},
+				{
+					"name": "Get Branch",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/branches/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "branches", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create Branch",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"شعبه جدید\",\n    \"address\": \"آدرس شعبه جدید\",\n    \"game_master_id\": null\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/branches",
+							"host": ["{{base_url}}"],
+							"path": ["api", "branches"]
+						}
+					}
+				},
+				{
+					"name": "Update Branch",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"شعبه به‌روز شده\",\n    \"address\": \"آدرس جدید\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/branches/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "branches", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Branch",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/branches/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "branches", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Branch Sessions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/branches/1/sessions?date=",
+							"host": ["{{base_url}}"],
+							"path": ["api", "branches", "1", "sessions"],
+							"query": [
+								{
+									"key": "date",
+									"value": ""
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Halls",
+			"item": [
+				{
+					"name": "List Halls",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/branches/1/halls",
+							"host": ["{{base_url}}"],
+							"path": ["api", "branches", "1", "halls"]
+						}
+					}
+				},
+				{
+					"name": "Create Hall",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"سالن جدید\",\n    \"capacity\": 15\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/branches/1/halls",
+							"host": ["{{base_url}}"],
+							"path": ["api", "branches", "1", "halls"]
+						}
+					}
+				},
+				{
+					"name": "Update Hall",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"سالن به‌روز شده\",\n    \"capacity\": 20\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/halls/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "halls", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Hall",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/halls/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "halls", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Session Templates",
+			"item": [
+				{
+					"name": "List Session Templates",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/halls/1/session-templates",
+							"host": ["{{base_url}}"],
+							"path": ["api", "halls", "1", "session-templates"]
+						}
+					}
+				},
+				{
+					"name": "Create Session Template",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"day_of_week\": 1,\n    \"start_time\": \"19:00\",\n    \"price\": 50000,\n    \"max_participants\": 10,\n    \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/halls/1/session-templates",
+							"host": ["{{base_url}}"],
+							"path": ["api", "halls", "1", "session-templates"]
+						}
+					}
+				},
+				{
+					"name": "Update Session Template",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"price\": 55000,\n    \"max_participants\": 12,\n    \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/session-templates/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "session-templates", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Session Template",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/session-templates/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "session-templates", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Sessions",
+			"item": [
+				{
+					"name": "List Sessions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/sessions?branch_id=1&date_from=&date_to=&status=upcoming",
+							"host": ["{{base_url}}"],
+							"path": ["api", "sessions"],
+							"query": [
+								{
+									"key": "branch_id",
+									"value": "1"
+								},
+								{
+									"key": "date_from",
+									"value": ""
+								},
+								{
+									"key": "date_to",
+									"value": ""
+								},
+								{
+									"key": "status",
+									"value": "upcoming"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Session",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/sessions/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "sessions", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create Session (One-time)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"branch_id\": 1,\n    \"hall_id\": 1,\n    \"date\": \"2025-01-15\",\n    \"start_time\": \"18:00\",\n    \"price\": 50000,\n    \"max_participants\": 10,\n    \"status\": \"upcoming\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/sessions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "sessions"]
+						}
+					}
+				},
+				{
+					"name": "Update Session",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"price\": 55000,\n    \"status\": \"ongoing\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/sessions/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "sessions", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Reservations",
+			"item": [
+				{
+					"name": "List Reservations",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/reservations",
+							"host": ["{{base_url}}"],
+							"path": ["api", "reservations"]
+						}
+					}
+				},
+				{
+					"name": "Get Reservation",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/reservations/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "reservations", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create Reservation",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"session_id\": 1,\n    \"number_of_people\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/sessions/1/reservations",
+							"host": ["{{base_url}}"],
+							"path": ["api", "sessions", "1", "reservations"]
+						}
+					}
+				},
+				{
+					"name": "Cancel Reservation",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/reservations/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "reservations", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Game Master",
+			"item": [
+				{
+					"name": "Get Game Master Sessions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/game-master/sessions?date=&status=upcoming",
+							"host": ["{{base_url}}"],
+							"path": ["api", "game-master", "sessions"],
+							"query": [
+								{
+									"key": "date",
+									"value": ""
+								},
+								{
+									"key": "status",
+									"value": "upcoming"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Session Reservations",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/game-master/sessions/1/reservations",
+							"host": ["{{base_url}}"],
+							"path": ["api", "game-master", "sessions", "1", "reservations"]
+						}
+					}
+				},
+				{
+					"name": "Validate Reservation",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/game-master/reservations/1/validate",
+							"host": ["{{base_url}}"],
+							"path": ["api", "game-master", "reservations", "1", "validate"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+

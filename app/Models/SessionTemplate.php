@@ -7,24 +7,27 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Branch extends Model
+class SessionTemplate extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'name',
-        'address',
-        'game_master_id',
+        'hall_id',
+        'day_of_week',
+        'start_time',
+        'price',
+        'max_participants',
+        'is_active',
     ];
 
-    public function gameMaster(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'game_master_id');
-    }
+    protected $casts = [
+        'price' => 'decimal:2',
+        'is_active' => 'boolean',
+    ];
 
-    public function halls(): HasMany
+    public function hall(): BelongsTo
     {
-        return $this->hasMany(Hall::class);
+        return $this->belongsTo(Hall::class);
     }
 
     public function sessions(): HasMany

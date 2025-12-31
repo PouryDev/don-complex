@@ -7,24 +7,24 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Branch extends Model
+class Hall extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'branch_id',
         'name',
-        'address',
-        'game_master_id',
+        'capacity',
     ];
 
-    public function gameMaster(): BelongsTo
+    public function branch(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'game_master_id');
+        return $this->belongsTo(Branch::class);
     }
 
-    public function halls(): HasMany
+    public function sessionTemplates(): HasMany
     {
-        return $this->hasMany(Hall::class);
+        return $this->hasMany(SessionTemplate::class);
     }
 
     public function sessions(): HasMany
