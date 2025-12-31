@@ -15,6 +15,7 @@ function Select({
     const [focusedIndex, setFocusedIndex] = useState(-1);
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
     const selectRef = useRef(null);
+    const buttonRef = useRef(null);
     const dropdownRef = useRef(null);
 
     const selectedOption = options.find(opt => opt.value === value);
@@ -97,10 +98,10 @@ function Select({
 
     // Calculate dropdown position when opening
     useEffect(() => {
-        if (isOpen && selectRef.current) {
+        if (isOpen && buttonRef.current) {
             const updatePosition = () => {
-                if (selectRef.current) {
-                    const rect = selectRef.current.getBoundingClientRect();
+                if (buttonRef.current) {
+                    const rect = buttonRef.current.getBoundingClientRect();
                     // For fixed positioning, use getBoundingClientRect directly (relative to viewport)
                     setDropdownPosition({
                         top: rect.bottom + 8, // 8px margin (mt-2)
@@ -110,7 +111,11 @@ function Select({
                 }
             };
 
-            updatePosition();
+            // Use requestAnimationFrame to ensure DOM is ready
+            requestAnimationFrame(() => {
+                updatePosition();
+            });
+
             window.addEventListener('resize', updatePosition);
             window.addEventListener('scroll', updatePosition, true);
 
@@ -131,6 +136,7 @@ function Select({
             
             <div className="relative" ref={selectRef}>
                 <button
+                    ref={buttonRef}
                     type="button"
                     onClick={() => !disabled && setIsOpen(!isOpen)}
                     onKeyDown={handleKeyDown}
