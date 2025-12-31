@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { menuService, branchService } from '../services/api';
 import { useCart } from '../contexts/CartContext';
 import Loading from '../Components/Loading';
+import Select from '../Components/Select';
 import { getCategoryIcon, WarningIcon, SearchIcon } from '../Components/Icons';
 
 function Menu() {
@@ -55,10 +56,10 @@ function Menu() {
         }
     };
 
-    const handleBranchChange = (e) => {
-        const newBranchId = parseInt(e.target.value);
-        setBranchId(newBranchId);
-        localStorage.setItem('selected_branch_id', newBranchId.toString());
+    const handleBranchChange = (newBranchId) => {
+        const branchIdNum = typeof newBranchId === 'string' ? parseInt(newBranchId) : newBranchId;
+        setBranchId(branchIdNum);
+        localStorage.setItem('selected_branch_id', branchIdNum.toString());
         setSelectedCategory('all'); // Reset category filter when branch changes
     };
 
@@ -158,20 +159,16 @@ function Menu() {
             {/* Branch Selector */}
             {branches.length > 0 && (
                 <div className="cafe-card rounded-xl p-4">
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">
-                        انتخاب شعبه
-                    </label>
-                    <select
+                    <Select
+                        label="انتخاب شعبه"
                         value={branchId || ''}
                         onChange={handleBranchChange}
-                        className="w-full px-4 py-3 rounded-lg bg-gray-800 text-white border border-red-500/30 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-200"
-                    >
-                        {branches.map((branch) => (
-                            <option key={branch.id} value={branch.id}>
-                                {branch.name}
-                            </option>
-                        ))}
-                    </select>
+                        options={branches.map(branch => ({
+                            value: branch.id,
+                            label: branch.name
+                        }))}
+                        placeholder="شعبه را انتخاب کنید..."
+                    />
                 </div>
             )}
 
