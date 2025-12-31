@@ -9,31 +9,41 @@ function Menu() {
     const [categories, setCategories] = useState([]);
     const [menuItems, setMenuItems] = useState([]);
     const [branchId, setBranchId] = useState(null);
+    const [branches, setBranches] = useState([]);
     const { addToCart } = useCart();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [imageErrors, setImageErrors] = useState(new Set());
 
     useEffect(() => {
-        // Get branch_id from localStorage or fetch first branch
-        const savedBranchId = localStorage.getItem('selected_branch_id');
-        if (savedBranchId) {
-            setBranchId(parseInt(savedBranchId));
-            fetchData(parseInt(savedBranchId));
-        } else {
-            fetchFirstBranch();
-        }
+        fetchBranches();
     }, []);
 
-    const fetchFirstBranch = async () => {
+    useEffect(() => {
+        if (branchId) {
+            fetchData(branchId);
+        }
+    }, [branchId]);
+
+    const fetchBranches = async () => {
         try {
-            const response = await branchService.getBranches();
+            const response = await branchService.getBranches({ per_page: 100 });
             const branchesData = Array.isArray(response) ? response : (response.data || []);
+            setBranches(branchesData);
+            
             if (branchesData.length > 0) {
-                const firstBranchId = branchesData[0].id;
-                setBranchId(firstBranchId);
-                localStorage.setItem('selected_branch_id', firstBranchId.toString());
-                fetchData(firstBranchId);
+                // Get branch_id from localStorage or use first branch
+                const savedBranchId = localStorage.getItem('selected_branch_id');
+                const targetBranchId = savedBranchId 
+                    ? parseInt(savedBranchId) 
+                    : branchesData[0].id;
+                
+                // Check if saved branch still exists
+                const branchExists = branchesData.find(b => b.id === targetBranchId);
+                const finalBranchId = branchExists ? targetBranchId : branchesData[0].id;
+                
+                setBranchId(finalBranchId);
+                localStorage.setItem('selected_branch_id', finalBranchId.toString());
             } else {
                 setError('هیچ شعبه‌ای یافت نشد.');
                 setLoading(false);
@@ -43,6 +53,13 @@ function Menu() {
             setError('خطا در بارگذاری شعبه‌ها.');
             setLoading(false);
         }
+    };
+
+    const handleBranchChange = (e) => {
+        const newBranchId = parseInt(e.target.value);
+        setBranchId(newBranchId);
+        localStorage.setItem('selected_branch_id', newBranchId.toString());
+        setSelectedCategory('all'); // Reset category filter when branch changes
     };
 
     const fetchData = async (branchIdParam = null) => {
@@ -137,6 +154,26 @@ function Menu() {
                 <h1 className="text-3xl font-bold text-white mb-2">منوی کافه</h1>
                 <p className="text-gray-300">انتخاب کنید و لذت ببرید</p>
             </div>
+
+            {/* Branch Selector */}
+            {branches.length > 0 && (
+                <div className="cafe-card rounded-xl p-4">
+                    <label className="block text-sm font-semibold text-gray-300 mb-2">
+                        انتخاب شعبه
+                    </label>
+                    <select
+                        value={branchId || ''}
+                        onChange={handleBranchChange}
+                        className="w-full px-4 py-3 rounded-lg bg-gray-800 text-white border border-red-500/30 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-200"
+                    >
+                        {branches.map((branch) => (
+                            <option key={branch.id} value={branch.id}>
+                                {branch.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
 
             {/* Category Filter */}
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide py-3 px-1">

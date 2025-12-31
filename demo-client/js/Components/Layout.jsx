@@ -209,7 +209,7 @@ function Layout() {
     }, [activeIndex, location.pathname]);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black pb-28 md:pb-8">
+        <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black pb-36 md:pb-12">
             {/* Header */}
             <header className="sticky top-0 z-40 bg-gray-900/80 backdrop-blur-md shadow-sm border-b border-red-900/50">
                 <div className="max-w-4xl mx-auto px-4 py-3">
@@ -260,7 +260,7 @@ function Layout() {
             </header>
 
             {/* Main Content */}
-            <main className="max-w-4xl mx-auto px-4 py-4 pb-24 md:pb-8 min-h-[calc(100vh-140px)]">
+            <main className="max-w-4xl mx-auto px-4 py-4 pb-32 md:pb-12 min-h-[calc(100vh-140px)]">
                 <Outlet />
             </main>
 
