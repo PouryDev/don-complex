@@ -11,12 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('branches', function (Blueprint $table) {
+        Schema::create('menu_items', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')->constrained();
+            $table->foreignId('menu_category_id')->constrained();
             $table->string('name');
-            $table->string('address');
-            $table->string('phone');
-            $table->boolean('is_active')->default(true);
+            $table->string('slug')->unique();
+            $table->text('description')->nullable();
+            $table->decimal('price', 10, 0);
+            $table->boolean('is_available')->default(true);
             $table->timestamps();
         });
     }
@@ -26,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('branches');
+        Schema::dropIfExists('menu_items');
     }
 };

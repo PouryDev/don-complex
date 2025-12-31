@@ -11,11 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('branches', function (Blueprint $table) {
+        Schema::create('session_templates', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('address');
-            $table->string('phone');
+            $table->foreignId('branch_id')->constrained();
+            $table->tinyInteger('weekday');
+            $table->time('start_time');
+            $table->integer('duration');
+            $table->integer('max_capacity');
+            $table->integer('price');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
@@ -26,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('branches');
+        Schema::dropIfExists('session_templates');
     }
 };

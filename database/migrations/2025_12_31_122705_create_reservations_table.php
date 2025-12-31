@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('branches', function (Blueprint $table) {
+        Schema::create('reservations', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('address');
-            $table->string('phone');
-            $table->boolean('is_active')->default(true);
+            $table->foreignId('game_session_id')->constrained('game_sessions');
+            $table->foreignId('user_id')->constrained('users');
+            $table->integer('people_count');
+            $table->integer('total_price');
+            // TODO: End this
             $table->timestamps();
         });
     }
@@ -26,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('branches');
+        Schema::dropIfExists('reservations');
     }
 };
