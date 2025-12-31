@@ -13,6 +13,7 @@ function Select({
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [focusedIndex, setFocusedIndex] = useState(-1);
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
     const selectRef = useRef(null);
     const dropdownRef = useRef(null);
 
@@ -94,6 +95,31 @@ function Select({
         }
     }, [focusedIndex, isOpen]);
 
+    // Calculate dropdown position when opening
+    useEffect(() => {
+        if (isOpen && selectRef.current) {
+            const updatePosition = () => {
+                if (selectRef.current) {
+                    const rect = selectRef.current.getBoundingClientRect();
+                    setDropdownPosition({
+                        top: rect.bottom + window.scrollY + 8, // 8px margin (mt-2)
+                        left: rect.left + window.scrollX,
+                        width: rect.width
+                    });
+                }
+            };
+
+            updatePosition();
+            window.addEventListener('resize', updatePosition);
+            window.addEventListener('scroll', updatePosition, true);
+
+            return () => {
+                window.removeEventListener('resize', updatePosition);
+                window.removeEventListener('scroll', updatePosition, true);
+            };
+        }
+    }, [isOpen]);
+
     return (
         <div className={`relative z-[100] ${className}`}>
             {label && (
@@ -169,7 +195,7 @@ function Select({
                                 }}
                             />
                             
-                            {/* Dropdown */}
+                            {/* Dropdown - Fixed positioning to avoid stacking context issues */}
                             <motion.div
                                 ref={dropdownRef}
                                 initial={{ opacity: 0, y: -10, scale: 0.95 }}
@@ -181,7 +207,7 @@ function Select({
                                     stiffness: 300,
                                     duration: 0.2
                                 }}
-                                className="absolute z-[9999] w-full mt-2 bg-gray-800 rounded-xl shadow-2xl border-2 border-red-500/20 overflow-hidden pointer-events-auto"
+                                className="fixed z-[9999] bg-gray-800 rounded-xl shadow-2xl border-2 border-red-500/20 overflow-hidden pointer-events-auto"
                                 onMouseEnter={() => {
                                     // Keep dropdown open when mouse enters
                                 }}
@@ -189,8 +215,10 @@ function Select({
                                     // Don't close on mouse leave, only on click outside
                                 }}
                                 style={{ 
+                                    top: `${dropdownPosition.top}px`,
+                                    left: `${dropdownPosition.left}px`,
+                                    width: `${dropdownPosition.width}px`,
                                     maxHeight: 'min(300px, calc(100vh - 200px))',
-                                    top: '100%'
                                 }}
                             >
                                 <div 
