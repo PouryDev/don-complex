@@ -27,7 +27,9 @@ export const AuthProvider = ({ children }) => {
     const fetchUser = async () => {
         try {
             const response = await api.get('/user');
-            setUser(response.data);
+            // Handle Laravel Resource wrapping - if response.data has a data property, use it
+            const userData = response.data?.data || response.data;
+            setUser(userData);
         } catch (error) {
             localStorage.removeItem('auth_token');
         } finally {

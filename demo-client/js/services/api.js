@@ -309,7 +309,10 @@ export const reservationService = {
 
 // Auth Service (update profile)
 export const authService = {
-    updateProfile: (data) => api.put('/user', data).then(res => res.data),
+    updateProfile: (data) => api.put('/user', data).then(res => {
+        // Handle Laravel Resource wrapping - if response.data has a data property, use it
+        return res.data?.data || res.data;
+    }),
 };
 
 // Cart Service
