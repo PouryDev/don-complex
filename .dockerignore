@@ -1,57 +1,22 @@
-# Git
-.git
-.gitignore
-.gitattributes
-
-# IDE
-.vscode
-.idea
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Node
 node_modules
 npm-debug.log
-yarn-error.log
-
-# PHP
-vendor
-.phpunit.result.cache
-
-# Laravel
+.git
+.gitignore
+README.md
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.docker
 storage/logs/*
 storage/framework/cache/*
 storage/framework/sessions/*
 storage/framework/views/*
 bootstrap/cache/*
-.env
-.env.backup
-.env.production
-
-# Testing
-.phpunit.cache
-coverage
 tests
-
-# Documentation
-README.md
-*.md
-
-# Build artifacts
-public/hot
-public/storage
-public/build
-
-# Misc
-*.log
-*.cache
-docker-compose.yml
-docker-compose.override.yml
-Dockerfile*
-.dockerignore
-
+.phpunit.result.cache
+coverage
+.nyc_output
+.DS_Store
+Thumbs.db
