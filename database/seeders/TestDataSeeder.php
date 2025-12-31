@@ -6,9 +6,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\UserRole;
 use App\Models\Branch;
-use App\Models\Category;
 use App\Models\Hall;
-use App\Models\MenuItem;
 use App\Models\PaymentTransaction;
 use App\Models\Reservation;
 use App\Models\Session;
@@ -297,217 +295,8 @@ class TestDataSeeder extends Seeder
             }
         }
 
-        // Create Categories (only if they don't exist)
-        $category1 = Category::firstOrCreate(
-            ['name' => 'نوشیدنی‌ها'],
-            ['order' => 1, 'is_active' => true]
-        );
-
-        $category2 = Category::firstOrCreate(
-            ['name' => 'غذاهای اصلی'],
-            ['order' => 2, 'is_active' => true]
-        );
-
-        $category3 = Category::firstOrCreate(
-            ['name' => 'پیش‌غذا'],
-            ['order' => 3, 'is_active' => true]
-        );
-
-        $category4 = Category::firstOrCreate(
-            ['name' => 'دسر'],
-            ['order' => 4, 'is_active' => true]
-        );
-
-        $category5 = Category::firstOrCreate(
-            ['name' => 'اسنک'],
-            ['order' => 5, 'is_active' => true]
-        );
-
-        // Create Menu Items
-        // نوشیدنی‌ها
-        MenuItem::create([
-            'category_id' => $category1->id,
-            'name' => 'قهوه اسپرسو',
-            'description' => 'قهوه اسپرسو تازه دم شده',
-            'ingredients' => 'دانه قهوه، آب',
-            'price' => 25000,
-            'is_available' => true,
-            'order' => 1,
-        ]);
-
-        MenuItem::create([
-            'category_id' => $category1->id,
-            'name' => 'کاپوچینو',
-            'description' => 'قهوه با شیر و فوم',
-            'ingredients' => 'اسپرسو، شیر، فوم شیر',
-            'price' => 35000,
-            'is_available' => true,
-            'order' => 2,
-        ]);
-
-        MenuItem::create([
-            'category_id' => $category1->id,
-            'name' => 'لاته',
-            'description' => 'قهوه با شیر',
-            'ingredients' => 'اسپرسو، شیر',
-            'price' => 32000,
-            'is_available' => true,
-            'order' => 3,
-        ]);
-
-        MenuItem::create([
-            'category_id' => $category1->id,
-            'name' => 'آبمیوه طبیعی',
-            'description' => 'آبمیوه تازه فشرده شده',
-            'ingredients' => 'میوه تازه',
-            'price' => 40000,
-            'is_available' => true,
-            'order' => 4,
-        ]);
-
-        MenuItem::create([
-            'category_id' => $category1->id,
-            'name' => 'چای',
-            'description' => 'چای ایرانی',
-            'ingredients' => 'برگ چای، آب',
-            'price' => 15000,
-            'is_available' => true,
-            'order' => 5,
-        ]);
-
-        // غذاهای اصلی
-        MenuItem::create([
-            'category_id' => $category2->id,
-            'name' => 'پاستا کاربونارا',
-            'description' => 'پاستا با سس خامه و بیکن',
-            'ingredients' => 'پاستا، خامه، بیکن، پنیر پارمزان',
-            'price' => 120000,
-            'is_available' => true,
-            'order' => 1,
-        ]);
-
-        MenuItem::create([
-            'category_id' => $category2->id,
-            'name' => 'پاستا آلفردو',
-            'description' => 'پاستا با سس آلفردو',
-            'ingredients' => 'پاستا، خامه، پنیر پارمزان، سیر',
-            'price' => 110000,
-            'is_available' => true,
-            'order' => 2,
-        ]);
-
-        MenuItem::create([
-            'category_id' => $category2->id,
-            'name' => 'برگر کلاسیک',
-            'description' => 'همبرگر با نان، گوشت، پنیر و سبزیجات',
-            'ingredients' => 'نان همبرگر، گوشت گوساله، پنیر، کاهو، گوجه، پیاز',
-            'price' => 95000,
-            'is_available' => true,
-            'order' => 3,
-        ]);
-
-        MenuItem::create([
-            'category_id' => $category2->id,
-            'name' => 'پیتزا مارگاریتا',
-            'description' => 'پیتزا با پنیر موتزارلا و گوجه',
-            'ingredients' => 'خمیر پیتزا، پنیر موتزارلا، گوجه، ریحان',
-            'price' => 130000,
-            'is_available' => true,
-            'order' => 4,
-        ]);
-
-        // پیش‌غذا
-        MenuItem::create([
-            'category_id' => $category3->id,
-            'name' => 'سالاد سزار',
-            'description' => 'سالاد با سس سزار',
-            'ingredients' => 'کاهو، نان تست، پنیر پارمزان، سس سزار',
-            'price' => 65000,
-            'is_available' => true,
-            'order' => 1,
-        ]);
-
-        MenuItem::create([
-            'category_id' => $category3->id,
-            'name' => 'سوپ قارچ',
-            'description' => 'سوپ خامه‌ای قارچ',
-            'ingredients' => 'قارچ، خامه، پیاز، سیر',
-            'price' => 55000,
-            'is_available' => true,
-            'order' => 2,
-        ]);
-
-        MenuItem::create([
-            'category_id' => $category3->id,
-            'name' => 'سیب‌زمینی سرخ کرده',
-            'description' => 'سیب‌زمینی سرخ کرده ترد',
-            'ingredients' => 'سیب‌زمینی، روغن',
-            'price' => 45000,
-            'is_available' => true,
-            'order' => 3,
-        ]);
-
-        // دسر
-        MenuItem::create([
-            'category_id' => $category4->id,
-            'name' => 'چیزکیک',
-            'description' => 'چیزکیک کلاسیک',
-            'ingredients' => 'پنیر خامه‌ای، شکر، تخم مرغ، بیسکویت',
-            'price' => 75000,
-            'is_available' => true,
-            'order' => 1,
-        ]);
-
-        MenuItem::create([
-            'category_id' => $category4->id,
-            'name' => 'بستنی',
-            'description' => 'بستنی وانیلی',
-            'ingredients' => 'شیر، شکر، وانیل',
-            'price' => 50000,
-            'is_available' => true,
-            'order' => 2,
-        ]);
-
-        MenuItem::create([
-            'category_id' => $category4->id,
-            'name' => 'کیک شکلاتی',
-            'description' => 'کیک شکلاتی مرطوب',
-            'ingredients' => 'شکلات، آرد، شکر، تخم مرغ',
-            'price' => 80000,
-            'is_available' => true,
-            'order' => 3,
-        ]);
-
-        // اسنک
-        MenuItem::create([
-            'category_id' => $category5->id,
-            'name' => 'چیپس',
-            'description' => 'چیپس سیب‌زمینی',
-            'ingredients' => 'سیب‌زمینی، نمک',
-            'price' => 30000,
-            'is_available' => true,
-            'order' => 1,
-        ]);
-
-        MenuItem::create([
-            'category_id' => $category5->id,
-            'name' => 'پاپ کورن',
-            'description' => 'پاپ کورن نمکی',
-            'ingredients' => 'ذرت، روغن، نمک',
-            'price' => 35000,
-            'is_available' => true,
-            'order' => 2,
-        ]);
-
-        MenuItem::create([
-            'category_id' => $category5->id,
-            'name' => 'آجیل مخلوط',
-            'description' => 'مخلوط آجیل',
-            'ingredients' => 'بادام، پسته، فندق',
-            'price' => 60000,
-            'is_available' => true,
-            'order' => 3,
-        ]);
+        // Note: Menu data (categories and menu items) are created by MenuSeeder
+        // Run: php artisan db:seed --class=MenuSeeder
 
         $this->command->info('Test data seeded successfully!');
         $this->command->info('Users created:');
@@ -517,8 +306,7 @@ class TestDataSeeder extends Seeder
         $this->command->info('  - Customer 1: customer1@test.com / password');
         $this->command->info('  - Customer 2: customer2@test.com / password');
         $this->command->info('  - Customer 3: customer3@test.com / password');
-        $this->command->info('Menu data created:');
-        $this->command->info('  - 5 categories');
-        $this->command->info('  - 18 menu items');
+        $this->command->info('');
+        $this->command->info('Note: To seed menu data, run: php artisan db:seed --class=MenuSeeder');
     }
 }
