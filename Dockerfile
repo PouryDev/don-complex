@@ -74,7 +74,6 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --no-script
     composer dump-autoload --optimize --classmap-authoritative --no-interaction
 
 # Install Node.js dependencies and build frontend assets
-RUN npm ci && npm run build
 
 # Optimize permissions for runtime directories
 RUN set -eux; \
