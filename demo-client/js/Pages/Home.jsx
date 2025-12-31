@@ -19,19 +19,19 @@ function Home() {
         totalOrders: 0,
     });
     const [campaigns, setCampaigns] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [dataLoading, setDataLoading] = useState(true);
 
     useEffect(() => {
         if (user) {
             fetchData();
         } else {
-            setLoading(false);
+            setDataLoading(false);
         }
     }, [user]);
 
     const fetchData = async () => {
         try {
-            setLoading(true);
+            setDataLoading(true);
             const [ordersData, campaignsData] = await Promise.all([
                 user ? orderService.getOrders().catch(() => []) : Promise.resolve([]),
                 discountService.getCampaigns().catch(() => []),
@@ -56,7 +56,7 @@ function Home() {
         } catch (err) {
             console.error('Error fetching home data:', err);
         } finally {
-            setLoading(false);
+            setDataLoading(false);
         }
     };
 
@@ -158,7 +158,7 @@ function Home() {
                                     <IconComponent className="w-6 h-6" />
                                 </div>
                                 <div className="text-2xl font-bold text-red-400 mb-1">
-                                    {loading ? '...' : stat.value}
+                                    {dataLoading ? '...' : stat.value}
                                 </div>
                                 <div className="text-xs text-gray-300">{stat.label}</div>
                             </div>
@@ -191,7 +191,7 @@ function Home() {
                 </div>
             )}
 
-            {campaigns.length === 0 && !loading && (
+            {campaigns.length === 0 && !dataLoading && (
                 <div className="cafe-card rounded-xl p-5 bg-gradient-to-r from-gray-800 to-gray-900 border-2 border-red-900/50">
                     <div className="flex items-center gap-3">
                         <div className="text-red-500">
