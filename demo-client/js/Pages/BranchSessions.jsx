@@ -118,7 +118,7 @@ function BranchSessions() {
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-3 border border-red-900/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 bg-gray-800 text-white"
+                    className="w-full px-4 py-3 border border-red-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-800 text-white"
                 />
             </div>
 
@@ -133,7 +133,7 @@ function BranchSessions() {
                             className="w-full cafe-card rounded-xl p-5 hover:scale-[1.02] transition-all duration-200 text-right"
                         >
                             <div className="flex items-center gap-4">
-                                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center text-white shadow-lg">
+                                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white shadow-lg">
                                     <CalendarIcon className="w-8 h-8" />
                                 </div>
                                 <div className="flex-1">

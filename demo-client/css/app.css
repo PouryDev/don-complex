@@ -9,13 +9,13 @@
     --font-sans: 'Vazir', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
     
-    /* Dark Red Theme Colors */
-    --color-cafe-dark: #0A0A0A;
-    --color-cafe-medium: #1A1A1A;
-    --color-cafe-light: #1F1F1F;
-    --color-cafe-cream: #2A2A2A;
-    --color-cafe-gold: #DC2626;
-    --color-cafe-orange: #B91C1C;
+    /* Modern Dark Red Theme Colors */
+    --color-cafe-dark: #000000;
+    --color-cafe-medium: #0F0F0F;
+    --color-cafe-light: #1A1A1A;
+    --color-cafe-cream: #252525;
+    --color-cafe-gold: #FF4444;
+    --color-cafe-orange: #E63946;
 }
 
 /* RTL Support */
@@ -94,45 +94,45 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-    background: #1A1A1A;
+    background: #0F0F0F;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #DC2626;
+    background: #FF4444;
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #B91C1C;
+    background: #E63946;
 }
 
 /* Card styles */
 .cafe-card {
-    background: linear-gradient(135deg, #1F1F1F 0%, #2A2A2A 100%);
-    border: 1px solid rgba(220, 38, 38, 0.3);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, #1A1A1A 0%, #252525 100%);
+    border: 1px solid rgba(255, 68, 68, 0.2);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
 }
 
 .cafe-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(220, 38, 38, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-    border-color: rgba(220, 38, 38, 0.5);
+    box-shadow: 0 10px 15px -3px rgba(255, 68, 68, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 68, 68, 0.4);
 }
 
 /* Button styles */
 .cafe-button {
-    background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+    background: linear-gradient(135deg, #FF4444 0%, #E63946 100%);
     color: white;
     font-weight: 600;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.4);
+    box-shadow: 0 4px 6px -1px rgba(255, 68, 68, 0.3);
 }
 
 .cafe-button:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 8px -1px rgba(220, 38, 38, 0.5);
-    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+    box-shadow: 0 6px 8px -1px rgba(255, 68, 68, 0.4);
+    background: linear-gradient(135deg, #FF5555 0%, #FF4444 100%);
 }
 
 .cafe-button:active {
@@ -159,17 +159,17 @@ html {
 }
 
 .scrollbar-thin::-webkit-scrollbar-track {
-    background: #1A1A1A;
+    background: #0F0F0F;
     border-radius: 3px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+    background: linear-gradient(135deg, #FF4444 0%, #E63946 100%);
     border-radius: 3px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+    background: linear-gradient(135deg, #FF5555 0%, #FF4444 100%);
 }
 
 /* Scrollbar for white background (in cart summary) */

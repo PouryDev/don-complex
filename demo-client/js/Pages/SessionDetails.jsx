@@ -183,7 +183,7 @@ function SessionDetails() {
                 />
 
                 {/* Total Price */}
-                <div className="flex justify-between items-center p-4 bg-gray-800 rounded-lg border-2 border-red-900/50">
+                <div className="flex justify-between items-center p-4 bg-gray-800 rounded-lg border-2 border-red-500/20">
                     <span className="text-gray-300 text-lg">جمع کل:</span>
                     <span className="text-red-400 font-bold text-xl">
                         {formatPrice(calculateTotal())} تومان

@@ -206,9 +206,21 @@ export const branchService = {
         const queryParams = new URLSearchParams();
         if (params.per_page) queryParams.append('per_page', params.per_page);
         const queryString = queryParams.toString();
-        return api.get(`/branches${queryString ? '?' + queryString : ''}`).then(res => res.data);
+        return api.get(`/branches${queryString ? '?' + queryString : ''}`).then(res => {
+            // Handle paginated response
+            if (res.data && res.data.data) {
+                return res.data;
+            }
+            return res.data;
+        });
     },
-    getBranch: (id) => api.get(`/branches/${id}`).then(res => res.data),
+    getBranch: (id) => api.get(`/branches/${id}`).then(res => {
+        // Handle single resource response
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return res.data;
+    }),
 };
 
 // Session Service
@@ -221,16 +233,34 @@ export const sessionService = {
             }
         });
         const queryString = queryParams.toString();
-        return api.get(`/sessions${queryString ? '?' + queryString : ''}`).then(res => res.data);
+        return api.get(`/sessions${queryString ? '?' + queryString : ''}`).then(res => {
+            // Handle paginated response
+            if (res.data && res.data.data) {
+                return res.data;
+            }
+            return res.data;
+        });
     },
     getBranchSessions: (branchId, params = {}) => {
         const queryParams = new URLSearchParams();
         if (params.date) queryParams.append('date', params.date);
         if (params.per_page) queryParams.append('per_page', params.per_page);
         const queryString = queryParams.toString();
-        return api.get(`/branches/${branchId}/sessions${queryString ? '?' + queryString : ''}`).then(res => res.data);
+        return api.get(`/branches/${branchId}/sessions${queryString ? '?' + queryString : ''}`).then(res => {
+            // Handle paginated response
+            if (res.data && res.data.data) {
+                return res.data;
+            }
+            return res.data;
+        });
     },
-    getSession: (id) => api.get(`/sessions/${id}`).then(res => res.data),
+    getSession: (id) => api.get(`/sessions/${id}`).then(res => {
+        // Handle single resource response
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return res.data;
+    }),
 };
 
 // Reservation Service
@@ -239,13 +269,31 @@ export const reservationService = {
         const queryParams = new URLSearchParams();
         if (params.per_page) queryParams.append('per_page', params.per_page);
         const queryString = queryParams.toString();
-        return api.get(`/reservations${queryString ? '?' + queryString : ''}`).then(res => res.data);
+        return api.get(`/reservations${queryString ? '?' + queryString : ''}`).then(res => {
+            // Handle paginated response
+            if (res.data && res.data.data) {
+                return res.data;
+            }
+            return res.data;
+        });
     },
-    getReservation: (id) => api.get(`/reservations/${id}`).then(res => res.data),
+    getReservation: (id) => api.get(`/reservations/${id}`).then(res => {
+        // Handle single resource response
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return res.data;
+    }),
     createReservation: (sessionId, numberOfPeople) => {
         return api.post(`/sessions/${sessionId}/reservations`, {
             number_of_people: numberOfPeople,
-        }).then(res => res.data);
+        }).then(res => {
+            // Handle single resource response
+            if (res.data && res.data.data) {
+                return res.data.data;
+            }
+            return res.data;
+        });
     },
     cancelReservation: (id) => api.delete(`/reservations/${id}`).then(res => res.data),
 };

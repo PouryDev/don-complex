@@ -91,7 +91,7 @@ function Profile() {
             description: 'مشاهده و مدیریت فاکتورهای شما',
             icon: InvoiceIcon,
             path: '/invoices',
-            color: 'from-red-600 to-red-700',
+            color: 'from-red-500 to-red-600',
         },
     ];
 
@@ -135,7 +135,7 @@ function Profile() {
 
                 {!isEditing ? (
                     <div className="text-center">
-                        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center text-white shadow-lg">
+                        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white shadow-lg">
                             <UserIcon />
                         </div>
                         <h2 className="text-2xl font-bold text-white mb-1">{user.name}</h2>
@@ -229,7 +229,7 @@ function Profile() {
             <div className="cafe-card rounded-xl p-5">
                 <button
                     onClick={() => setShowLogoutConfirm(true)}
-                    className="w-full px-6 py-3 rounded-lg text-sm font-semibold bg-gradient-to-r from-red-400 to-red-500 text-white hover:from-red-500 hover:to-red-600 transition-all duration-200 shadow-md shadow-red-400/20"
+                    className="w-full px-6 py-3 rounded-lg text-sm font-semibold bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md shadow-red-500/20"
                 >
                     خروج از حساب کاربری
                 </button>

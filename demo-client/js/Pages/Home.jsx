@@ -66,21 +66,21 @@ function Home() {
             description: 'دیدن منوی کامل کافه',
             icon: CoffeeCupIcon,
             path: '/menu',
-            gradient: 'from-red-600 to-red-700',
+            gradient: 'from-red-500 to-red-600',
         },
         {
             title: 'سفارشات من',
             description: 'پیگیری سفارشات شما',
             icon: OrdersListIcon,
             path: '/orders',
-            gradient: 'from-red-600 to-red-700',
+            gradient: 'from-red-500 to-red-600',
         },
         {
             title: 'پروفایل',
             description: 'تنظیمات و اطلاعات حساب',
             icon: UserIcon,
             path: '/profile',
-            gradient: 'from-red-600 to-red-700',
+            gradient: 'from-red-500 to-red-600',
         },
     ];
 
@@ -94,8 +94,8 @@ function Home() {
         <div className="space-y-6">
             {/* Welcome Section */}
             <div className="cafe-card rounded-2xl p-6 text-center relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-900/30 to-red-800/30 rounded-full -mr-16 -mt-16"></div>
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-red-900/30 to-red-800/30 rounded-full -ml-12 -mb-12"></div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-500/10 to-red-600/10 rounded-full -mr-16 -mt-16"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-red-500/10 to-red-600/10 rounded-full -ml-12 -mb-12"></div>
                 <div className="relative z-10">
                     <div className="flex items-center justify-center gap-3 mb-2">
                         <CoffeeCupIcon className="w-8 h-8 text-red-500" />
@@ -172,7 +172,7 @@ function Home() {
             {campaigns.length > 0 && (
                 <div className="space-y-3">
                     {campaigns.map((campaign, index) => (
-                        <div key={index} className="cafe-card rounded-xl p-5 bg-gradient-to-r from-gray-800 to-gray-900 border-2 border-red-900/50">
+                        <div key={index} className="cafe-card rounded-xl p-5 bg-gradient-to-r from-gray-800 to-gray-900 border-2 border-red-500/20">
                             <div className="flex items-center gap-3">
                                 <div className="text-red-500">
                                     <CelebrationIcon className="w-8 h-8" />
@@ -192,7 +192,7 @@ function Home() {
             )}
 
             {campaigns.length === 0 && !dataLoading && (
-                <div className="cafe-card rounded-xl p-5 bg-gradient-to-r from-gray-800 to-gray-900 border-2 border-red-900/50">
+                <div className="cafe-card rounded-xl p-5 bg-gradient-to-r from-gray-800 to-gray-900 border-2 border-red-500/20">
                     <div className="flex items-center gap-3">
                         <div className="text-red-500">
                             <CelebrationIcon className="w-8 h-8" />

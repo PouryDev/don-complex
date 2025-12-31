@@ -134,7 +134,7 @@ function Auth() {
                         </button>
                         {/* Animated Indicator */}
                         <motion.div
-                            className="absolute bottom-0 h-0.5 bg-gradient-to-r from-red-600 to-red-700 z-0"
+                            className="absolute bottom-0 h-0.5 bg-gradient-to-r from-red-500 to-red-600 z-0"
                             initial={false}
                             animate={{
                                 right: activeTab === 'login' ? '0%' : '50%',
@@ -211,7 +211,7 @@ function Auth() {
                                     required
                                     pattern="09\d{9}"
                                     maxLength={11}
-                                    className="w-full px-4 py-3 border border-red-900/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 bg-gray-800 text-white placeholder-gray-400"
+                                    className="w-full px-4 py-3 border border-red-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-800 text-white placeholder-gray-400"
                                     placeholder="09123456789"
                                 />
                             </div>
@@ -225,7 +225,7 @@ function Auth() {
                                     value={loginData.password}
                                     onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                                     required
-                                    className="w-full px-4 py-3 border border-red-900/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 bg-gray-800 text-white placeholder-gray-400"
+                                    className="w-full px-4 py-3 border border-red-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-800 text-white placeholder-gray-400"
                                     placeholder="••••••••"
                                 />
                             </div>
@@ -259,7 +259,7 @@ function Auth() {
                                     value={registerData.name}
                                     onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
                                     required
-                                    className="w-full px-4 py-3 border border-red-900/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 bg-gray-800 text-white placeholder-gray-400"
+                                    className="w-full px-4 py-3 border border-red-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-800 text-white placeholder-gray-400"
                                     placeholder="نام و نام خانوادگی"
                                 />
                             </div>
@@ -279,7 +279,7 @@ function Auth() {
                                     required
                                     pattern="09\d{9}"
                                     maxLength={11}
-                                    className="w-full px-4 py-3 border border-red-900/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 bg-gray-800 text-white placeholder-gray-400"
+                                    className="w-full px-4 py-3 border border-red-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-800 text-white placeholder-gray-400"
                                     placeholder="09123456789"
                                 />
                             </div>
@@ -294,7 +294,7 @@ function Auth() {
                                     onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
                                     required
                                     minLength={8}
-                                    className="w-full px-4 py-3 border border-red-900/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 bg-gray-800 text-white placeholder-gray-400"
+                                    className="w-full px-4 py-3 border border-red-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-800 text-white placeholder-gray-400"
                                     placeholder="حداقل ۸ کاراکتر"
                                 />
                             </div>
@@ -309,7 +309,7 @@ function Auth() {
                                     onChange={(e) => setRegisterData({ ...registerData, password_confirmation: e.target.value })}
                                     required
                                     minLength={8}
-                                    className="w-full px-4 py-3 border border-red-900/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 bg-gray-800 text-white placeholder-gray-400"
+                                    className="w-full px-4 py-3 border border-red-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-800 text-white placeholder-gray-400"
                                     placeholder="تکرار رمز عبور"
                                 />
                             </div>

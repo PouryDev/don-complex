@@ -232,7 +232,7 @@ function Layout() {
                             <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
                             </svg>
-                            <Link to="/" className="text-xl font-bold bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent">
+                            <Link to="/" className="text-xl font-bold bg-gradient-to-r from-red-500 to-red-600 bg-clip-text text-transparent">
                                 دن کلاب
                             </Link>
                         </div>
@@ -257,7 +257,7 @@ function Layout() {
                                     />
                                 </svg>
                                 {/* Subtle glow effect on hover */}
-                                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-red-600/0 to-red-700/0 group-hover:from-red-600/10 group-hover:to-red-700/10 transition-all duration-300 pointer-events-none"></div>
+                                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-red-500/0 to-red-600/0 group-hover:from-red-500/10 group-hover:to-red-600/10 transition-all duration-300 pointer-events-none"></div>
                             </button>
                         </div>
                     </div>
@@ -279,7 +279,7 @@ function Layout() {
                         >
                             {/* Animated Active Overlay */}
                             <motion.div
-                                className="absolute bg-gradient-to-br from-red-900/80 to-red-800/80 rounded-xl pointer-events-none z-0"
+                                className="absolute bg-gradient-to-br from-red-500/20 to-red-600/20 rounded-xl pointer-events-none z-0"
                                 initial={false}
                                 animate={{
                                     left: indicatorStyle.left || '0px',
@@ -315,7 +315,7 @@ function Layout() {
                                         {/* Icon container */}
                                         <div className={`relative z-10 mb-1 p-2 rounded-xl transition-all duration-300 ${
                                             active
-                                                ? 'bg-gradient-to-br from-red-600 to-red-700 text-white shadow-lg shadow-red-600/30 transform scale-110'
+                                                ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30 transform scale-110'
                                                 : 'group-hover:bg-gray-800 group-hover:scale-105'
                                         }`}>
                                             <IconComponent active={active} />
@@ -337,7 +337,7 @@ function Layout() {
                                                 animate={{ scale: 1, opacity: 1 }}
                                                 exit={{ scale: 0, opacity: 0 }}
                                                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                                className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-gradient-to-r from-red-600 to-red-700 rounded-full shadow-lg"
+                                                className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-gradient-to-r from-red-500 to-red-600 rounded-full shadow-lg"
                                             />
                                         )}
                                     </Link>
