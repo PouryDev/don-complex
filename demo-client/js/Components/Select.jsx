@@ -87,7 +87,7 @@ function Select({
     }, [focusedIndex, isOpen]);
 
     return (
-        <div className={`relative ${className}`}>
+        <div className={`relative z-50 ${className}`}>
             {label && (
                 <label className="block text-sm font-bold text-white mb-3">
                     {label}
@@ -152,7 +152,7 @@ function Select({
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: 0.15 }}
-                                className="fixed inset-0 z-[55] bg-black/10"
+                                className="fixed inset-0 z-[100] bg-black/10"
                                 onClick={() => setIsOpen(false)}
                             />
                             
@@ -168,7 +168,7 @@ function Select({
                                     stiffness: 300,
                                     duration: 0.2
                                 }}
-                                className="absolute z-[60] w-full mt-2 bg-gray-800 rounded-xl shadow-2xl border-2 border-red-500/20 overflow-hidden"
+                                className="absolute z-[110] w-full mt-2 bg-gray-800 rounded-xl shadow-2xl border-2 border-red-500/20 overflow-hidden"
                                 style={{ 
                                     maxHeight: 'min(300px, calc(100vh - 200px))',
                                     top: '100%'
