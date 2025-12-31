@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function Select({ 
@@ -13,6 +14,7 @@ function Select({
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [focusedIndex, setFocusedIndex] = useState(-1);
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
     const selectRef = useRef(null);
     const buttonRef = useRef(null);
     const dropdownRef = useRef(null);
@@ -87,6 +89,31 @@ function Select({
         }
     }, [focusedIndex, isOpen]);
 
+    // Calculate dropdown position when opening
+    useEffect(() => {
+        if (isOpen && buttonRef.current) {
+            const updatePosition = () => {
+                if (buttonRef.current) {
+                    const rect = buttonRef.current.getBoundingClientRect();
+                    setDropdownPosition({
+                        top: rect.bottom + 8, // 8px margin (mt-2)
+                        left: rect.left,
+                        width: rect.width
+                    });
+                }
+            };
+
+            updatePosition();
+            window.addEventListener('resize', updatePosition);
+            window.addEventListener('scroll', updatePosition, true);
+
+            return () => {
+                window.removeEventListener('resize', updatePosition);
+                window.removeEventListener('scroll', updatePosition, true);
+            };
+        }
+    }, [isOpen]);
+
     return (
         <div className={`relative ${className}`}>
             {label && (
@@ -146,23 +173,38 @@ function Select({
                 </button>
 
                 <AnimatePresence>
-                    {isOpen && (
-                        <motion.div
-                            ref={dropdownRef}
-                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                            transition={{ 
-                                type: "spring",
-                                damping: 25,
-                                stiffness: 300,
-                                duration: 0.2
-                            }}
-                            className="absolute left-0 right-0 mt-2 bg-gray-800 rounded-xl shadow-2xl border-2 border-red-500/20 overflow-hidden z-50"
-                            style={{ 
-                                maxHeight: 'min(300px, calc(100vh - 200px))',
-                            }}
-                        >
+                    {isOpen && createPortal(
+                        <>
+                            {/* Backdrop */}
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.15 }}
+                                className="fixed inset-0 z-[9998] bg-black/10"
+                                onClick={() => setIsOpen(false)}
+                            />
+                            
+                            {/* Dropdown - Portal to body to escape stacking context */}
+                            <motion.div
+                                ref={dropdownRef}
+                                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                transition={{ 
+                                    type: "spring",
+                                    damping: 25,
+                                    stiffness: 300,
+                                    duration: 0.2
+                                }}
+                                className="fixed z-[9999] bg-gray-800 rounded-xl shadow-2xl border-2 border-red-500/20 overflow-hidden"
+                                style={{ 
+                                    top: `${dropdownPosition.top}px`,
+                                    left: `${dropdownPosition.left}px`,
+                                    width: `${dropdownPosition.width}px`,
+                                    maxHeight: 'min(300px, calc(100vh - 200px))',
+                                }}
+                            >
                             <div 
                                 className="overflow-y-auto scrollbar-thin scrollbar-thumb-red-600 scrollbar-track-gray-700"
                                 style={{ maxHeight: 'min(300px, calc(100vh - 200px))' }}
@@ -232,6 +274,8 @@ function Select({
                                 )}
                             </div>
                         </motion.div>
+                        </>,
+                        document.body
                     )}
                 </AnimatePresence>
             </div>
