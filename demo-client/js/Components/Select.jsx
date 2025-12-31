@@ -101,9 +101,10 @@ function Select({
             const updatePosition = () => {
                 if (selectRef.current) {
                     const rect = selectRef.current.getBoundingClientRect();
+                    // For fixed positioning, use getBoundingClientRect directly (relative to viewport)
                     setDropdownPosition({
-                        top: rect.bottom + window.scrollY + 8, // 8px margin (mt-2)
-                        left: rect.left + window.scrollX,
+                        top: rect.bottom + 8, // 8px margin (mt-2)
+                        left: rect.left,
                         width: rect.width
                     });
                 }
