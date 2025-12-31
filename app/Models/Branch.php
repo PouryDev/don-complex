@@ -31,4 +31,14 @@ class Branch extends Model
     {
         return $this->hasMany(Session::class);
     }
+
+    public function categories(): HasMany
+    {
+        return $this->hasMany(Category::class);
+    }
+
+    public function menuItems(): HasMany
+    {
+        return $this->hasMany(MenuItem::class);
+    }
 }

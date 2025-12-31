@@ -15,7 +15,7 @@ class StoreReservationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'session_id' => ['required', 'exists:sessions,id'],
+            // session_id is not needed here because it comes from the route parameter
             'number_of_people' => ['required', 'integer', 'min:1', 'max:50'],
         ];
     }

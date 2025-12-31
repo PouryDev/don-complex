@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { menuService } from '../services/api';
+import { menuService, branchService } from '../services/api';
 import { useCart } from '../contexts/CartContext';
 import Loading from '../Components/Loading';
 import { getCategoryIcon, WarningIcon, SearchIcon } from '../Components/Icons';
@@ -8,16 +8,49 @@ function Menu() {
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [categories, setCategories] = useState([]);
     const [menuItems, setMenuItems] = useState([]);
+    const [branchId, setBranchId] = useState(null);
     const { addToCart } = useCart();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [imageErrors, setImageErrors] = useState(new Set());
 
     useEffect(() => {
-        fetchData();
+        // Get branch_id from localStorage or fetch first branch
+        const savedBranchId = localStorage.getItem('selected_branch_id');
+        if (savedBranchId) {
+            setBranchId(parseInt(savedBranchId));
+            fetchData(parseInt(savedBranchId));
+        } else {
+            fetchFirstBranch();
+        }
     }, []);
 
-    const fetchData = async () => {
+    const fetchFirstBranch = async () => {
+        try {
+            const response = await branchService.getBranches();
+            const branchesData = Array.isArray(response) ? response : (response.data || []);
+            if (branchesData.length > 0) {
+                const firstBranchId = branchesData[0].id;
+                setBranchId(firstBranchId);
+                localStorage.setItem('selected_branch_id', firstBranchId.toString());
+                fetchData(firstBranchId);
+            } else {
+                setError('هیچ شعبه‌ای یافت نشد.');
+                setLoading(false);
+            }
+        } catch (err) {
+            console.error('Error fetching branches:', err);
+            setError('خطا در بارگذاری شعبه‌ها.');
+            setLoading(false);
+        }
+    };
+
+    const fetchData = async (branchIdParam = null) => {
+        const targetBranchId = branchIdParam || branchId;
+        if (!targetBranchId) {
+            return;
+        }
+
         try {
             setLoading(true);
             setError(null);
@@ -26,20 +59,20 @@ function Menu() {
             let menuItemsData = [];
             
             try {
-                categoriesData = await menuService.getCategories();
+                categoriesData = await menuService.getCategories(targetBranchId);
             } catch (err) {
                 try {
-                    categoriesData = await menuService.getCategoriesPublic();
+                    categoriesData = await menuService.getCategoriesPublic(targetBranchId);
                 } catch (err2) {
                     console.error('Error fetching categories:', err2);
                 }
             }
             
             try {
-                menuItemsData = await menuService.getMenuItems();
+                menuItemsData = await menuService.getMenuItems(targetBranchId);
             } catch (err) {
                 try {
-                    menuItemsData = await menuService.getMenuItemsPublic();
+                    menuItemsData = await menuService.getMenuItemsPublic(targetBranchId);
                 } catch (err2) {
                     console.error('Error fetching menu items:', err2);
                 }

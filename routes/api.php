@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BranchController;
+use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\GameMasterController;
 use App\Http\Controllers\Api\HallController;
+use App\Http\Controllers\Api\MenuItemController;
 use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\SessionTemplateController;
@@ -12,6 +14,10 @@ use Illuminate\Support\Facades\Route;
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+
+// Public menu routes
+Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/menu-items', [MenuItemController::class, 'index']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -48,6 +54,23 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/sessions', [GameMasterController::class, 'sessions']);
         Route::get('/sessions/{session}/reservations', [GameMasterController::class, 'sessionReservations']);
         Route::post('/reservations/{reservation}/validate', [GameMasterController::class, 'validateReservation']);
+    });
+
+    // Admin routes
+    Route::prefix('admin')->group(function () {
+        // Categories
+        Route::get('/categories', [CategoryController::class, 'index']);
+        Route::post('/categories', [CategoryController::class, 'store']);
+        Route::get('/categories/{category}', [CategoryController::class, 'show']);
+        Route::put('/categories/{category}', [CategoryController::class, 'update']);
+        Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
+
+        // Menu Items
+        Route::get('/menu-items', [MenuItemController::class, 'index']);
+        Route::post('/menu-items', [MenuItemController::class, 'store']);
+        Route::get('/menu-items/{menuItem}', [MenuItemController::class, 'show']);
+        Route::post('/menu-items/{menuItem}', [MenuItemController::class, 'update']);
+        Route::delete('/menu-items/{menuItem}', [MenuItemController::class, 'destroy']);
     });
 });
 
