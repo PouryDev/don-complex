@@ -14,7 +14,7 @@ export const ScenarioScreen = ({ onSelectScenario, onBack }) => {
 
   return (
     <AnimatedBackground colors={['#0a0a0a', '#1a0a1a', '#0a0a0a']}>
-      <div className="min-h-screen overflow-y-auto pb-40 md:pb-20">
+      <div className="h-full overflow-y-auto pb-40 md:pb-20">
         <div className="max-w-4xl mx-auto px-6 py-16">
           <div className="mb-8">
             <button
@@ -41,8 +41,17 @@ export const ScenarioScreen = ({ onSelectScenario, onBack }) => {
                 className="rounded-2xl overflow-hidden shadow-lg"
               >
                 <motion.button
-                  onClick={() => onSelectScenario(scenario)}
-                  className="w-full text-right p-6 border-2 border-white/15 rounded-2xl transition-all"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Button clicked for scenario:', scenario);
+                    if (onSelectScenario) {
+                      onSelectScenario(scenario);
+                    } else {
+                      console.error('onSelectScenario is not defined!');
+                    }
+                  }}
+                  className="w-full text-right p-6 border-2 border-white/15 rounded-2xl transition-all relative z-10"
                   style={{
                     background: `linear-gradient(135deg, ${getGradientForIndex(index)[0]}, ${getGradientForIndex(index)[1]})`
                   }}

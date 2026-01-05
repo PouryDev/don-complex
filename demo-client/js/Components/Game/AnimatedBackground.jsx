@@ -7,7 +7,7 @@ export const AnimatedBackground = ({ colors = ['#0a0a0a', '#1a0a1a', '#0a0a0a'],
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden" style={gradientStyle}>
+    <div className="relative h-full w-full" style={gradientStyle}>
       {/* Floating orbs for ambient animation */}
       <motion.div
         className="absolute w-96 h-96 rounded-full opacity-15"

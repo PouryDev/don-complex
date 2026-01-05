@@ -14,6 +14,7 @@ export default function RoleDistribution() {
   const [shuffledRoles, setShuffledRoles] = useState([]);
 
   const handleSelectScenario = (scenario) => {
+    console.log('Scenario selected:', scenario);
     setSelectedScenario(scenario);
     setCurrentScreen('playerCount');
   };
@@ -63,7 +64,7 @@ export default function RoleDistribution() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black">
+    <div className="fixed inset-0 z-50 bg-black overflow-hidden">
       {currentScreen === 'scenario' && (
         <ScenarioScreen
           onSelectScenario={handleSelectScenario}

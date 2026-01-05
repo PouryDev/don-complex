@@ -11,7 +11,7 @@ export const PlayerCountScreen = ({ scenario, onSelectPlayerCount, onBack }) => 
 
   return (
     <AnimatedBackground colors={['#0a0a0a', '#1a0a1a', '#0a0a0a']}>
-      <div className="min-h-screen overflow-y-auto pb-40 md:pb-20">
+      <div className="h-full overflow-y-auto pb-40 md:pb-20">
         <div className="max-w-4xl mx-auto px-6 py-16">
           <div className="mb-8">
             <button
@@ -38,8 +38,12 @@ export const PlayerCountScreen = ({ scenario, onSelectPlayerCount, onBack }) => 
                 className="rounded-2xl overflow-hidden shadow-xl"
               >
                 <motion.button
-                  onClick={() => onSelectPlayerCount(count)}
-                  className="w-full p-12 text-center border-2 border-white/15 rounded-2xl transition-all"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onSelectPlayerCount(count);
+                  }}
+                  className="w-full p-12 text-center border-2 border-white/15 rounded-2xl transition-all relative z-10"
                   style={{
                     background: `linear-gradient(135deg, ${getGradientForIndex(index)[0]}, ${getGradientForIndex(index)[1]})`
                   }}

@@ -36,7 +36,7 @@ export const RoleRevealScreen = ({ roles, onRestart, onBackToMenu }) => {
   if (allRevealed) {
     return (
       <AnimatedBackground colors={['#0a0a0a', '#1a0a1a', '#0a0a0a']}>
-        <div className="min-h-screen flex flex-col justify-between p-8 pb-40 md:pb-20">
+        <div className="h-full flex flex-col justify-between p-8 pb-40 md:pb-20 overflow-y-auto">
           <motion.div
             className="flex-1 flex flex-col justify-center items-center gap-6"
             initial={{ scale: 0 }}
@@ -75,7 +75,7 @@ export const RoleRevealScreen = ({ roles, onRestart, onBackToMenu }) => {
 
   return (
     <AnimatedBackground colors={['#0a0a0a', '#1a0a1a', '#0a0a0a']}>
-      <div className="min-h-screen overflow-y-auto pb-40 md:pb-20">
+      <div className="h-full overflow-y-auto pb-40 md:pb-20">
         <div className="max-w-4xl mx-auto px-6 py-16">
           <div className="mb-6 text-center">
             <p className="text-xl font-bold text-cyan-400 mb-4">
