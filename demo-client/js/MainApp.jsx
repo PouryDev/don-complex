@@ -24,16 +24,7 @@ import { registerNavigate } from './helpers/navigation';
 
 function MainApp() {
     const navigate = useNavigate();
-    const [showIntro, setShowIntro] = useState(() => {
-        // Check sessionStorage on initial render
-        if (typeof window !== 'undefined') {
-            const introShown = sessionStorage.getItem('intro_shown');
-            const shouldShow = introShown !== 'true';
-            console.log('MainApp: showIntro initial state:', shouldShow, 'introShown:', introShown);
-            return shouldShow;
-        }
-        return true;
-    });
+    const [showIntro, setShowIntro] = useState(true);
 
     // Register navigate function for use outside React context (e.g., in axios interceptors)
     useEffect(() => {
@@ -41,7 +32,6 @@ function MainApp() {
     }, [navigate]);
 
     const handleIntroComplete = () => {
-        console.log('MainApp: Intro completed, hiding intro');
         setShowIntro(false);
     };
 
