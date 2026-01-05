@@ -38,20 +38,16 @@ function Intro({ onComplete }) {
     const [isVisible, setIsVisible] = useState(true);
 
     useEffect(() => {
-        // Check if intro has been shown in this session
-        const introShown = sessionStorage.getItem('intro_shown');
+        console.log('Intro component mounted');
         
-        if (introShown === 'true') {
-            setIsVisible(false);
-            if (onComplete) onComplete();
-            return;
+        // Mark intro as shown immediately
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem('intro_shown', 'true');
         }
-
-        // Mark intro as shown
-        sessionStorage.setItem('intro_shown', 'true');
 
         // Set timer for 3 seconds, then fade out
         const timer = setTimeout(() => {
+            console.log('Intro timer completed, fading out');
             setIsVisible(false);
             // Call onComplete after fade out animation completes (0.4s)
             setTimeout(() => {
@@ -59,18 +55,22 @@ function Intro({ onComplete }) {
             }, 400);
         }, 3000);
 
-        return () => clearTimeout(timer);
+        return () => {
+            clearTimeout(timer);
+        };
     }, [onComplete]);
 
     return (
         <AnimatePresence>
             {isVisible && (
                 <motion.div
+                    key="intro-overlay"
                     variants={overlayVariants}
                     initial="initial"
                     animate="animate"
                     exit="exit"
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm"
+                    className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-sm"
+                    style={{ pointerEvents: 'auto' }}
                 >
                     <motion.img
                         src="/logo.png"
@@ -80,6 +80,11 @@ function Intro({ onComplete }) {
                         animate="animate"
                         exit="exit"
                         className="w-[200px] md:w-[300px] max-w-[90vw] h-auto"
+                        onError={(e) => {
+                            console.error('Failed to load logo:', e);
+                            // Fallback: try with different path
+                            e.target.src = '/public/logo.png';
+                        }}
                     />
                 </motion.div>
             )}

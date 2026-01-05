@@ -24,31 +24,34 @@ import { registerNavigate } from './helpers/navigation';
 
 function MainApp() {
     const navigate = useNavigate();
-    const [showIntro, setShowIntro] = useState(true);
+    const [showIntro, setShowIntro] = useState(() => {
+        // Check sessionStorage on initial render
+        if (typeof window !== 'undefined') {
+            const introShown = sessionStorage.getItem('intro_shown');
+            const shouldShow = introShown !== 'true';
+            console.log('MainApp: showIntro initial state:', shouldShow, 'introShown:', introShown);
+            return shouldShow;
+        }
+        return true;
+    });
 
     // Register navigate function for use outside React context (e.g., in axios interceptors)
     useEffect(() => {
         registerNavigate(navigate);
     }, [navigate]);
 
-    // Check if intro should be shown
-    useEffect(() => {
-        const introShown = sessionStorage.getItem('intro_shown');
-        if (introShown === 'true') {
-            setShowIntro(false);
-        }
-    }, []);
-
     const handleIntroComplete = () => {
+        console.log('MainApp: Intro completed, hiding intro');
         setShowIntro(false);
     };
 
     return (
-        <AuthProvider>
-            <ToastProvider>
-                <CartProvider>
-                {showIntro && <Intro onComplete={handleIntroComplete} />}
-                <Routes>
+        <>
+            {showIntro && <Intro onComplete={handleIntroComplete} />}
+            <AuthProvider>
+                <ToastProvider>
+                    <CartProvider>
+                    <Routes>
                     {/* All routes with layout */}
                     <Route element={<Layout />}>
                         <Route path="/" element={<Home />} />
@@ -138,10 +141,11 @@ function MainApp() {
                         
                         <Route path="*" element={<NotFound />} />
                     </Route>
-                </Routes>
-                </CartProvider>
-            </ToastProvider>
-        </AuthProvider>
+                    </Routes>
+                    </CartProvider>
+                </ToastProvider>
+            </AuthProvider>
+        </>
     );
 }
 
