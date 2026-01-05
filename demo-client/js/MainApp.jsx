@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { CartProvider } from './contexts/CartContext';
 import ProtectedRoute from './Components/ProtectedRoute';
 import Layout from './Components/Layout';
+import Intro from './Components/Intro';
 import Home from './Pages/Home';
 import Menu from './Pages/Menu';
 import Orders from './Pages/Orders';
@@ -23,16 +24,30 @@ import { registerNavigate } from './helpers/navigation';
 
 function MainApp() {
     const navigate = useNavigate();
+    const [showIntro, setShowIntro] = useState(true);
 
     // Register navigate function for use outside React context (e.g., in axios interceptors)
     useEffect(() => {
         registerNavigate(navigate);
     }, [navigate]);
 
+    // Check if intro should be shown
+    useEffect(() => {
+        const introShown = sessionStorage.getItem('intro_shown');
+        if (introShown === 'true') {
+            setShowIntro(false);
+        }
+    }, []);
+
+    const handleIntroComplete = () => {
+        setShowIntro(false);
+    };
+
     return (
         <AuthProvider>
             <ToastProvider>
                 <CartProvider>
+                {showIntro && <Intro onComplete={handleIntroComplete} />}
                 <Routes>
                     {/* All routes with layout */}
                     <Route element={<Layout />}>

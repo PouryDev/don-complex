@@ -16,7 +16,6 @@ class UpdateBranchRequest extends FormRequest
         return [
             'name' => ['sometimes', 'string', 'max:255'],
             'address' => ['sometimes', 'nullable', 'string', 'max:500'],
-            'game_master_id' => ['sometimes', 'nullable', 'exists:users,id'],
         ];
     }
 }

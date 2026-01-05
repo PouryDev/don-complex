@@ -30,6 +30,7 @@ class TestDataSeeder extends Seeder
             'phone' => '09123456789',
         ]);
 
+        // Game masters will be created after branches, so we'll update them later
         $gameMaster1 = User::create([
             'name' => 'Game Master 1',
             'email' => 'gamemaster1@mafiacafe.com',
@@ -74,20 +75,21 @@ class TestDataSeeder extends Seeder
         $branch1 = Branch::create([
             'name' => 'شعبه مرکز',
             'address' => 'تهران، میدان آزادی، خیابان آزادی',
-            'game_master_id' => $gameMaster1->id,
         ]);
 
         $branch2 = Branch::create([
             'name' => 'شعبه شمال',
             'address' => 'تهران، میدان ونک، خیابان ونک',
-            'game_master_id' => $gameMaster2->id,
         ]);
 
         $branch3 = Branch::create([
             'name' => 'شعبه جنوب',
             'address' => 'تهران، میدان انقلاب، خیابان انقلاب',
-            'game_master_id' => null, // No game master assigned yet
         ]);
+
+        // Assign game masters to branches
+        $gameMaster1->update(['branch_id' => $branch1->id]);
+        $gameMaster2->update(['branch_id' => $branch2->id]);
 
         // Create Halls
         $hall1 = Hall::create([

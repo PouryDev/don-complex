@@ -17,11 +17,11 @@ class BranchController extends Controller
 
         // Game master can only see their own branch
         if ($request->user()->isGameMaster()) {
-            $query->where('game_master_id', $request->user()->id);
+            $query->where('id', $request->user()->branch_id);
         }
 
         $perPage = $request->get('per_page', 15);
-        $branches = $query->with('gameMaster')->paginate($perPage);
+        $branches = $query->with('gameMasters')->paginate($perPage);
 
         return BranchResource::collection($branches);
     }
@@ -30,7 +30,7 @@ class BranchController extends Controller
     {
         $this->authorize('view', $branch);
 
-        $branch->load('gameMaster');
+        $branch->load('gameMasters');
 
         return new BranchResource($branch);
     }
@@ -42,11 +42,10 @@ class BranchController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:500'],
-            'game_master_id' => ['nullable', 'exists:users,id'],
         ]);
 
         $branch = Branch::create($validated);
-        $branch->load('gameMaster');
+        $branch->load('gameMasters');
 
         return new BranchResource($branch);
     }
@@ -56,7 +55,7 @@ class BranchController extends Controller
         $this->authorize('update', $branch);
 
         $branch->update($request->validated());
-        $branch->load('gameMaster');
+        $branch->load('gameMasters');
 
         return new BranchResource($branch);
     }

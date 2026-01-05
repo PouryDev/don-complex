@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Branch extends Model
@@ -14,12 +13,11 @@ class Branch extends Model
     protected $fillable = [
         'name',
         'address',
-        'game_master_id',
     ];
 
-    public function gameMaster(): BelongsTo
+    public function gameMasters(): HasMany
     {
-        return $this->belongsTo(User::class, 'game_master_id');
+        return $this->hasMany(User::class, 'branch_id')->where('role', \App\Enums\UserRole::GAME_MASTER);
     }
 
     public function halls(): HasMany

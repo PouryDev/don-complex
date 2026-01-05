@@ -13,13 +13,14 @@ class BranchResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'address' => $this->address,
-            'game_master_id' => $this->game_master_id,
-            'game_master' => $this->whenLoaded('gameMaster', function () {
-                return [
-                    'id' => $this->gameMaster->id,
-                    'name' => $this->gameMaster->name,
-                    'email' => $this->gameMaster->email,
-                ];
+            'game_masters' => $this->whenLoaded('gameMasters', function () {
+                return $this->gameMasters->map(function ($gameMaster) {
+                    return [
+                        'id' => $gameMaster->id,
+                        'name' => $gameMaster->name,
+                        'email' => $gameMaster->email,
+                    ];
+                });
             }),
         ];
     }
