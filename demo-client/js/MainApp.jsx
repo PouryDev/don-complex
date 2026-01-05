@@ -20,6 +20,7 @@ import BranchSessions from './Pages/BranchSessions';
 import SessionDetails from './Pages/SessionDetails';
 import MySessions from './Pages/MySessions';
 import News from './Pages/News';
+import RoleDistribution from './Pages/RoleDistribution';
 import { registerNavigate } from './helpers/navigation';
 
 function MainApp() {
@@ -53,6 +54,9 @@ function MainApp() {
                         
                         {/* News - public */}
                         <Route path="/news" element={<News />} />
+                        
+                        {/* Role Distribution - public */}
+                        <Route path="/role-distribution" element={<RoleDistribution />} />
                         
                         {/* Protected routes */}
                         <Route 

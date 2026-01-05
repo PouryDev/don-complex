@@ -85,7 +85,7 @@ function Book() {
                                     </p>
                                 )}
                             </div>
-                            <div className="text-gray-400">
+                            <div className="text-gray-400" style={{transform: 'rotate(180deg)'}}>
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>

@@ -71,6 +71,22 @@ const ProfileIcon = ({ active }) => (
     </svg>
 );
 
+const GameIcon = ({ active }) => (
+    <svg
+        className={`w-6 h-6 transition-all duration-300 ${active ? 'scale-110' : 'scale-100'}`}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        strokeWidth={active ? 2.5 : 2}
+    >
+        <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+        />
+    </svg>
+);
+
 const navItems = [
     {
         path: '/',
@@ -86,6 +102,12 @@ const navItems = [
         path: '/book',
         label: 'رزرو وقت',
         icon: CalendarIcon,
+    },
+    {
+        path: 'game',
+        label: 'پخش نقش',
+        icon: GameIcon,
+        isGame: true,
     },
     {
         path: '/news',
@@ -107,7 +129,12 @@ function Layout() {
     const itemRefs = useRef([]);
     const [indicatorStyle, setIndicatorStyle] = useState({});
 
-    const isActive = React.useCallback((path) => {
+    const isActive = React.useCallback((path, isGame) => {
+        // For game, check if we're on the role-distribution route
+        if (isGame) {
+            return location.pathname === '/role-distribution';
+        }
+        
         // Get the actual pathname to check - use state.from if we're on login/register
         let pathnameToCheck = location.pathname;
         if ((location.pathname === '/login' || location.pathname === '/register') && location.state?.from) {
@@ -160,7 +187,7 @@ function Layout() {
 
     // Calculate active index using useMemo - always return a valid index
     const activeIndex = useMemo(() => {
-        const currentIndex = navItems.findIndex(item => isActive(item.path));
+        const currentIndex = navItems.findIndex(item => isActive(item.path, item.isGame));
         // Always return a valid index (0 if no match found)
         return currentIndex !== -1 ? currentIndex : 0;
     }, [location.pathname, location.state, isActive]);
@@ -170,6 +197,16 @@ function Layout() {
         const updateIndicatorPosition = () => {
             // Ensure activeIndex is valid
             const validIndex = activeIndex >= 0 && activeIndex < navItems.length ? activeIndex : 0;
+            
+            // Don't show overlay for game button (it's not a tab)
+            const activeItem = navItems[validIndex];
+            if (activeItem?.isGame) {
+                setIndicatorStyle({
+                    left: '0px',
+                    width: '0px',
+                });
+                return;
+            }
             
             if (itemRefs.current[validIndex] && navRef.current) {
                 const activeItemElement = itemRefs.current[validIndex];
@@ -293,8 +330,54 @@ function Layout() {
                                 }}
                             />
                             {navItems.map((item, index) => {
-                                const active = isActive(item.path);
+                                const active = isActive(item.path, item.isGame);
                                 const IconComponent = item.icon;
+                                
+                                if (item.isGame) {
+                                    return (
+                                        <div
+                                            key={item.path}
+                                            ref={(el) => (itemRefs.current[index] = el)}
+                                            className="relative flex-1 mx-1 h-full"
+                                        >
+                                            {/* Curved background container - always visible */}
+                                            <div className={`
+                                                absolute inset-0 rounded-t-3xl transition-all duration-300
+                                                ${active
+                                                    ? 'bg-gradient-to-b from-purple-900/95 via-purple-800/85 to-transparent shadow-inner'
+                                                    : 'bg-gradient-to-b from-purple-900/90 via-purple-800/80 to-transparent group-hover:from-purple-900/95 group-hover:via-purple-800/85 shadow-sm'
+                                                }
+                                            `} />
+                                            
+                                            <button
+                                                onClick={() => navigate('/role-distribution')}
+                                                className={`relative flex flex-col items-center justify-center w-full h-full transition-all duration-300 group z-10 ${
+                                                    active
+                                                        ? 'text-purple-500'
+                                                        : 'text-gray-400 hover:text-purple-400'
+                                                }`}
+                                            >
+                                                {/* Icon container with button-like style */}
+                                                <div className={`relative z-10 mb-1 p-2.5 rounded-xl transition-all duration-300 border-2 text-white ${
+                                                    active
+                                                        ? 'bg-gradient-to-br from-purple-600 to-purple-700 shadow-lg shadow-purple-600/30 transform scale-110 border-purple-700'
+                                                        : 'bg-gradient-to-br from-purple-700 to-purple-800 border-purple-800 group-hover:border-purple-700 group-hover:from-purple-600 group-hover:to-purple-700 group-hover:scale-105 shadow-md'
+                                                }`}>
+                                                    <IconComponent active={active} />
+                                                </div>
+                                                
+                                                {/* Label */}
+                                                <span className={`relative z-10 text-xs font-semibold transition-all duration-300 ${
+                                                    active
+                                                        ? 'text-purple-500 scale-105'
+                                                        : 'text-gray-400 group-hover:text-purple-400'
+                                                }`}>
+                                                    {item.label}
+                                                </span>
+                                            </button>
+                                        </div>
+                                    );
+                                }
                                 
                                 return (
                                     <Link
@@ -343,6 +426,7 @@ function Layout() {
                 </div>
             </nav>
 
+            {/* Game Modal/Page - handled by route */}
         </div>
     );
 }
