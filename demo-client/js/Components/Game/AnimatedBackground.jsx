@@ -10,11 +10,12 @@ export const AnimatedBackground = ({ colors = ['#0a0a0a', '#1a0a1a', '#0a0a0a'],
     <div className="relative h-full w-full" style={gradientStyle}>
       {/* Floating orbs for ambient animation */}
       <motion.div
-        className="absolute w-96 h-96 rounded-full opacity-15"
+        className="absolute w-96 h-96 rounded-full opacity-15 pointer-events-none"
         style={{
           top: '-100px',
           left: '-100px',
           backgroundColor: '#00d4ff',
+          zIndex: 0,
         }}
         animate={{
           x: [-120, 120, -120],
@@ -28,11 +29,12 @@ export const AnimatedBackground = ({ colors = ['#0a0a0a', '#1a0a1a', '#0a0a0a'],
       />
       
       <motion.div
-        className="absolute w-80 h-80 rounded-full opacity-15"
+        className="absolute w-80 h-80 rounded-full opacity-15 pointer-events-none"
         style={{
           bottom: '-100px',
           right: '-100px',
           backgroundColor: '#b300ff',
+          zIndex: 0,
         }}
         animate={{
           x: [80, -80, 80],
@@ -46,13 +48,14 @@ export const AnimatedBackground = ({ colors = ['#0a0a0a', '#1a0a1a', '#0a0a0a'],
       />
       
       <motion.div
-        className="absolute w-72 h-72 rounded-full opacity-15"
+        className="absolute w-72 h-72 rounded-full opacity-15 pointer-events-none"
         style={{
           top: '40%',
           left: '50%',
           marginLeft: '-144px',
           marginTop: '-144px',
           backgroundColor: '#ff00ea',
+          zIndex: 0,
         }}
         animate={{
           scale: [1, 1.3, 1],
@@ -64,7 +67,9 @@ export const AnimatedBackground = ({ colors = ['#0a0a0a', '#1a0a1a', '#0a0a0a'],
         }}
       />
       
-      {children}
+      <div className="relative z-10 h-full w-full">
+        {children}
+      </div>
     </div>
   );
 };

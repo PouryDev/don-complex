@@ -40,7 +40,11 @@ export default function RoleDistribution() {
   };
 
   const handleBackToMenu = () => {
-    navigate('/');
+    // Reset all state and go back to scenario selection
+    setCurrentScreen('scenario');
+    setSelectedScenario(null);
+    setSelectedPlayerCount(null);
+    setShuffledRoles([]);
   };
 
   const handleBackFromScenario = () => {

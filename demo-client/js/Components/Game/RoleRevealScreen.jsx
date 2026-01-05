@@ -15,11 +15,21 @@ export const RoleRevealScreen = ({ roles, onRestart, onBackToMenu }) => {
     setCurrentRoleRevealed(true);
   };
 
-  const handleNext = () => {
+  const handleNext = (e) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    console.log('handleNext called:', {
+      currentPlayerIndex,
+      rolesLength: roles.length,
+      currentRoleRevealed,
+      allRevealed
+    });
     if (currentPlayerIndex < roles.length - 1) {
+      console.log('Moving to next player');
       setCurrentPlayerIndex(currentPlayerIndex + 1);
       setCurrentRoleRevealed(false);
     } else {
+      console.log('All players revealed, showing completion screen');
       setAllRevealed(true);
       setCompletedScale(1);
     }
@@ -101,7 +111,7 @@ export const RoleRevealScreen = ({ roles, onRestart, onBackToMenu }) => {
             onReveal={handleRoleReveal}
           />
 
-          <div className="mt-8">
+          <div className="mt-8 relative z-20">
             <GradientButton
               title={
                 currentPlayerIndex < roles.length - 1

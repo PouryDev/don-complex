@@ -8,9 +8,22 @@ export const GradientButton = ({ title, onClick, colors, disabled = false, pulse
       : `linear-gradient(135deg, ${colors[0]}, ${colors[1]})`,
   };
 
+  const handleClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('GradientButton clicked:', title, 'disabled:', disabled);
+    if (!disabled && onClick) {
+      onClick(e);
+    } else if (disabled) {
+      console.log('Button is disabled, ignoring click');
+    } else {
+      console.error('onClick handler is not provided!');
+    }
+  };
+
   return (
     <motion.div
-      className={`rounded-xl overflow-hidden shadow-lg ${className}`}
+      className={`rounded-xl overflow-hidden shadow-lg ${className} relative z-10`}
       whileHover={disabled ? {} : { scale: 1.02 }}
       whileTap={disabled ? {} : { scale: 0.98 }}
       animate={pulse && !disabled ? {
@@ -23,10 +36,14 @@ export const GradientButton = ({ title, onClick, colors, disabled = false, pulse
       } : {}}
     >
       <button
-        onClick={onClick}
+        onClick={handleClick}
         disabled={disabled}
-        className="w-full py-4 px-8 text-center border border-white/15 rounded-xl transition-all"
-        style={gradientStyle}
+        className="w-full py-4 px-8 text-center border border-white/15 rounded-xl transition-all relative z-10"
+        style={{
+          ...gradientStyle,
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          pointerEvents: disabled ? 'none' : 'auto',
+        }}
       >
         <span className={`text-lg font-bold ${disabled ? 'text-gray-600' : 'text-white'}`}>
           {title}
