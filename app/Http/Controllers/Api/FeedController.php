@@ -73,6 +73,71 @@ class FeedController extends Controller
     }
 
     /**
+     * Display a single feed item by type and id.
+     */
+    public function show(Request $request, string $type, int $id): JsonResponse
+    {
+        $now = Carbon::now();
+
+        // Map type to model class
+        $typeMap = [
+            'news' => 'App\Models\News',
+            'form' => 'App\Models\Form',
+            'quiz' => 'App\Models\Quiz',
+        ];
+
+        if (!isset($typeMap[$type])) {
+            return response()->json(['message' => 'نوع نامعتبر'], 404);
+        }
+
+        $modelClass = $typeMap[$type];
+
+        // Find the feed item by feedable type and id
+        $feedItem = FeedItem::with('feedable')
+            ->where('feedable_type', $modelClass)
+            ->where('feedable_id', $id)
+            ->where('is_active', true)
+            ->where(function ($query) use ($now) {
+                $query->whereNull('scheduled_at')
+                    ->orWhere('scheduled_at', '<=', $now);
+            })
+            ->first();
+
+        if (!$feedItem || !$feedItem->feedable) {
+            return response()->json(['message' => 'آیتم مورد نظر یافت نشد'], 404);
+        }
+
+        $item = $feedItem->feedable;
+
+        $baseData = [
+            'id' => $item->id,
+            'feed_item_id' => $feedItem->id,
+            'type' => $type,
+            'title' => $item->title,
+            'description' => $item->description,
+            'badge' => $item->badge,
+            'scheduled_at' => $feedItem->scheduled_at?->toISOString(),
+            'created_at' => $item->created_at?->toISOString(),
+            'updated_at' => $item->updated_at?->toISOString(),
+        ];
+
+        // Add type-specific fields
+        switch ($type) {
+            case 'news':
+                $baseData['image_url'] = $item->image_url;
+                break;
+            case 'form':
+                $baseData['fields'] = $item->fields;
+                break;
+            case 'quiz':
+                $baseData['questions'] = $item->questions;
+                break;
+        }
+
+        return response()->json($baseData);
+    }
+
+    /**
      * Get the type string from the model instance.
      */
     private function getTypeFromModel($model): string

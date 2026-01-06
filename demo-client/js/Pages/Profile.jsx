@@ -7,7 +7,6 @@ import Loading from '../Components/Loading';
 import ConfirmDialog from '../Components/ConfirmDialog';
 import Input from '../Components/Input';
 import { EditIcon, CalendarIcon, CashIcon, ShoppingCartIcon, CheckIcon, StarIcon } from '../Components/Icons';
-import MySessions from './MySessions';
 
 // Icon Components
 const InvoiceIcon = () => (
@@ -86,7 +85,6 @@ function Profile() {
         }
     };
 
-    const [showMySessions, setShowMySessions] = useState(false);
     const [stats, setStats] = useState({
         activeOrders: 0,
         paidInvoices: 0,
@@ -129,9 +127,8 @@ function Profile() {
             title: 'سانس‌های من',
             description: 'مشاهده رزروهای شما و مجموع پرداختی‌ها',
             icon: CalendarIcon,
-            path: '#',
+            path: '/my-sessions',
             color: 'from-red-500 to-red-600',
-            onClick: () => setShowMySessions(!showMySessions),
         },
         {
             title: 'فاکتورها',
@@ -299,13 +296,6 @@ function Profile() {
                     );
                 })}
             </div>
-
-            {/* My Sessions Section */}
-            {showMySessions && (
-                <div className="mt-6">
-                    <MySessions />
-                </div>
-            )}
 
             {/* Logout Button */}
             <div className="cafe-card rounded-xl p-5">

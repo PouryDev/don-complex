@@ -21,8 +21,9 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/menu-items', [MenuItemController::class, 'index']);
 
-// Public feed route
+// Public feed routes
 Route::get('/feed', [FeedController::class, 'index']);
+Route::get('/feed/{type}/{id}', [FeedController::class, 'show']);
 
 // Public payment gateways route (needed for checkout)
 Route::get('/payment/gateways', [PaymentController::class, 'gateways']);

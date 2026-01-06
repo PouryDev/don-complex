@@ -5,6 +5,7 @@ import { useToast } from '../contexts/ToastContext';
 import Loading from '../Components/Loading';
 import Input from '../Components/Input';
 import Button from '../Components/Button';
+import Checkbox from '../Components/Checkbox';
 import { WarningIcon, CalendarIcon } from '../Components/Icons';
 
 function SessionDetails() {
@@ -219,37 +220,37 @@ function SessionDetails() {
                         onChange={(e) => setNumberOfPeople(parseInt(e.target.value) || 1)}
                         required
                     />
-                    {session.available_spots > 0 && (
-                        <p className="text-xs text-gray-400 mt-1 px-1">
-                            حداکثر {session.available_spots} نفر می‌توانید رزرو کنید
-                        </p>
-                    )}
                 </div>
 
                 {/* Payment Gateway Selection */}
                 {gateways.length > 0 && (
-                    <div className="space-y-1">
+                    <div className="space-y-3">
                         <label className="block text-sm font-bold text-white mb-2">
                             درگاه پرداخت
                         </label>
-                        <select
-                            value={selectedGatewayId || ''}
-                            onChange={(e) => setSelectedGatewayId(parseInt(e.target.value))}
-                            required
-                            disabled={loadingGateways}
-                            className="w-full px-4 py-3 sm:py-3.5 border-2 rounded-xl bg-gray-800 text-white placeholder-gray-400 font-medium text-right transition-all duration-200 border-red-500/20 hover:border-red-500/40 focus:border-red-500 focus:ring-2 focus:ring-red-500/30 shadow-sm hover:shadow-md focus:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
-                        >
-                            <option value="">انتخاب درگاه پرداخت</option>
-                            {gateways.map((gateway) => (
-                                <option key={gateway.id} value={gateway.id}>
-                                    {gateway.display_name || gateway.name}
-                                </option>
-                            ))}
-                        </select>
-                        {loadingGateways && (
+                        {loadingGateways ? (
                             <p className="text-xs text-gray-400 mt-1 px-1">
                                 در حال بارگذاری درگاه‌های پرداخت...
                             </p>
+                        ) : (
+                            <div className="space-y-2">
+                                {gateways.map((gateway) => (
+                                    <Checkbox
+                                        key={gateway.id}
+                                        name={`gateway-${gateway.id}`}
+                                        label={gateway.display_name || gateway.name}
+                                        checked={selectedGatewayId === gateway.id}
+                                        onChange={(e) => {
+                                            // Radio behavior: always set when clicked, prevent unchecking
+                                            if (e.target.checked || selectedGatewayId === gateway.id) {
+                                                setSelectedGatewayId(gateway.id);
+                                            }
+                                        }}
+                                        disabled={loadingGateways}
+                                        className="mb-0"
+                                    />
+                                ))}
+                            </div>
                         )}
                     </div>
                 )}

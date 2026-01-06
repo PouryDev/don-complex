@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { reservationService, paymentService } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 import Loading from '../Components/Loading';
 import Button from '../Components/Button';
+import Checkbox from '../Components/Checkbox';
 import { CalendarIcon, WarningIcon, EmptyBoxIcon, CashIcon } from '../Components/Icons';
 
 function MySessions() {
@@ -18,6 +20,10 @@ function MySessions() {
     const [hasMore, setHasMore] = useState(true);
     const [processingPayment, setProcessingPayment] = useState({});
     const [gateways, setGateways] = useState([]);
+    const [showGatewayModal, setShowGatewayModal] = useState(false);
+    const [selectedReservation, setSelectedReservation] = useState(null);
+    const [selectedGatewayId, setSelectedGatewayId] = useState(null);
+    const [gatewayError, setGatewayError] = useState(null);
     const observerTarget = useRef(null);
 
     useEffect(() => {
@@ -35,7 +41,7 @@ function MySessions() {
         }
     };
 
-    const handlePayment = async (reservation) => {
+    const handlePaymentClick = (reservation) => {
         if (!reservation.payment_transaction?.id) {
             showToast('تراکنش پرداخت یافت نشد', 'error');
             return;
@@ -46,15 +52,31 @@ function MySessions() {
             return;
         }
 
-        // Use first available gateway
-        const gatewayId = gateways[0].id;
+        setSelectedReservation(reservation);
+        setSelectedGatewayId(null);
+        setGatewayError(null);
+        setShowGatewayModal(true);
+    };
+
+    const handleGatewayConfirm = async () => {
+        if (!selectedGatewayId) {
+            setGatewayError('لطفا درگاه پرداخت را انتخاب کنید');
+            return;
+        }
+
+        if (!selectedReservation?.payment_transaction?.id) {
+            showToast('تراکنش پرداخت یافت نشد', 'error');
+            setShowGatewayModal(false);
+            return;
+        }
 
         try {
-            setProcessingPayment(prev => ({ ...prev, [reservation.id]: true }));
+            setProcessingPayment(prev => ({ ...prev, [selectedReservation.id]: true }));
+            setShowGatewayModal(false);
             
             const paymentResult = await paymentService.initiate(
-                reservation.payment_transaction.id,
-                gatewayId
+                selectedReservation.payment_transaction.id,
+                selectedGatewayId
             );
 
             if (paymentResult.success && paymentResult.data?.redirect_url) {
@@ -68,8 +90,18 @@ function MySessions() {
             showToast(errorMessage, 'error');
             console.error('Error initiating payment:', err);
         } finally {
-            setProcessingPayment(prev => ({ ...prev, [reservation.id]: false }));
+            setProcessingPayment(prev => ({ ...prev, [selectedReservation.id]: false }));
+            setSelectedReservation(null);
+            setSelectedGatewayId(null);
+            setGatewayError(null);
         }
+    };
+
+    const handleGatewayModalClose = () => {
+        setShowGatewayModal(false);
+        setSelectedReservation(null);
+        setSelectedGatewayId(null);
+        setGatewayError(null);
     };
 
     useEffect(() => {
@@ -277,7 +309,7 @@ function MySessions() {
                                         </div>
                                         {reservation.payment_status === 'pending' && reservation.payment_transaction && (
                                             <Button
-                                                onClick={() => handlePayment(reservation)}
+                                                onClick={() => handlePaymentClick(reservation)}
                                                 disabled={processingPayment[reservation.id]}
                                                 className="text-xs sm:text-sm py-2 sm:py-2.5 px-4 w-full sm:w-auto"
                                             >
@@ -320,6 +352,105 @@ function MySessions() {
                     </button>
                 </div>
             )}
+
+            {/* Gateway Selection Modal */}
+            <AnimatePresence>
+                {showGatewayModal && (
+                    <>
+                        {/* Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={handleGatewayModalClose}
+                            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+                        />
+                        
+                        {/* Modal */}
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none" dir="rtl">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                transition={{
+                                    type: "spring",
+                                    stiffness: 300,
+                                    damping: 25,
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full pointer-events-auto overflow-hidden border-2 border-red-900/50"
+                            >
+                                {/* Header */}
+                                <div className="bg-gradient-to-r from-red-500 to-red-600 p-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="bg-white/20 rounded-full p-3">
+                                            <CashIcon className="w-6 h-6 text-white" />
+                                        </div>
+                                        <h3 className="text-xl font-bold text-white">انتخاب درگاه پرداخت</h3>
+                                    </div>
+                                </div>
+
+                                {/* Content */}
+                                <div className="p-6">
+                                    <p className="text-gray-300 text-sm mb-4">
+                                        لطفا درگاه پرداخت مورد نظر خود را انتخاب کنید
+                                    </p>
+
+                                    {/* Gateway List */}
+                                    <div className="space-y-3 mb-4">
+                                        {gateways.map((gateway) => (
+                                            <Checkbox
+                                                key={gateway.id}
+                                                name={`modal-gateway-${gateway.id}`}
+                                                label={gateway.display_name || gateway.name}
+                                                checked={selectedGatewayId === gateway.id}
+                                                onChange={(e) => {
+                                                    // Radio behavior: always set when clicked, prevent unchecking
+                                                    if (e.target.checked || selectedGatewayId === gateway.id) {
+                                                        setSelectedGatewayId(gateway.id);
+                                                        setGatewayError(null);
+                                                    }
+                                                }}
+                                                className="mb-0"
+                                            />
+                                        ))}
+                                    </div>
+
+                                    {/* Error Message */}
+                                    {gatewayError && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -5 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg"
+                                        >
+                                            <p className="text-sm text-red-400 flex items-center gap-2">
+                                                <WarningIcon className="w-4 h-4" />
+                                                {gatewayError}
+                                            </p>
+                                        </motion.div>
+                                    )}
+
+                                    {/* Buttons */}
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={handleGatewayModalClose}
+                                            className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-xl transition-colors"
+                                        >
+                                            لغو
+                                        </button>
+                                        <button
+                                            onClick={handleGatewayConfirm}
+                                            className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all"
+                                        >
+                                            پرداخت
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </div>
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

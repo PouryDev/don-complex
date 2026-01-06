@@ -34,10 +34,8 @@ function FeedDetail() {
         try {
             setLoading(true);
             setError(null);
-            const feedItems = await feedService.getFeed();
-            const foundItem = feedItems.find(
-                (item) => item.type === type && item.id === parseInt(id)
-            );
+            
+            const foundItem = await feedService.getFeedItem(type, id);
             
             if (!foundItem) {
                 setError('آیتم مورد نظر یافت نشد.');
@@ -64,7 +62,11 @@ function FeedDetail() {
                 setQuizAnswers(initialAnswers);
             }
         } catch (err) {
-            setError('خطا در دریافت اطلاعات. لطفاً دوباره تلاش کنید.');
+            if (err.response?.status === 404) {
+                setError('آیتم مورد نظر یافت نشد.');
+            } else {
+                setError('خطا در دریافت اطلاعات. لطفاً دوباره تلاش کنید.');
+            }
             console.error('Error fetching feed item:', err);
         } finally {
             setLoading(false);

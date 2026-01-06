@@ -403,6 +403,9 @@ export const feedService = {
             return res.data;
         });
     },
+    getFeedItem: (type, id) => {
+        return api.get(`/feed/${type}/${id}`).then(res => res.data);
+    },
 };
 
 export default api;
