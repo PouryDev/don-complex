@@ -152,14 +152,14 @@ function BranchSessions() {
 
     if (error) {
         return (
-            <div className="text-center py-12">
-                <div className="flex justify-center mb-4 text-red-500">
-                    <WarningIcon className="w-16 h-16" />
+            <div className="text-center py-8 sm:py-12 px-4">
+                <div className="flex justify-center mb-3 sm:mb-4 text-red-500">
+                    <WarningIcon className="w-12 h-12 sm:w-16 sm:h-16" />
                 </div>
-                <p className="text-gray-300 mb-4">{error}</p>
+                <p className="text-sm sm:text-base text-gray-300 mb-4">{error}</p>
                 <button
                     onClick={fetchSessions}
-                    className="cafe-button px-6 py-2 rounded-lg"
+                    className="cafe-button px-5 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm sm:text-base"
                 >
                     تلاش مجدد
                 </button>
@@ -168,19 +168,19 @@ function BranchSessions() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6 pb-4">
             {/* Header */}
-            <div className="text-center">
-                <h1 className="text-3xl font-bold text-white mb-2">
+            <div className="text-center px-1">
+                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1.5 sm:mb-2">
                     {branch?.name || 'سانس‌ها'}
                 </h1>
-                <p className="text-gray-300">سانس مورد نظر خود را انتخاب کنید</p>
+                <p className="text-sm sm:text-base text-gray-300">سانس مورد نظر خود را انتخاب کنید</p>
             </div>
 
             {/* Date Filter */}
-            <div className="cafe-card rounded-xl p-4">
-                <div className="mb-2">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+            <div className="cafe-card rounded-xl p-3 sm:p-4">
+                <div>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
                         تاریخ
                     </label>
                     <PersianDatePicker
@@ -193,43 +193,52 @@ function BranchSessions() {
             </div>
 
             {/* Sessions List */}
-            <div className="space-y-4">
+            <div className="space-y-3">
                 {sessions
                     .filter(session => session.available_spots > 0 && session.status === 'upcoming')
                     .map((session) => (
                         <button
                             key={session.id}
                             onClick={() => handleSessionSelect(session.id)}
-                            className="w-full cafe-card rounded-xl p-5 hover:scale-[1.02] transition-all duration-200 text-right"
+                            className="w-full cafe-card rounded-xl p-3 sm:p-4 active:scale-[0.98] transition-all duration-200 text-right touch-manipulation"
                         >
-                            <div className="flex items-center gap-4">
-                                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white shadow-lg">
-                                    <CalendarIcon className="w-8 h-8" />
+                            <div className="flex items-center gap-3 sm:gap-4">
+                                {/* Time Icon */}
+                                <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white shadow-lg">
+                                    <CalendarIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                                 </div>
-                                <div className="flex-1">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h3 className="text-lg font-semibold text-white">
+                                
+                                {/* Content */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                                        <h3 className="text-base sm:text-lg font-bold text-white leading-tight">
                                             {formatTime(session.start_time)}
                                         </h3>
-                                        <span className="px-3 py-1 bg-gray-700 text-red-400 rounded-full text-xs font-semibold">
+                                        <span className="flex-shrink-0 px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-700/80 text-red-400 rounded-lg text-[10px] sm:text-xs font-semibold whitespace-nowrap">
                                             {getStatusText(session.status)}
                                         </span>
                                     </div>
-                                    <div className="flex items-center gap-4 text-sm text-gray-300">
-                                        <span>{formatPrice(session.price)} تومان</span>
-                                        <span>•</span>
-                                        <span>{session.available_spots} جا خالی</span>
-                                        <span>•</span>
-                                        <span>حداکثر {session.max_participants} نفر</span>
+                                    
+                                    {/* Info Row */}
+                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm text-gray-300">
+                                        <span className="font-medium text-white">{formatPrice(session.price)} تومان</span>
+                                        <span className="text-gray-500">•</span>
+                                        <span className="text-green-400 font-medium">{session.available_spots} جا خالی</span>
+                                        <span className="text-gray-500">•</span>
+                                        <span className="text-gray-400">حداکثر {session.max_participants} نفر</span>
                                     </div>
+                                    
+                                    {/* Hall Name */}
                                     {session.hall && (
-                                        <p className="text-xs text-gray-400 mt-1">
+                                        <p className="text-[10px] sm:text-xs text-gray-400 mt-1.5 truncate">
                                             سالن: {session.hall.name}
                                         </p>
                                     )}
                                 </div>
-                                <div className="text-gray-400" style={{transform: 'rotate(180deg)'}}>
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                
+                                {/* Arrow Icon */}
+                                <div className="flex-shrink-0 text-gray-400" style={{transform: 'rotate(180deg)'}}>
+                                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                     </svg>
                                 </div>
@@ -239,21 +248,21 @@ function BranchSessions() {
                 
                 {/* Infinite scroll sentinel */}
                 {hasMore && (
-                    <div ref={observerTarget} className="py-4 text-center">
+                    <div ref={observerTarget} className="py-3 sm:py-4 text-center">
                         {loadingMore && (
-                            <div className="text-gray-400">در حال بارگذاری...</div>
+                            <div className="text-xs sm:text-sm text-gray-400">در حال بارگذاری...</div>
                         )}
                     </div>
                 )}
             </div>
 
             {sessions.filter(s => s.available_spots > 0 && s.status === 'upcoming').length === 0 && (
-                <div className="text-center py-12">
-                    <div className="flex justify-center mb-4 text-red-500">
-                        <EmptyBoxIcon className="w-16 h-16" />
+                <div className="text-center py-8 sm:py-12">
+                    <div className="flex justify-center mb-3 sm:mb-4 text-red-500">
+                        <EmptyBoxIcon className="w-12 h-12 sm:w-16 sm:h-16" />
                     </div>
-                    <p className="text-gray-300 mb-2">سانسی برای این تاریخ یافت نشد</p>
-                    <p className="text-sm text-gray-500">لطفا تاریخ دیگری را انتخاب کنید</p>
+                    <p className="text-sm sm:text-base text-gray-300 mb-1.5 sm:mb-2">سانسی برای این تاریخ یافت نشد</p>
+                    <p className="text-xs sm:text-sm text-gray-500">لطفا تاریخ دیگری را انتخاب کنید</p>
                 </div>
             )}
         </div>
