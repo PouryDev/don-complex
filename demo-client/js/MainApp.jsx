@@ -6,7 +6,6 @@ import { CartProvider } from './contexts/CartContext';
 import ProtectedRoute from './Components/ProtectedRoute';
 import Layout from './Components/Layout';
 import Intro from './Components/Intro';
-import Home from './Pages/Home';
 import Menu from './Pages/Menu';
 import Orders from './Pages/Orders';
 import Profile from './Pages/Profile';
@@ -45,7 +44,7 @@ function MainApp() {
                     <Routes>
                     {/* All routes with layout */}
                     <Route element={<Layout />}>
-                        <Route path="/" element={<Home />} />
+                        <Route path="/" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                         <Route path="/menu" element={<ProtectedRoute><Menu /></ProtectedRoute>} />
                         
                         {/* Auth routes - public but inside layout */}

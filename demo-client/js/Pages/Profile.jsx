@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { authService } from '../services/api';
@@ -6,7 +6,7 @@ import { useToast } from '../contexts/ToastContext';
 import Loading from '../Components/Loading';
 import ConfirmDialog from '../Components/ConfirmDialog';
 import Input from '../Components/Input';
-import { EditIcon, CalendarIcon, CashIcon } from '../Components/Icons';
+import { EditIcon, CalendarIcon, CashIcon, ShoppingCartIcon, CheckIcon, StarIcon } from '../Components/Icons';
 import MySessions from './MySessions';
 
 // Icon Components
@@ -87,6 +87,42 @@ function Profile() {
     };
 
     const [showMySessions, setShowMySessions] = useState(false);
+    const [stats, setStats] = useState({
+        activeOrders: 0,
+        paidInvoices: 0,
+        totalOrders: 0,
+    });
+    const [dataLoading, setDataLoading] = useState(true);
+
+    useEffect(() => {
+        if (user) {
+            fetchStats();
+        } else {
+            setDataLoading(false);
+        }
+    }, [user]);
+
+    const fetchStats = async () => {
+        try {
+            setDataLoading(true);
+            // Set default stats for booking system
+            setStats({
+                activeOrders: 0,
+                paidInvoices: 0,
+                totalOrders: 0,
+            });
+        } catch (err) {
+            console.error('Error fetching stats:', err);
+        } finally {
+            setDataLoading(false);
+        }
+    };
+
+    const displayStats = [
+        { label: 'رزروهای فعال', value: stats.activeOrders.toString(), icon: ShoppingCartIcon },
+        { label: 'پرداخت شده', value: stats.paidInvoices.toString(), icon: CheckIcon },
+        { label: 'کل رزروها', value: stats.totalOrders.toString(), icon: StarIcon },
+    ];
 
     const menuItems = [
         {
@@ -130,6 +166,32 @@ function Profile() {
 
     return (
         <div className="space-y-6">
+            {/* Stats */}
+            {user && (
+                <div>
+                    <h2 className="text-xl font-semibold text-white mb-4 px-2">آمار شما</h2>
+                    <div className="grid grid-cols-3 gap-3">
+                        {displayStats.map((stat, index) => {
+                            const IconComponent = stat.icon;
+                            return (
+                            <div
+                                key={index}
+                                className="cafe-card rounded-xl p-4 text-center"
+                            >
+                                <div className="flex justify-center mb-2 text-red-500">
+                                    <IconComponent className="w-6 h-6" />
+                                </div>
+                                <div className="text-2xl font-bold text-red-400 mb-1">
+                                    {dataLoading ? '...' : stat.value}
+                                </div>
+                                <div className="text-xs text-gray-300">{stat.label}</div>
+                            </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
             {/* Profile Header */}
             <div className="cafe-card rounded-2xl p-6">
                 <div className="flex justify-between items-start mb-4">

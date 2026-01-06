@@ -7,22 +7,6 @@ import Cart from './Cart';
 import { CalendarIcon, MySessionsIcon, NewsIcon } from './Icons';
 
 // SVG Icon Components
-const HomeIcon = ({ active }) => (
-    <svg
-        className={`w-6 h-6 transition-all duration-300 ${active ? 'scale-110' : 'scale-100'}`}
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        strokeWidth={active ? 2.5 : 2}
-    >
-        <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-        />
-    </svg>
-);
-
 const MenuIcon = ({ active }) => (
     <svg
         className={`w-6 h-6 transition-all duration-300 ${active ? 'scale-110' : 'scale-100'}`}
@@ -89,11 +73,6 @@ const GameIcon = ({ active }) => (
 
 const navItems = [
     {
-        path: '/',
-        label: 'خانه',
-        icon: HomeIcon,
-    },
-    {
         path: '/menu',
         label: 'منو',
         icon: MenuIcon,
@@ -139,11 +118,6 @@ function Layout() {
         let pathnameToCheck = location.pathname;
         if ((location.pathname === '/login' || location.pathname === '/register') && location.state?.from) {
             pathnameToCheck = location.state.from;
-        }
-        
-        // Exact match for home - only when pathname is exactly '/'
-        if (path === '/') {
-            return pathnameToCheck === '/' || pathnameToCheck === '';
         }
         
         // For profile, check profile and sub-pages (invoices, admin)
