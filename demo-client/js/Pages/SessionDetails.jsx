@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { sessionService, reservationService, invoiceService, paymentService } from '../services/api';
+import { sessionService, reservationService, paymentService } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 import Loading from '../Components/Loading';
 import Input from '../Components/Input';
@@ -16,10 +16,32 @@ function SessionDetails() {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
+    const [gateways, setGateways] = useState([]);
+    const [selectedGatewayId, setSelectedGatewayId] = useState(null);
+    const [loadingGateways, setLoadingGateways] = useState(false);
 
     useEffect(() => {
         fetchSession();
+        fetchGateways();
     }, [sessionId]);
+
+    const fetchGateways = async () => {
+        try {
+            setLoadingGateways(true);
+            const response = await paymentService.getGateways();
+            const gatewaysList = response.data || response;
+            setGateways(gatewaysList);
+            
+            // Auto-select first active gateway
+            if (gatewaysList.length > 0) {
+                setSelectedGatewayId(gatewaysList[0].id);
+            }
+        } catch (err) {
+            console.error('Error fetching gateways:', err);
+        } finally {
+            setLoadingGateways(false);
+        }
+    };
 
     const fetchSession = async () => {
         try {
@@ -50,6 +72,11 @@ function SessionDetails() {
             return;
         }
 
+        if (!selectedGatewayId && gateways.length > 0) {
+            showToast('لطفا درگاه پرداخت را انتخاب کنید', 'error');
+            return;
+        }
+
         try {
             setSubmitting(true);
             
@@ -59,19 +86,24 @@ function SessionDetails() {
             // Get payment transaction from reservation
             const paymentTransactionId = reservation.payment_transaction?.id;
             
-            if (paymentTransactionId) {
+            if (paymentTransactionId && selectedGatewayId) {
                 // Initiate payment
-                await paymentService.initiate(paymentTransactionId);
+                const paymentResult = await paymentService.initiate(paymentTransactionId, selectedGatewayId);
                 
-                // Navigate to invoices page or show success
-                showToast('رزرو با موفقیت انجام شد. لطفا پرداخت را انجام دهید.', 'success');
-                navigate('/my-sessions');
+                // Check if we got a redirect URL
+                if (paymentResult.success && paymentResult.data?.redirect_url) {
+                    // Redirect to payment gateway
+                    window.location.href = paymentResult.data.redirect_url;
+                } else {
+                    showToast(paymentResult.message || 'رزرو با موفقیت انجام شد. لطفا پرداخت را انجام دهید.', 'success');
+                    navigate('/my-sessions');
+                }
             } else {
                 showToast('رزرو با موفقیت انجام شد', 'success');
                 navigate('/my-sessions');
             }
         } catch (err) {
-            const errorMessage = err.response?.data?.message || 'خطا در ثبت رزرو. لطفا دوباره تلاش کنید.';
+            const errorMessage = err.response?.data?.message || err.message || 'خطا در ثبت رزرو. لطفا دوباره تلاش کنید.';
             showToast(errorMessage, 'error');
             console.error('Error creating reservation:', err);
         } finally {
@@ -194,6 +226,34 @@ function SessionDetails() {
                     )}
                 </div>
 
+                {/* Payment Gateway Selection */}
+                {gateways.length > 0 && (
+                    <div className="space-y-1">
+                        <label className="block text-sm font-bold text-white mb-2">
+                            درگاه پرداخت
+                        </label>
+                        <select
+                            value={selectedGatewayId || ''}
+                            onChange={(e) => setSelectedGatewayId(parseInt(e.target.value))}
+                            required
+                            disabled={loadingGateways}
+                            className="w-full px-4 py-3 sm:py-3.5 border-2 rounded-xl bg-gray-800 text-white placeholder-gray-400 font-medium text-right transition-all duration-200 border-red-500/20 hover:border-red-500/40 focus:border-red-500 focus:ring-2 focus:ring-red-500/30 shadow-sm hover:shadow-md focus:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                        >
+                            <option value="">انتخاب درگاه پرداخت</option>
+                            {gateways.map((gateway) => (
+                                <option key={gateway.id} value={gateway.id}>
+                                    {gateway.display_name || gateway.name}
+                                </option>
+                            ))}
+                        </select>
+                        {loadingGateways && (
+                            <p className="text-xs text-gray-400 mt-1 px-1">
+                                در حال بارگذاری درگاه‌های پرداخت...
+                            </p>
+                        )}
+                    </div>
+                )}
+
                 {/* Total Price Card */}
                 <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-xl p-4 sm:p-5 border-2 border-red-500/30 shadow-lg">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full -mr-16 -mt-16"></div>
@@ -208,7 +268,7 @@ function SessionDetails() {
 
                 <Button
                     type="submit"
-                    disabled={submitting || numberOfPeople > session.available_spots || numberOfPeople < 1}
+                    disabled={submitting || numberOfPeople > session.available_spots || numberOfPeople < 1 || !selectedGatewayId || loadingGateways}
                     className="w-full cafe-button py-3 sm:py-3.5 text-sm sm:text-base font-semibold mt-2"
                 >
                     {submitting ? 'در حال ثبت رزرو...' : 'ثبت رزرو و پرداخت'}

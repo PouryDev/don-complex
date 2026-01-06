@@ -70,26 +70,42 @@ class ReservationController extends Controller
     {
         $this->authorize('create', Reservation::class);
 
-        $reservation = $this->reservationService->createReservation(
-            $request->user(),
-            $session,
-            $request->validated()['number_of_people']
-        );
+        try {
+            $numberOfPeople = $request->validated()['number_of_people'];
 
-        // Create payment transaction
-        $totalPrice = $this->reservationService->calculateTotalPrice($session, $request->validated()['number_of_people']);
-        $this->paymentService->createTransaction($reservation, $totalPrice);
+            // Additional validation: check if requested number exceeds available spots
+            $availableSpots = $session->max_participants - $session->current_participants;
+            if ($numberOfPeople > $availableSpots) {
+                return response()->json([
+                    'message' => "حداکثر {$availableSpots} نفر می‌توانید رزرو کنید",
+                ], 422)->header('Content-Type', 'application/json');
+            }
 
-        // Eager load all nested relationships
-        $reservation->load([
-            'session.branch',
-            'session.hall',
-            'session.sessionTemplate',
-            'user',
-            'paymentTransaction'
-        ]);
+            $reservation = $this->reservationService->createReservation(
+                $request->user(),
+                $session,
+                $numberOfPeople
+            );
 
-        return new ReservationResource($reservation);
+            // Create payment transaction
+            $totalPrice = $this->reservationService->calculateTotalPrice($session, $numberOfPeople);
+            $this->paymentService->createTransaction($reservation, $totalPrice);
+
+            // Eager load all nested relationships
+            $reservation->load([
+                'session.branch',
+                'session.hall',
+                'session.sessionTemplate',
+                'user',
+                'paymentTransaction'
+            ]);
+
+            return new ReservationResource($reservation);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
 
     public function destroy(Reservation $reservation)

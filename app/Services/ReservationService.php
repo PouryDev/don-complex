@@ -28,7 +28,7 @@ class ReservationService
 
             // Check if there are enough spots available
             if (!$this->sessionService->hasEnoughSpots($lockedSession, $numberOfPeople)) {
-                throw new \Exception('Not enough spots available for this session');
+                throw new \Exception('ظرفیت کافی برای این سانس وجود ندارد');
             }
 
             // Create the reservation

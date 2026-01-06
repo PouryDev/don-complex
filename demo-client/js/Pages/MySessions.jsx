@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { reservationService } from '../services/api';
+import { reservationService, paymentService } from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 import Loading from '../Components/Loading';
+import Button from '../Components/Button';
 import { CalendarIcon, WarningIcon, EmptyBoxIcon, CashIcon } from '../Components/Icons';
 
 function MySessions() {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [reservations, setReservations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -13,11 +16,61 @@ function MySessions() {
     const [totalSpent, setTotalSpent] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
+    const [processingPayment, setProcessingPayment] = useState({});
+    const [gateways, setGateways] = useState([]);
     const observerTarget = useRef(null);
 
     useEffect(() => {
         fetchReservations(true);
+        fetchGateways();
     }, []);
+
+    const fetchGateways = async () => {
+        try {
+            const response = await paymentService.getGateways();
+            const gatewaysList = response.data || response;
+            setGateways(gatewaysList);
+        } catch (err) {
+            console.error('Error fetching gateways:', err);
+        }
+    };
+
+    const handlePayment = async (reservation) => {
+        if (!reservation.payment_transaction?.id) {
+            showToast('تراکنش پرداخت یافت نشد', 'error');
+            return;
+        }
+
+        if (gateways.length === 0) {
+            showToast('درگاه پرداختی یافت نشد', 'error');
+            return;
+        }
+
+        // Use first available gateway
+        const gatewayId = gateways[0].id;
+
+        try {
+            setProcessingPayment(prev => ({ ...prev, [reservation.id]: true }));
+            
+            const paymentResult = await paymentService.initiate(
+                reservation.payment_transaction.id,
+                gatewayId
+            );
+
+            if (paymentResult.success && paymentResult.data?.redirect_url) {
+                // Redirect to payment gateway
+                window.location.href = paymentResult.data.redirect_url;
+            } else {
+                showToast(paymentResult.message || 'خطا در شروع پرداخت', 'error');
+            }
+        } catch (err) {
+            const errorMessage = err.response?.data?.message || err.message || 'خطا در پردازش پرداخت';
+            showToast(errorMessage, 'error');
+            console.error('Error initiating payment:', err);
+        } finally {
+            setProcessingPayment(prev => ({ ...prev, [reservation.id]: false }));
+        }
+    };
 
     useEffect(() => {
         if (!hasMore || loading || loadingMore) return;
@@ -144,14 +197,14 @@ function MySessions() {
 
     if (error) {
         return (
-            <div className="text-center py-12">
-                <div className="flex justify-center mb-4 text-red-500">
-                    <WarningIcon className="w-16 h-16" />
+            <div className="text-center py-8 sm:py-12 px-4">
+                <div className="flex justify-center mb-3 sm:mb-4 text-red-500">
+                    <WarningIcon className="w-12 h-12 sm:w-16 sm:h-16" />
                 </div>
-                <p className="text-gray-300 mb-4">{error}</p>
+                <p className="text-sm sm:text-base text-gray-300 mb-4">{error}</p>
                 <button
                     onClick={fetchReservations}
-                    className="cafe-button px-6 py-2 rounded-lg"
+                    className="cafe-button px-5 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm sm:text-base"
                 >
                     تلاش مجدد
                 </button>
@@ -160,24 +213,24 @@ function MySessions() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6 pb-4">
             {/* Header */}
-            <div className="text-center">
-                <h1 className="text-3xl font-bold text-white mb-2">سانس‌های من</h1>
-                <p className="text-gray-300">لیست رزروهای شما</p>
+            <div className="text-center px-1">
+                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1.5 sm:mb-2">سانس‌های من</h1>
+                <p className="text-sm sm:text-base text-gray-300">لیست رزروهای شما</p>
             </div>
 
             {/* Total Spent Card */}
-            <div className="cafe-card rounded-xl p-5 bg-gradient-to-r from-red-500/10 to-red-600/10 border-2 border-red-500/20">
+            <div className="cafe-card rounded-xl p-4 sm:p-5 bg-gradient-to-r from-red-500/10 to-red-600/10 border-2 border-red-500/20">
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white">
-                            <CashIcon className="w-6 h-6" />
+                    <div className="flex items-center gap-2.5 sm:gap-3">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white flex-shrink-0">
+                            <CashIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-300">مجموع پرداختی‌ها</p>
-                            <p className="text-2xl font-bold text-white">
-                                {formatPrice(totalSpent)} تومان
+                            <p className="text-xs sm:text-sm text-gray-300">مجموع پرداختی‌ها</p>
+                            <p className="text-lg sm:text-2xl font-bold text-white">
+                                {formatPrice(totalSpent)} <span className="text-xs sm:text-sm font-normal">تومان</span>
                             </p>
                         </div>
                     </div>
@@ -185,45 +238,56 @@ function MySessions() {
             </div>
 
             {/* Reservations List */}
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
                 {reservations.map((reservation) => (
                     <div
                         key={reservation.id}
-                        className="cafe-card rounded-xl p-5"
+                        className="cafe-card rounded-xl p-4 sm:p-5"
                     >
-                        <div className="flex items-start gap-4">
-                            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white shadow-lg flex-shrink-0">
-                                <CalendarIcon className="w-8 h-8" />
+                        <div className="flex items-start gap-3 sm:gap-4">
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white shadow-lg flex-shrink-0">
+                                <CalendarIcon className="w-6 h-6 sm:w-8 sm:h-8" />
                             </div>
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                                 {reservation.session && (
                                     <>
                                         {reservation.session.branch && (
-                                            <h3 className="text-lg font-semibold text-white mb-1">
+                                            <h3 className="text-base sm:text-lg font-semibold text-white mb-1 truncate">
                                                 {reservation.session.branch.name}
                                             </h3>
                                         )}
-                                        <div className="space-y-1 text-sm text-gray-300 mb-3">
-                                            <p>
+                                        <div className="space-y-0.5 sm:space-y-1 text-xs sm:text-sm text-gray-300 mb-2 sm:mb-3">
+                                            <p className="break-words">
                                                 {formatDate(reservation.session.date)} - {formatTime(reservation.session.start_time)}
                                             </p>
                                             {reservation.session.hall && (
-                                                <p>سالن: {reservation.session.hall.name}</p>
+                                                <p className="break-words">سالن: {reservation.session.hall.name}</p>
                                             )}
                                             <p>تعداد نفرات: {reservation.number_of_people}</p>
                                         </div>
                                     </>
                                 )}
-                                <div className="flex items-center justify-between pt-3 border-t border-red-500/20">
-                                    <div>
-                                        <span className="text-sm text-gray-300">وضعیت پرداخت: </span>
-                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${getPaymentStatusColor(reservation.payment_status)} text-white`}>
-                                            {getPaymentStatusText(reservation.payment_status)}
-                                        </span>
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-red-500/20">
+                                    <div className="flex-1">
+                                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                                            <span className="text-xs sm:text-sm text-gray-300">وضعیت پرداخت: </span>
+                                            <span className={`px-2.5 sm:px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${getPaymentStatusColor(reservation.payment_status)} text-white whitespace-nowrap`}>
+                                                {getPaymentStatusText(reservation.payment_status)}
+                                            </span>
+                                        </div>
+                                        {reservation.payment_status === 'pending' && reservation.payment_transaction && (
+                                            <Button
+                                                onClick={() => handlePayment(reservation)}
+                                                disabled={processingPayment[reservation.id]}
+                                                className="text-xs sm:text-sm py-2 sm:py-2.5 px-4 w-full sm:w-auto"
+                                            >
+                                                {processingPayment[reservation.id] ? 'در حال انتقال...' : 'پرداخت'}
+                                            </Button>
+                                        )}
                                     </div>
                                     {reservation.payment_transaction && (
-                                        <span className="text-lg font-bold text-red-400">
-                                            {formatPrice(reservation.payment_transaction.amount)} تومان
+                                        <span className="text-base sm:text-lg font-bold text-red-400 whitespace-nowrap">
+                                            {formatPrice(reservation.payment_transaction.amount)} <span className="text-xs sm:text-sm font-normal">تومان</span>
                                         </span>
                                     )}
                                 </div>
@@ -243,14 +307,14 @@ function MySessions() {
             </div>
 
             {reservations.length === 0 && (
-                <div className="text-center py-12">
-                    <div className="flex justify-center mb-4 text-red-500">
-                        <EmptyBoxIcon className="w-16 h-16" />
+                <div className="text-center py-8 sm:py-12 px-4">
+                    <div className="flex justify-center mb-3 sm:mb-4 text-red-500">
+                        <EmptyBoxIcon className="w-12 h-12 sm:w-16 sm:h-16" />
                     </div>
-                    <p className="text-gray-300 mb-2">رزروی یافت نشد</p>
+                    <p className="text-sm sm:text-base text-gray-300 mb-2">رزروی یافت نشد</p>
                     <button
                         onClick={() => navigate('/book')}
-                        className="cafe-button px-6 py-2 rounded-lg mt-4"
+                        className="cafe-button px-5 sm:px-6 py-2 sm:py-2.5 rounded-lg mt-3 sm:mt-4 text-sm sm:text-base"
                     >
                         رزرو جدید
                     </button>
