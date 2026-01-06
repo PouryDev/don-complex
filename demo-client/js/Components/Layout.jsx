@@ -227,6 +227,11 @@ function Layout() {
                     <div className="relative flex items-center justify-between">
                         {/* User Info - Right side (first in RTL) */}
                         <div className="flex items-center gap-2">
+                            <img 
+                                src="/logo.png" 
+                                alt="Don Club Logo" 
+                                className="w-10 h-10 rounded-full object-cover border-2 border-red-500/50"
+                            />
                             {user && (
                                 <span className="text-sm text-gray-300 hidden sm:inline">
                                     {user.name}
