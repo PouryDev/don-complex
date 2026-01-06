@@ -30,7 +30,8 @@ class ReservationPolicy
 
     public function create(User $user): bool
     {
-        return $user->isCustomer();
+        // All authenticated users can create reservations
+        return true;
     }
 
     public function update(User $user, Reservation $reservation): bool
