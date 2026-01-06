@@ -19,6 +19,7 @@ import BranchSessions from './Pages/BranchSessions';
 import SessionDetails from './Pages/SessionDetails';
 import MySessions from './Pages/MySessions';
 import News from './Pages/News';
+import FeedDetail from './Pages/FeedDetail';
 import RoleDistribution from './Pages/RoleDistribution';
 import { registerNavigate } from './helpers/navigation';
 
@@ -51,8 +52,9 @@ function MainApp() {
                         <Route path="/login" element={<Auth />} />
                         <Route path="/register" element={<Auth />} />
                         
-                        {/* News - public */}
+                        {/* News/Feed - public */}
                         <Route path="/news" element={<News />} />
+                        <Route path="/feed/:type/:id" element={<FeedDetail />} />
                         
                         {/* Role Distribution - public */}
                         <Route path="/role-distribution" element={<RoleDistribution />} />

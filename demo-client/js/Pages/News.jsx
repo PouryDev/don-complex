@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { GridIcon } from '../Components/Icons';
 import { feedService } from '../services/api';
 import Loading from '../Components/Loading';
 
 function News() {
+    const navigate = useNavigate();
     const [feedItems, setFeedItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -91,7 +93,8 @@ function News() {
                     {feedItems.map((item) => (
                         <div
                             key={`${item.type}-${item.id}`}
-                            className="cafe-card rounded-xl p-5 hover:scale-[1.01] transition-all duration-200"
+                            onClick={() => navigate(`/feed/${item.type}/${item.id}`)}
+                            className="cafe-card rounded-xl p-5 hover:scale-[1.01] transition-all duration-200 cursor-pointer"
                         >
                             {/* Item Header */}
                             <div className="flex items-start justify-between mb-4">
