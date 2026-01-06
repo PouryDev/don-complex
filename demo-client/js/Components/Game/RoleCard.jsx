@@ -1,10 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { RoleIcon } from './RoleIcon';
 import { gradients } from '../../utils/gameTheme';
 
 export const RoleCard = ({ role, playerNumber, onReveal }) => {
   const [revealed, setRevealed] = useState(false);
+  const [iconSize, setIconSize] = useState(160);
+
+  useEffect(() => {
+    const updateIconSize = () => {
+      if (window.innerWidth < 640) {
+        setIconSize(100);
+      } else if (window.innerWidth < 768) {
+        setIconSize(140);
+      } else {
+        setIconSize(160);
+      }
+    };
+
+    updateIconSize();
+    window.addEventListener('resize', updateIconSize);
+    return () => window.removeEventListener('resize', updateIconSize);
+  }, []);
 
   const handleReveal = (e) => {
     e.preventDefault();
@@ -24,7 +41,7 @@ export const RoleCard = ({ role, playerNumber, onReveal }) => {
 
   return (
     <motion.div
-      className="mb-5"
+      className="mb-4 sm:mb-5"
       initial={{ scale: 0.8, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.3 }}
@@ -32,7 +49,8 @@ export const RoleCard = ({ role, playerNumber, onReveal }) => {
       <div
         className="rounded-2xl overflow-hidden shadow-2xl relative"
         style={{
-          height: '500px',
+          height: 'clamp(380px, 60vh, 500px)',
+          minHeight: '380px',
           perspective: '1000px',
           ...(revealed && role.team === 'مافیا' ? {
             boxShadow: '0 0 30px rgba(255, 0, 85, 0.6)'
@@ -43,7 +61,7 @@ export const RoleCard = ({ role, playerNumber, onReveal }) => {
       >
         {/* Front side */}
         <motion.div
-          className="absolute inset-0 p-8 flex flex-col items-center justify-center border-2 border-white/15 rounded-2xl cursor-pointer"
+          className="absolute inset-0 p-4 sm:p-6 md:p-8 flex flex-col items-center justify-center border-2 border-white/15 rounded-2xl cursor-pointer"
           style={{
             background: 'linear-gradient(135deg, #2a2a2a, #1a1a1a)',
             backfaceVisibility: 'hidden',
@@ -60,13 +78,13 @@ export const RoleCard = ({ role, playerNumber, onReveal }) => {
           whileTap={revealed ? {} : { scale: 0.98 }}
         >
           {!revealed && (
-            <div className="flex flex-col items-center gap-4">
-              <p className="text-lg font-bold text-white/90 mb-6">بازیکن {playerNumber}</p>
-              <p className="text-base text-gray-400 text-center">ضربه بزنید برای نمایش نقش</p>
+            <div className="flex flex-col items-center gap-3 sm:gap-4">
+              <p className="text-base sm:text-lg font-bold text-white/90 mb-4 sm:mb-6">بازیکن {playerNumber}</p>
+              <p className="text-sm sm:text-base text-gray-400 text-center px-2">ضربه بزنید برای نمایش نقش</p>
               <motion.div
                 animate={{ y: [0, -10, 0] }}
                 transition={{ duration: 1, repeat: Infinity }}
-                className="text-5xl"
+                className="text-4xl sm:text-5xl"
               >
                 👆
               </motion.div>
@@ -76,7 +94,7 @@ export const RoleCard = ({ role, playerNumber, onReveal }) => {
 
         {/* Back side */}
         <motion.div
-          className="absolute inset-0 p-8 flex flex-col items-center justify-center border-2 border-white/15 rounded-2xl"
+          className="absolute inset-0 p-4 sm:p-6 md:p-8 flex flex-col items-center justify-center border-2 border-white/15 rounded-2xl"
           style={{
             background: `linear-gradient(135deg, ${teamColor[0]}, ${teamColor[1]})`,
             backfaceVisibility: 'hidden',
@@ -91,30 +109,30 @@ export const RoleCard = ({ role, playerNumber, onReveal }) => {
           transition={{ duration: 0.6 }}
         >
           {revealed && (
-            <div className="flex flex-col items-center gap-5 w-full">
-              <p className="text-xl font-bold text-white/90 mb-6">بازیکن {playerNumber}</p>
+            <div className="flex flex-col items-center gap-3 sm:gap-4 md:gap-5 w-full">
+              <p className="text-lg sm:text-xl font-bold text-white/90 mb-3 sm:mb-4 md:mb-6">بازیکن {playerNumber}</p>
               <motion.div
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.3, duration: 0.5 }}
-                className="w-44 h-44 rounded-2xl bg-black/30 flex items-center justify-center border-3 border-white/30 mb-4"
+                className="w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 rounded-2xl bg-black/30 flex items-center justify-center border-3 border-white/30 mb-2 sm:mb-3 md:mb-4"
                 style={{
                   boxShadow: '0 0 15px rgba(255, 255, 255, 0.3)'
                 }}
               >
                 <RoleIcon
                   roleName={role.name}
-                  size={160}
+                  size={iconSize}
                   color={role.team === 'مافیا' ? '#ff3366' : '#00ffff'}
                 />
               </motion.div>
-              <h2 className="text-3xl font-black text-white text-center mb-4" style={{
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white text-center mb-2 sm:mb-3 md:mb-4 px-2" style={{
                 textShadow: '0 0 8px rgba(0, 0, 0, 0.5)'
               }}>
                 {role.name}
               </h2>
-              <div className="bg-white/25 px-6 py-3 rounded-lg border border-white/30 mt-2">
-                <p className="text-xl font-bold text-white">{role.team}</p>
+              <div className="bg-white/25 px-4 sm:px-6 py-2 sm:py-3 rounded-lg border border-white/30 mt-1 sm:mt-2">
+                <p className="text-base sm:text-lg md:text-xl font-bold text-white">{role.team}</p>
               </div>
             </div>
           )}

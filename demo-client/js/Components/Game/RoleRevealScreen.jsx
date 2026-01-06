@@ -46,25 +46,25 @@ export const RoleRevealScreen = ({ roles, onRestart, onBackToMenu }) => {
   if (allRevealed) {
     return (
       <AnimatedBackground colors={['#0a0a0a', '#1a0a1a', '#0a0a0a']}>
-        <div className="h-full flex flex-col justify-between p-8 pb-40 md:pb-20 overflow-y-auto">
+        <div className="h-full min-h-screen flex flex-col justify-between p-4 sm:p-8 pb-[max(4rem,env(safe-area-inset-bottom)+4rem)] md:pb-20 overflow-y-auto">
           <motion.div
-            className="flex-1 flex flex-col justify-center items-center gap-6"
+            className="flex-1 flex flex-col justify-center items-center gap-4 sm:gap-6 min-h-0 py-8"
             initial={{ scale: 0 }}
             animate={{ scale: completedScale }}
             transition={{ type: "spring", tension: 50, friction: 7 }}
           >
-            <div className="text-9xl mb-4">🎉</div>
-            <h2 className="text-4xl font-black text-white text-center" style={{
+            <div className="text-6xl sm:text-9xl mb-2 sm:mb-4">🎉</div>
+            <h2 className="text-2xl sm:text-4xl font-black text-white text-center px-4" style={{
               textShadow: '0 0 20px rgba(0, 255, 136, 1)'
             }}>
               بازی شروع شد!
             </h2>
-            <p className="text-base text-gray-300 text-center">
+            <p className="text-sm sm:text-base text-gray-300 text-center px-4">
               همه بازیکنان نقش خود را دیدند
             </p>
           </motion.div>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4 w-full max-w-md mx-auto pb-4">
             <GradientButton
               title="بازی جدید"
               onClick={handleRestart}
@@ -85,10 +85,10 @@ export const RoleRevealScreen = ({ roles, onRestart, onBackToMenu }) => {
 
   return (
     <AnimatedBackground colors={['#0a0a0a', '#1a0a1a', '#0a0a0a']}>
-      <div className="h-full overflow-y-auto pb-40 md:pb-20">
-        <div className="max-w-4xl mx-auto px-6 py-16">
-          <div className="mb-6 text-center">
-            <p className="text-xl font-bold text-cyan-400 mb-4">
+      <div className="h-full min-h-screen overflow-y-auto pb-[max(6rem,env(safe-area-inset-bottom)+6rem)] md:pb-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-12 md:py-16">
+          <div className="mb-4 sm:mb-6 text-center">
+            <p className="text-lg sm:text-xl font-bold text-cyan-400 mb-3 sm:mb-4">
               {currentPlayerIndex + 1} از {roles.length}
             </p>
             <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
@@ -111,7 +111,7 @@ export const RoleRevealScreen = ({ roles, onRestart, onBackToMenu }) => {
             onReveal={handleRoleReveal}
           />
 
-          <div className="mt-8 relative z-20">
+          <div className="mt-6 sm:mt-8 relative z-20 pb-2">
             <GradientButton
               title={
                 currentPlayerIndex < roles.length - 1
