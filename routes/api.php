@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BranchController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\FeedController;
 use App\Http\Controllers\Api\GameMasterController;
 use App\Http\Controllers\Api\HallController;
 use App\Http\Controllers\Api\MenuItemController;
@@ -18,6 +19,9 @@ Route::post('/login', [AuthController::class, 'login']);
 // Public menu routes
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/menu-items', [MenuItemController::class, 'index']);
+
+// Public feed route
+Route::get('/feed', [FeedController::class, 'index']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {

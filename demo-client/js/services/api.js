@@ -370,5 +370,10 @@ export const cartService = {
     },
 };
 
+// Feed Service
+export const feedService = {
+    getFeed: () => api.get('/feed').then(res => res.data),
+};
+
 export default api;
 

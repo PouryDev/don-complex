@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import Cart from './Cart';
-import { CalendarIcon, MySessionsIcon, NewsIcon } from './Icons';
+import { CalendarIcon, GridIcon, MySessionsIcon } from './Icons';
 
 // SVG Icon Components
 const MenuIcon = ({ active }) => (
@@ -90,8 +90,8 @@ const navItems = [
     },
     {
         path: '/news',
-        label: 'اخبار',
-        icon: NewsIcon,
+        label: 'هاب',
+        icon: GridIcon,
     },
     {
         path: '/profile',
