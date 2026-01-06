@@ -23,9 +23,10 @@ class MenuItemController extends Controller
             $query->where('branch_id', $request->branch_id);
         }
 
+        $perPage = $request->get('per_page', 15);
         $menuItems = $query->orderBy('order')
             ->orderBy('name')
-            ->get();
+            ->paginate($perPage);
 
         return response()->json($menuItems);
     }

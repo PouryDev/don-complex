@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { menuService, branchService } from '../services/api';
 import { useCart } from '../contexts/CartContext';
 import Loading from '../Components/Loading';
@@ -13,8 +13,12 @@ function Menu() {
     const [branches, setBranches] = useState([]);
     const { addToCart } = useCart();
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState(null);
     const [imageErrors, setImageErrors] = useState(new Set());
+    const [currentPage, setCurrentPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const observerTarget = useRef(null);
 
     useEffect(() => {
         fetchBranches();
@@ -22,9 +26,33 @@ function Menu() {
 
     useEffect(() => {
         if (branchId) {
-            fetchData(branchId);
+            fetchData(branchId, true);
         }
     }, [branchId]);
+
+    useEffect(() => {
+        if (!hasMore || loading || loadingMore || selectedCategory !== 'all') return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    loadMore();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        const currentTarget = observerTarget.current;
+        if (currentTarget) {
+            observer.observe(currentTarget);
+        }
+
+        return () => {
+            if (currentTarget) {
+                observer.unobserve(currentTarget);
+            }
+        };
+    }, [hasMore, loading, loadingMore, selectedCategory]);
 
     const fetchBranches = async () => {
         try {
@@ -63,48 +91,87 @@ function Menu() {
         setSelectedCategory('all'); // Reset category filter when branch changes
     };
 
-    const fetchData = async (branchIdParam = null) => {
+    const fetchData = async (branchIdParam = null, reset = false) => {
         const targetBranchId = branchIdParam || branchId;
         if (!targetBranchId) {
             return;
         }
 
         try {
-            setLoading(true);
+            if (reset) {
+                setLoading(true);
+                setCurrentPage(1);
+                setMenuItems([]);
+            } else {
+                setLoadingMore(true);
+            }
             setError(null);
+            
             // Try public endpoints first, fallback to admin endpoints
             let categoriesData = [];
             let menuItemsData = [];
             
-            try {
-                categoriesData = await menuService.getCategories(targetBranchId);
-            } catch (err) {
+            // Fetch categories only on reset
+            if (reset) {
                 try {
-                    categoriesData = await menuService.getCategoriesPublic(targetBranchId);
-                } catch (err2) {
-                    console.error('Error fetching categories:', err2);
+                    categoriesData = await menuService.getCategories(targetBranchId);
+                } catch (err) {
+                    try {
+                        categoriesData = await menuService.getCategoriesPublic(targetBranchId);
+                    } catch (err2) {
+                        console.error('Error fetching categories:', err2);
+                    }
                 }
+                setCategories(Array.isArray(categoriesData) ? categoriesData : (categoriesData.data || []));
             }
             
+            // Fetch menu items with pagination
+            const page = reset ? 1 : currentPage;
             try {
-                menuItemsData = await menuService.getMenuItems(targetBranchId);
+                menuItemsData = await menuService.getMenuItems(targetBranchId, { page, per_page: 15 });
             } catch (err) {
                 try {
-                    menuItemsData = await menuService.getMenuItemsPublic(targetBranchId);
+                    menuItemsData = await menuService.getMenuItemsPublic(targetBranchId, { page, per_page: 15 });
                 } catch (err2) {
                     console.error('Error fetching menu items:', err2);
                 }
             }
             
-            setCategories(Array.isArray(categoriesData) ? categoriesData : (categoriesData.data || []));
-            setMenuItems(Array.isArray(menuItemsData) ? menuItemsData : (menuItemsData.data || []));
+            // Handle paginated response
+            const items = menuItemsData.data || menuItemsData;
+            const paginationInfo = menuItemsData.current_page !== undefined ? menuItemsData : null;
+            
+            if (reset) {
+                setMenuItems(Array.isArray(items) ? items : []);
+            } else {
+                setMenuItems(prev => [...prev, ...(Array.isArray(items) ? items : [])]);
+            }
+            
+            if (paginationInfo) {
+                setHasMore(paginationInfo.current_page < paginationInfo.last_page);
+                setCurrentPage(paginationInfo.current_page + 1);
+            } else {
+                // Fallback: if no pagination info, assume no more if items length is less than per_page
+                const itemsArray = Array.isArray(items) ? items : [];
+                setHasMore(itemsArray.length >= 15);
+                if (!reset) {
+                    setCurrentPage(prev => prev + 1);
+                }
+            }
         } catch (err) {
             setError('خطا در بارگذاری منو. لطفا دوباره تلاش کنید.');
             console.error('Error fetching menu:', err);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
+
+    const loadMore = useCallback(() => {
+        if (!loadingMore && hasMore && selectedCategory === 'all') {
+            fetchData(null, false);
+        }
+    }, [loadingMore, hasMore, currentPage, selectedCategory]);
 
     const getCategoryIconComponent = (categoryName) => {
         return getCategoryIcon(categoryName);
@@ -257,6 +324,15 @@ function Menu() {
                         </div>
                     </div>
                 ))}
+                
+                {/* Infinite scroll sentinel - only show when showing all items */}
+                {hasMore && selectedCategory === 'all' && (
+                    <div ref={observerTarget} className="col-span-2 py-4 text-center">
+                        {loadingMore && (
+                            <div className="text-gray-400">در حال بارگذاری...</div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {filteredItems.length === 0 && (

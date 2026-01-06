@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\FeedItem;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 class FeedController extends Controller
@@ -12,12 +13,12 @@ class FeedController extends Controller
     /**
      * Display a listing of all feed items (news, forms, quizzes).
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $now = Carbon::now();
 
         // Get active feed items that are scheduled (or have no schedule)
-        $feedItems = FeedItem::with('feedable')
+        $query = FeedItem::with('feedable')
             ->where('is_active', true)
             ->where(function ($query) use ($now) {
                 $query->whereNull('scheduled_at')
@@ -25,10 +26,12 @@ class FeedController extends Controller
             })
             ->orderBy('order')
             ->orderBy('scheduled_at', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->orderBy('created_at', 'desc');
 
-        $feed = $feedItems->map(function ($feedItem) {
+        $perPage = $request->get('per_page', 15);
+        $feedItems = $query->paginate($perPage);
+
+        $feed = $feedItems->getCollection()->map(function ($feedItem) {
             $item = $feedItem->feedable;
             
             if (!$item) {
@@ -63,7 +66,10 @@ class FeedController extends Controller
             return $baseData;
         })->filter()->values();
 
-        return response()->json($feed);
+        // Set the transformed collection back to paginator
+        $feedItems->setCollection($feed);
+
+        return response()->json($feedItems);
     }
 
     /**

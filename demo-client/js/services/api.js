@@ -38,26 +38,46 @@ api.interceptors.response.use(
 // Menu Service
 export const menuService = {
     getMenu: () => api.get('/menu').then(res => res.data),
-    getCategories: (branchId = null) => {
-        const params = branchId ? { branch_id: branchId } : {};
-        return api.get('/categories', { params }).then(res => res.data);
+    getCategories: (branchId = null, params = {}) => {
+        const queryParams = { ...params };
+        if (branchId) queryParams.branch_id = branchId;
+        if (!queryParams.per_page) queryParams.per_page = 15;
+        return api.get('/categories', { params: queryParams }).then(res => {
+            // Handle paginated response
+            if (res.data && res.data.data) {
+                return res.data;
+            }
+            return res.data;
+        });
     },
-    getMenuItems: (branchId = null) => {
-        const params = branchId ? { branch_id: branchId } : {};
-        return api.get('/menu-items', { params }).then(res => res.data);
+    getMenuItems: (branchId = null, params = {}) => {
+        const queryParams = { ...params };
+        if (branchId) queryParams.branch_id = branchId;
+        if (!queryParams.per_page) queryParams.per_page = 15;
+        return api.get('/menu-items', { params: queryParams }).then(res => {
+            // Handle paginated response
+            if (res.data && res.data.data) {
+                return res.data;
+            }
+            return res.data;
+        });
     },
     // Use admin endpoints for now (they should be public, but if not, we'll use admin)
-    getCategoriesPublic: (branchId = null) => {
-        const params = branchId ? { branch_id: branchId } : {};
-        return api.get('/admin/categories', { params }).then(res => {
-            if (res.data && res.data.data) return res.data.data;
+    getCategoriesPublic: (branchId = null, params = {}) => {
+        const queryParams = { ...params };
+        if (branchId) queryParams.branch_id = branchId;
+        if (!queryParams.per_page) queryParams.per_page = 15;
+        return api.get('/admin/categories', { params: queryParams }).then(res => {
+            if (res.data && res.data.data) return res.data;
             return Array.isArray(res.data) ? res.data : [];
         });
     },
-    getMenuItemsPublic: (branchId = null) => {
-        const params = branchId ? { branch_id: branchId } : {};
-        return api.get('/admin/menu-items', { params }).then(res => {
-            if (res.data && res.data.data) return res.data.data;
+    getMenuItemsPublic: (branchId = null, params = {}) => {
+        const queryParams = { ...params };
+        if (branchId) queryParams.branch_id = branchId;
+        if (!queryParams.per_page) queryParams.per_page = 15;
+        return api.get('/admin/menu-items', { params: queryParams }).then(res => {
+            if (res.data && res.data.data) return res.data;
             return Array.isArray(res.data) ? res.data : [];
         });
     },
@@ -372,7 +392,17 @@ export const cartService = {
 
 // Feed Service
 export const feedService = {
-    getFeed: () => api.get('/feed').then(res => res.data),
+    getFeed: (params = {}) => {
+        const queryParams = { ...params };
+        if (!queryParams.per_page) queryParams.per_page = 15;
+        return api.get('/feed', { params: queryParams }).then(res => {
+            // Handle paginated response
+            if (res.data && res.data.data) {
+                return res.data;
+            }
+            return res.data;
+        });
+    },
 };
 
 export default api;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GridIcon } from '../Components/Icons';
 import { feedService } from '../services/api';
@@ -8,25 +8,88 @@ function News() {
     const navigate = useNavigate();
     const [feedItems, setFeedItems] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const observerTarget = useRef(null);
 
     useEffect(() => {
-        fetchFeed();
+        fetchFeed(true);
     }, []);
 
-    const fetchFeed = async () => {
+    useEffect(() => {
+        if (!hasMore || loading || loadingMore) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    loadMore();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        const currentTarget = observerTarget.current;
+        if (currentTarget) {
+            observer.observe(currentTarget);
+        }
+
+        return () => {
+            if (currentTarget) {
+                observer.unobserve(currentTarget);
+            }
+        };
+    }, [hasMore, loading, loadingMore]);
+
+    const fetchFeed = async (reset = false) => {
         try {
-            setLoading(true);
+            if (reset) {
+                setLoading(true);
+                setCurrentPage(1);
+                setFeedItems([]);
+            } else {
+                setLoadingMore(true);
+            }
             setError(null);
-            const data = await feedService.getFeed();
-            setFeedItems(data);
+            
+            const page = reset ? 1 : currentPage;
+            const response = await feedService.getFeed({ page, per_page: 15 });
+            
+            // Handle paginated response
+            const items = response.data || response;
+            const paginationInfo = response.current_page !== undefined ? response : null;
+            
+            if (reset) {
+                setFeedItems(items);
+            } else {
+                setFeedItems(prev => [...prev, ...items]);
+            }
+            
+            if (paginationInfo) {
+                setHasMore(paginationInfo.current_page < paginationInfo.last_page);
+                setCurrentPage(paginationInfo.current_page + 1);
+            } else {
+                // Fallback: if no pagination info, assume no more if items length is less than per_page
+                setHasMore(items.length >= 15);
+                if (!reset) {
+                    setCurrentPage(prev => prev + 1);
+                }
+            }
         } catch (err) {
             setError('خطا در دریافت اطلاعات. لطفاً دوباره تلاش کنید.');
             console.error('Error fetching feed:', err);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
+
+    const loadMore = useCallback(() => {
+        if (!loadingMore && hasMore) {
+            fetchFeed(false);
+        }
+    }, [loadingMore, hasMore, currentPage]);
 
     const getTypeLabel = (type) => {
         const labels = {
@@ -159,6 +222,15 @@ function News() {
                             </div>
                         </div>
                     ))}
+                    
+                    {/* Infinite scroll sentinel */}
+                    {hasMore && (
+                        <div ref={observerTarget} className="py-4 text-center">
+                            {loadingMore && (
+                                <div className="text-gray-400">در حال بارگذاری...</div>
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
         </div>

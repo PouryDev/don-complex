@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { branchService } from '../services/api';
 import Loading from '../Components/Loading';
@@ -8,27 +8,89 @@ function Book() {
     const navigate = useNavigate();
     const [branches, setBranches] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const observerTarget = useRef(null);
 
     useEffect(() => {
-        fetchBranches();
+        fetchBranches(true);
     }, []);
 
-    const fetchBranches = async () => {
+    useEffect(() => {
+        if (!hasMore || loading || loadingMore) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    loadMore();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        const currentTarget = observerTarget.current;
+        if (currentTarget) {
+            observer.observe(currentTarget);
+        }
+
+        return () => {
+            if (currentTarget) {
+                observer.unobserve(currentTarget);
+            }
+        };
+    }, [hasMore, loading, loadingMore]);
+
+    const fetchBranches = async (reset = false) => {
         try {
-            setLoading(true);
+            if (reset) {
+                setLoading(true);
+                setCurrentPage(1);
+                setBranches([]);
+            } else {
+                setLoadingMore(true);
+            }
             setError(null);
-            const response = await branchService.getBranches();
-            // Handle paginated response - Laravel paginated responses have a 'data' property
-            const branchesData = Array.isArray(response) ? response : (response.data || []);
-            setBranches(branchesData);
+            
+            const page = reset ? 1 : currentPage;
+            const response = await branchService.getBranches({ page, per_page: 15 });
+            
+            // Handle paginated response
+            const branchesData = response.data || response;
+            const paginationInfo = response.current_page !== undefined ? response : null;
+            
+            if (reset) {
+                setBranches(Array.isArray(branchesData) ? branchesData : []);
+            } else {
+                setBranches(prev => [...prev, ...(Array.isArray(branchesData) ? branchesData : [])]);
+            }
+            
+            if (paginationInfo) {
+                setHasMore(paginationInfo.current_page < paginationInfo.last_page);
+                setCurrentPage(paginationInfo.current_page + 1);
+            } else {
+                // Fallback: if no pagination info, assume no more if items length is less than per_page
+                const branchesArray = Array.isArray(branchesData) ? branchesData : [];
+                setHasMore(branchesArray.length >= 15);
+                if (!reset) {
+                    setCurrentPage(prev => prev + 1);
+                }
+            }
         } catch (err) {
             setError('خطا در بارگذاری شعبه‌ها. لطفا دوباره تلاش کنید.');
             console.error('Error fetching branches:', err);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
+
+    const loadMore = useCallback(() => {
+        if (!loadingMore && hasMore) {
+            fetchBranches(false);
+        }
+    }, [loadingMore, hasMore, currentPage]);
 
     const handleBranchSelect = (branchId) => {
         navigate(`/book/branch/${branchId}/sessions`);
@@ -93,6 +155,15 @@ function Book() {
                         </div>
                     </button>
                 ))}
+                
+                {/* Infinite scroll sentinel */}
+                {hasMore && (
+                    <div ref={observerTarget} className="py-4 text-center">
+                        {loadingMore && (
+                            <div className="text-gray-400">در حال بارگذاری...</div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {branches.length === 0 && (

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { sessionService, branchService } from '../services/api';
 import Loading from '../Components/Loading';
-import Input from '../Components/Input';
+import PersianDatePicker from '../Components/PersianDatePicker';
 import { CalendarIcon, WarningIcon, EmptyBoxIcon } from '../Components/Icons';
 
 function BranchSessions() {
@@ -11,13 +11,44 @@ function BranchSessions() {
     const [sessions, setSessions] = useState([]);
     const [branch, setBranch] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState(null);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const observerTarget = useRef(null);
 
     useEffect(() => {
         fetchBranch();
-        fetchSessions();
+    }, [branchId]);
+
+    useEffect(() => {
+        fetchSessions(true);
     }, [branchId, selectedDate]);
+
+    useEffect(() => {
+        if (!hasMore || loading || loadingMore) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    loadMore();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        const currentTarget = observerTarget.current;
+        if (currentTarget) {
+            observer.observe(currentTarget);
+        }
+
+        return () => {
+            if (currentTarget) {
+                observer.unobserve(currentTarget);
+            }
+        };
+    }, [hasMore, loading, loadingMore]);
 
     const fetchBranch = async () => {
         try {
@@ -28,21 +59,58 @@ function BranchSessions() {
         }
     };
 
-    const fetchSessions = async () => {
+    const fetchSessions = async (reset = false) => {
         try {
-            setLoading(true);
+            if (reset) {
+                setLoading(true);
+                setCurrentPage(1);
+                setSessions([]);
+            } else {
+                setLoadingMore(true);
+            }
             setError(null);
-            const response = await sessionService.getBranchSessions(branchId, { date: selectedDate });
-            // Handle paginated response - Laravel paginated responses have a 'data' property
-            const sessionsData = Array.isArray(response) ? response : (response.data || []);
-            setSessions(sessionsData);
+            
+            const page = reset ? 1 : currentPage;
+            const response = await sessionService.getBranchSessions(branchId, { 
+                date: selectedDate,
+                page,
+                per_page: 15
+            });
+            
+            // Handle paginated response
+            const sessionsData = response.data || response;
+            const paginationInfo = response.current_page !== undefined ? response : null;
+            
+            if (reset) {
+                setSessions(sessionsData);
+            } else {
+                setSessions(prev => [...prev, ...sessionsData]);
+            }
+            
+            if (paginationInfo) {
+                setHasMore(paginationInfo.current_page < paginationInfo.last_page);
+                setCurrentPage(paginationInfo.current_page + 1);
+            } else {
+                // Fallback: if no pagination info, assume no more if items length is less than per_page
+                setHasMore(sessionsData.length >= 15);
+                if (!reset) {
+                    setCurrentPage(prev => prev + 1);
+                }
+            }
         } catch (err) {
             setError('خطا در بارگذاری سانس‌ها. لطفا دوباره تلاش کنید.');
             console.error('Error fetching sessions:', err);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
+
+    const loadMore = useCallback(() => {
+        if (!loadingMore && hasMore) {
+            fetchSessions(false);
+        }
+    }, [loadingMore, hasMore, currentPage]);
 
     const handleSessionSelect = (sessionId) => {
         navigate(`/book/session/${sessionId}`);
@@ -111,13 +179,17 @@ function BranchSessions() {
 
             {/* Date Filter */}
             <div className="cafe-card rounded-xl p-4">
-                <Input
-                    label="تاریخ"
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
-                />
+                <div className="mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                        تاریخ
+                    </label>
+                    <PersianDatePicker
+                        value={selectedDate}
+                        onChange={(date) => setSelectedDate(date)}
+                        placeholder="تاریخ را انتخاب کنید"
+                        min={new Date().toISOString().split('T')[0]}
+                    />
+                </div>
             </div>
 
             {/* Sessions List */}
@@ -164,6 +236,15 @@ function BranchSessions() {
                             </div>
                         </button>
                     ))}
+                
+                {/* Infinite scroll sentinel */}
+                {hasMore && (
+                    <div ref={observerTarget} className="py-4 text-center">
+                        {loadingMore && (
+                            <div className="text-gray-400">در حال بارگذاری...</div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {sessions.filter(s => s.available_spots > 0 && s.status === 'upcoming').length === 0 && (

@@ -21,9 +21,10 @@ class CategoryController extends Controller
             $query->where('branch_id', $request->branch_id);
         }
 
+        $perPage = $request->get('per_page', 15);
         $categories = $query->orderBy('order')
             ->orderBy('name')
-            ->get();
+            ->paginate($perPage);
 
         return response()->json($categories);
     }
