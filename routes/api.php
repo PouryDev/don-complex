@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\FeedController;
 use App\Http\Controllers\Api\GameMasterController;
 use App\Http\Controllers\Api\HallController;
 use App\Http\Controllers\Api\MenuItemController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\SessionTemplateController;
@@ -22,6 +23,9 @@ Route::get('/menu-items', [MenuItemController::class, 'index']);
 
 // Public feed route
 Route::get('/feed', [FeedController::class, 'index']);
+
+// Public payment gateways route (needed for checkout)
+Route::get('/payment/gateways', [PaymentController::class, 'gateways']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -52,6 +56,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Reservations
     Route::apiResource('reservations', ReservationController::class)->except(['update']);
     Route::post('/sessions/{session}/reservations', [ReservationController::class, 'store']);
+
+    // Payment routes
+    Route::post('/payments/{paymentTransaction}/initiate', [PaymentController::class, 'initiate']);
+    Route::get('/payments/{paymentTransaction}/status', [PaymentController::class, 'status']);
 
     // Game Master routes
     Route::prefix('game-master')->group(function () {

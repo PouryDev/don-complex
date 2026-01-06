@@ -99,9 +99,9 @@ export const invoiceService = {
 
 // Payment Service
 export const paymentService = {
-    initiate: (invoiceId) => api.post(`/payments/${invoiceId}/initiate`).then(res => res.data),
-    verify: (invoiceId) => api.post(`/payments/${invoiceId}/verify`).then(res => res.data),
-    uploadReceipt: (data) => api.post('/payments/upload-receipt', data).then(res => res.data),
+    initiate: (paymentTransactionId, gatewayId) => api.post(`/payments/${paymentTransactionId}/initiate`, { gateway_id: gatewayId }).then(res => res.data),
+    status: (paymentTransactionId) => api.get(`/payments/${paymentTransactionId}/status`).then(res => res.data),
+    getGateways: () => api.get('/payment/gateways').then(res => res.data),
 };
 
 // Transaction Service

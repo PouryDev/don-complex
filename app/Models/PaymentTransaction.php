@@ -13,6 +13,7 @@ class PaymentTransaction extends Model
 
     protected $fillable = [
         'reservation_id',
+        'gateway_id',
         'amount',
         'gateway',
         'gateway_transaction_id',
@@ -29,5 +30,10 @@ class PaymentTransaction extends Model
     public function reservation(): BelongsTo
     {
         return $this->belongsTo(Reservation::class);
+    }
+
+    public function paymentGateway(): BelongsTo
+    {
+        return $this->belongsTo(PaymentGateway::class, 'gateway_id');
     }
 }

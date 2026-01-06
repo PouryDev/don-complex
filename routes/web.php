@@ -1,6 +1,11 @@
 <?php
 
+use App\Http\Controllers\Api\PaymentController;
 use Illuminate\Support\Facades\Route;
+
+// Payment callback route (for gateway redirects)
+Route::get('/payment/callback/{gateway}', [PaymentController::class, 'callback'])
+    ->name('payment.callback');
 
 // Serve React app for root
 Route::get('/', function () {
@@ -9,7 +14,8 @@ Route::get('/', function () {
 
 // Serve React app for all frontend routes (catch-all)
 // API routes are handled separately in routes/api.php
+// Payment callback routes are handled above
 // This ensures that all frontend routes are handled by React Router
 Route::get('/{any}', function () {
     return view('app');
-})->where('any', '^(?!api).*$');
+})->where('any', '^(?!api|payment/callback).*$');

@@ -21,6 +21,8 @@ import MySessions from './Pages/MySessions';
 import News from './Pages/News';
 import FeedDetail from './Pages/FeedDetail';
 import RoleDistribution from './Pages/RoleDistribution';
+import PaymentSuccess from './Pages/PaymentSuccess';
+import PaymentError from './Pages/PaymentError';
 import { registerNavigate } from './helpers/navigation';
 
 function MainApp() {
@@ -58,6 +60,10 @@ function MainApp() {
                         
                         {/* Role Distribution - public */}
                         <Route path="/role-distribution" element={<RoleDistribution />} />
+                        
+                        {/* Payment pages - public */}
+                        <Route path="/payment/success" element={<PaymentSuccess />} />
+                        <Route path="/payment/error" element={<PaymentError />} />
                         
                         {/* Protected routes */}
                         <Route 
