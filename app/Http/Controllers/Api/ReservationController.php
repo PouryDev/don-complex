@@ -25,20 +25,27 @@ class ReservationController extends Controller
 
     public function index(Request $request)
     {
-        $query = Reservation::query()->with(['session', 'user', 'paymentTransaction']);
+        // Eager load all necessary relationships to prevent N+1 queries
+        $query = Reservation::query()->with([
+            'session.branch',
+            'session.hall',
+            'session.sessionTemplate',
+            'user',
+            'paymentTransaction'
+        ]);
 
         // Users can only see their own reservations
         if ($request->user()->isCustomer()) {
-            $query->where('user_id', $request->user()->id);
+            $query->where('reservations.user_id', $request->user()->id);
         } elseif ($request->user()->isGameMaster()) {
-            // Game master can see reservations for their branch
-            $query->whereHas('session', function ($q) use ($request) {
-                $q->where('branch_id', $request->user()->branch->id);
-            });
+            // Use join instead of whereHas for better performance
+            $query->join('game_sessions', 'reservations.session_id', '=', 'game_sessions.id')
+                  ->where('game_sessions.branch_id', $request->user()->branch->id)
+                  ->select('reservations.*');
         }
 
         $perPage = $request->get('per_page', 15);
-        $reservations = $query->orderBy('created_at', 'desc')->paginate($perPage);
+        $reservations = $query->orderBy('reservations.created_at', 'desc')->paginate($perPage);
 
         return ReservationResource::collection($reservations);
     }
@@ -47,7 +54,14 @@ class ReservationController extends Controller
     {
         $this->authorize('view', $reservation);
 
-        $reservation->load(['session', 'user', 'paymentTransaction']);
+        // Eager load all nested relationships
+        $reservation->load([
+            'session.branch',
+            'session.hall',
+            'session.sessionTemplate',
+            'user',
+            'paymentTransaction'
+        ]);
 
         return new ReservationResource($reservation);
     }
@@ -66,7 +80,14 @@ class ReservationController extends Controller
         $totalPrice = $this->reservationService->calculateTotalPrice($session, $request->validated()['number_of_people']);
         $this->paymentService->createTransaction($reservation, $totalPrice);
 
-        $reservation->load(['session', 'user', 'paymentTransaction']);
+        // Eager load all nested relationships
+        $reservation->load([
+            'session.branch',
+            'session.hall',
+            'session.sessionTemplate',
+            'user',
+            'paymentTransaction'
+        ]);
 
         return new ReservationResource($reservation);
     }

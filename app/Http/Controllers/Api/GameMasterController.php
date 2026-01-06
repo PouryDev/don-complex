@@ -62,7 +62,13 @@ class GameMasterController extends Controller
 
         $perPage = $request->get('per_page', 15);
         $reservations = $session->reservations()
-            ->with(['user', 'paymentTransaction'])
+            ->with([
+                'session.branch',
+                'session.hall',
+                'session.sessionTemplate',
+                'user',
+                'paymentTransaction'
+            ])
             ->whereNull('cancelled_at')
             ->orderBy('created_at')
             ->paginate($perPage);
@@ -86,7 +92,14 @@ class GameMasterController extends Controller
             'validated_by' => $request->user()->id,
         ]);
 
-        $reservation->load(['session', 'user', 'paymentTransaction']);
+        // Eager load all nested relationships
+        $reservation->load([
+            'session.branch',
+            'session.hall',
+            'session.sessionTemplate',
+            'user',
+            'paymentTransaction'
+        ]);
 
         return new ReservationResource($reservation);
     }

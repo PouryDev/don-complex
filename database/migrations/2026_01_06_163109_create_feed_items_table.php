@@ -19,8 +19,7 @@ return new class extends Migration
             $table->integer('order')->default(0);
             $table->timestamps();
             
-            // Index for better performance
-            $table->index(['feedable_type', 'feedable_id']);
+            // Index for better performance (morphs() already creates index for feedable_type and feedable_id)
             $table->index('scheduled_at');
             $table->index('is_active');
         });
