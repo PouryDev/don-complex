@@ -176,14 +176,12 @@ function BranchSessions() {
                     <label className="block text-sm sm:text-base font-semibold text-gray-200 mb-3 sm:mb-2.5">
                         تاریخ
                     </label>
-                    <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 border-2 border-red-500/30 active:border-red-500/60 hover:border-red-500/50 rounded-xl p-1.5 sm:p-1 transition-all duration-300 shadow-lg shadow-red-500/10 hover:shadow-red-500/20 active:shadow-red-500/30 active:scale-[0.98] touch-manipulation">
-                        <PersianDatePicker
-                            value={selectedDate}
-                            onChange={(date) => setSelectedDate(date)}
-                            placeholder="تاریخ را انتخاب کنید"
-                            min={new Date().toISOString().split('T')[0]}
-                        />
-                    </div>
+                    <PersianDatePicker
+                        value={selectedDate}
+                        onChange={(date) => setSelectedDate(date)}
+                        placeholder="تاریخ را انتخاب کنید"
+                        min={new Date().toISOString().split('T')[0]}
+                    />
                 </div>
             </div>
 
