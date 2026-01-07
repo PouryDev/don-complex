@@ -32,7 +32,8 @@ class ZibalGateway implements PaymentGatewayInterface
     public function initiate(PaymentTransaction $transaction, array $additionalData = []): array
     {
         try {
-            if (empty($this->merchantId)) {
+            // In sandbox mode, merchant_id is not required (we use test merchant 'zibal')
+            if (!$this->sandbox && empty($this->merchantId)) {
                 return [
                     'success' => false,
                     'redirect_url' => null,
@@ -55,9 +56,9 @@ class ZibalGateway implements PaymentGatewayInterface
                 'callbackUrl' => $callbackUrl,
             ];
 
-            // In sandbox mode, use test merchant
+            // In sandbox mode, use test merchant 'zibal' as per Zibal documentation
             if ($this->sandbox) {
-                $requestData['merchant'] = 'zibal'; // Test merchant ID
+                $requestData['merchant'] = 'zibal'; // Test merchant ID for sandbox
             }
 
             $response = Http::timeout(30)->post(self::REQUEST_URL, $requestData);
@@ -122,7 +123,8 @@ class ZibalGateway implements PaymentGatewayInterface
     public function verify(PaymentTransaction $transaction, array $callbackData = []): array
     {
         try {
-            if (empty($this->merchantId)) {
+            // In sandbox mode, merchant_id is not required (we use test merchant 'zibal')
+            if (!$this->sandbox && empty($this->merchantId)) {
                 return [
                     'success' => false,
                     'verified' => false,
@@ -150,9 +152,9 @@ class ZibalGateway implements PaymentGatewayInterface
                 'trackId' => $trackId,
             ];
 
-            // In sandbox mode, use test merchant
+            // In sandbox mode, use test merchant 'zibal' as per Zibal documentation
             if ($this->sandbox) {
-                $requestData['merchant'] = 'zibal';
+                $requestData['merchant'] = 'zibal'; // Test merchant ID for sandbox
             }
 
             $response = Http::timeout(30)->post(self::VERIFY_URL, $requestData);

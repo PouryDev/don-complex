@@ -7,7 +7,6 @@ use App\Models\PaymentGateway;
 use App\Models\PaymentTransaction;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Ramsey\Uuid\Uuid;
 
 class ZarinPalGateway implements PaymentGatewayInterface
 {
@@ -16,9 +15,12 @@ class ZarinPalGateway implements PaymentGatewayInterface
     protected bool $sandbox;
 
     // ZarinPal API endpoints
-    protected const REQUEST_URL = 'https://api.zarinpal.com/pg/v4/payment/request.json';
-    protected const VERIFY_URL = 'https://api.zarinpal.com/pg/v4/payment/verify.json';
+    protected const REQUEST_URL = 'https://payment.zarinpal.com/pg/v4/payment/request.json';
+    protected const REQUEST_URL_SANDBOX = 'https://sandbox.zarinpal.com/pg/v4/payment/request.json';
+    protected const VERIFY_URL = 'https://payment.zarinpal.com/pg/v4/payment/verify.json';
+    protected const VERIFY_URL_SANDBOX = 'https://sandbox.zarinpal.com/pg/v4/payment/verify.json';
     protected const PAYMENT_URL = 'https://www.zarinpal.com/pg/StartPay/';
+    protected const PAYMENT_URL_SANDBOX = 'https://sandbox.zarinpal.com/pg/StartPay/';
 
     public function __construct(PaymentGateway $gateway)
     {
@@ -61,12 +63,13 @@ class ZarinPalGateway implements PaymentGatewayInterface
                 ],
             ];
 
-            // In sandbox mode, use test merchant
+            // In sandbox mode, use sandbox URL and any UUID for merchant_id
             if ($this->sandbox) {
-                $requestData['merchant_id'] = 'eaa46b01-819e-42ef-8a67-ba2bb7f69a32'; // Test merchant ID
+                // In sandbox, merchant_id can be any UUID (use configured one or default test UUID)
+                $requestData['merchant_id'] = !empty($this->merchantId) ? $this->merchantId : '00000000-0000-0000-0000-000000000000';
             }
 
-            $url = self::REQUEST_URL;
+            $url = $this->sandbox ? self::REQUEST_URL_SANDBOX : self::REQUEST_URL;
 
             $response = Http::timeout(30)->post($url, $requestData);
 
@@ -89,7 +92,7 @@ class ZarinPalGateway implements PaymentGatewayInterface
 
             if ($responseData['data']['code'] == 100) {
                 $authority = $responseData['data']['authority'];
-                $paymentUrl = self::PAYMENT_URL . $authority;
+                $paymentUrl = ($this->sandbox ? self::PAYMENT_URL_SANDBOX : self::PAYMENT_URL) . $authority;
 
                 return [
                     'success' => true,
@@ -160,12 +163,13 @@ class ZarinPalGateway implements PaymentGatewayInterface
                 'amount' => $amount,
             ];
 
-            // In sandbox mode, use test merchant
+            // In sandbox mode, use sandbox URL and any UUID for merchant_id
             if ($this->sandbox) {
-                $requestData['merchant_id'] = 'eaa46b01-819e-42ef-8a67-ba2bb7f69a32'; // Test merchant ID
+                // In sandbox, merchant_id can be any UUID (use configured one or default test UUID)
+                $requestData['merchant_id'] = !empty($this->merchantId) ? $this->merchantId : '00000000-0000-0000-0000-000000000000';
             }
 
-            $url = self::VERIFY_URL;
+            $url = $this->sandbox ? self::VERIFY_URL_SANDBOX : self::VERIFY_URL;
 
             $response = Http::timeout(30)->post($url, $requestData);
 
