@@ -156,10 +156,11 @@ class ReservationController extends Controller
         $query->whereNull('cancelled_at');
 
         // Filter for non-expired reservations
-        // Use database NOW() function to ensure timezone-aware comparison
-        $query->where(function ($q) {
+        // Use Carbon with UTC timezone to match expires_at storage format
+        $nowUtc = Carbon::now('UTC');
+        $query->where(function ($q) use ($nowUtc) {
             $q->whereNull('expires_at')
-              ->orWhereRaw('expires_at > NOW()');
+              ->orWhere('expires_at', '>', $nowUtc);
         });
 
         // Order by expiration time (soonest first)
@@ -172,23 +173,24 @@ class ReservationController extends Controller
             ->get(['id', 'payment_status', 'expires_at', 'cancelled_at']);
 
         // Log for debugging in production
-        $now = Carbon::now();
+        $nowUtc = Carbon::now('UTC');
         \Log::info('Unpaid reservations query', [
             'user_id' => $user->id,
             'user_role' => $user->role->value ?? 'unknown',
             'count' => $reservations->count(),
-            'now' => $now->toDateTimeString(),
-            'now_timestamp' => $now->timestamp,
+            'now_utc' => $nowUtc->toDateTimeString(),
+            'now_timestamp' => $nowUtc->timestamp,
             'timezone' => config('app.timezone'),
             'all_pending_count' => $allPending->count(),
-            'all_pending' => $allPending->map(function ($r) use ($now) {
+            'all_pending' => $allPending->map(function ($r) use ($nowUtc) {
+                $expiresAt = $r->expires_at ? Carbon::parse($r->expires_at)->setTimezone('UTC') : null;
                 return [
                     'id' => $r->id,
                     'payment_status' => $r->payment_status,
-                    'expires_at' => $r->expires_at?->toDateTimeString(),
-                    'expires_at_timestamp' => $r->expires_at?->timestamp,
-                    'is_expired' => $r->expires_at ? $r->expires_at->isPast() : null,
-                    'time_diff_seconds' => $r->expires_at ? $r->expires_at->diffInSeconds($now, false) : null,
+                    'expires_at' => $expiresAt?->toDateTimeString(),
+                    'expires_at_timestamp' => $expiresAt?->timestamp,
+                    'is_expired' => $expiresAt ? $expiresAt->isPast() : null,
+                    'time_diff_seconds' => $expiresAt ? $expiresAt->diffInSeconds($nowUtc, false) : null,
                     'cancelled_at' => $r->cancelled_at,
                 ];
             })->toArray(),
