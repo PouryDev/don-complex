@@ -224,6 +224,26 @@ function MySessions() {
         return colors[status] || colors.pending;
     };
 
+    const isReservationExpired = (reservation) => {
+        if (!reservation.expires_at) return false;
+        if (reservation.payment_status !== 'pending') return false;
+        try {
+            const now = new Date().getTime();
+            const expiry = new Date(reservation.expires_at).getTime();
+            if (isNaN(expiry)) return false; // Invalid date
+            return expiry <= now;
+        } catch (e) {
+            console.error('Error checking expiration:', e);
+            return false;
+        }
+    };
+
+    const shouldShowCountdown = (reservation) => {
+        return reservation.payment_status === 'pending' 
+            && reservation.expires_at 
+            && !isReservationExpired(reservation);
+    };
+
     if (loading) {
         return <Loading />;
     }
@@ -278,20 +298,30 @@ function MySessions() {
 
             {/* Reservations List */}
             <div className="space-y-3 sm:space-y-4">
-                {reservations.map((reservation) => (
+                {reservations.map((reservation) => {
+                    const expired = isReservationExpired(reservation);
+                    return (
                     <div
                         key={reservation.id}
-                        className="cafe-card rounded-2xl sm:rounded-3xl p-4 sm:p-5 overflow-hidden relative group"
+                        className={`cafe-card rounded-2xl sm:rounded-3xl p-4 sm:p-5 overflow-hidden relative group ${
+                            expired ? 'opacity-75 border-2 border-red-500/30' : ''
+                        }`}
                     >
                         {/* Gradient overlay for pending reservations */}
-                        {reservation.payment_status === 'pending' && reservation.expires_at && (
+                        {reservation.payment_status === 'pending' && reservation.expires_at && !expired && (
                             <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 via-transparent to-orange-500/5 pointer-events-none"></div>
+                        )}
+                        {/* Gradient overlay for expired reservations */}
+                        {expired && (
+                            <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 via-transparent to-red-600/10 pointer-events-none"></div>
                         )}
                         
                         <div className="relative flex items-start gap-3 sm:gap-4">
                             {/* Icon with modern design */}
                             <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl flex items-center justify-center text-white shadow-xl flex-shrink-0 transition-transform duration-300 group-hover:scale-105 ${
-                                reservation.payment_status === 'paid' 
+                                expired
+                                    ? 'bg-gradient-to-br from-red-600 to-red-700'
+                                    : reservation.payment_status === 'paid' 
                                     ? 'bg-gradient-to-br from-green-500 to-emerald-600' 
                                     : reservation.payment_status === 'pending'
                                     ? 'bg-gradient-to-br from-yellow-500 to-orange-600'
@@ -299,8 +329,12 @@ function MySessions() {
                             }`}>
                                 <CalendarIcon className="w-7 h-7 sm:w-8 sm:h-8" />
                                 {/* Pulse effect for pending */}
-                                {reservation.payment_status === 'pending' && reservation.expires_at && (
+                                {reservation.payment_status === 'pending' && reservation.expires_at && !expired && (
                                     <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-yellow-400/30 animate-ping"></div>
+                                )}
+                                {/* Pulse effect for expired */}
+                                {expired && (
+                                    <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-red-600/40 animate-pulse"></div>
                                 )}
                             </div>
                             
@@ -344,10 +378,16 @@ function MySessions() {
                                     <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3">
                                         <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
                                             <span className="text-xs sm:text-sm text-gray-400">وضعیت:</span>
-                                            <span className={`px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold bg-gradient-to-r ${getPaymentStatusColor(reservation.payment_status)} text-white whitespace-nowrap shadow-lg`}>
-                                                {getPaymentStatusText(reservation.payment_status)}
-                                            </span>
-                                            {reservation.payment_status === 'pending' && reservation.expires_at && (
+                                            {expired ? (
+                                                <span className="px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold bg-gradient-to-r from-red-600 to-red-700 text-white whitespace-nowrap shadow-lg">
+                                                    منقضی شده
+                                                </span>
+                                            ) : (
+                                                <span className={`px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold bg-gradient-to-r ${getPaymentStatusColor(reservation.payment_status)} text-white whitespace-nowrap shadow-lg`}>
+                                                    {getPaymentStatusText(reservation.payment_status)}
+                                                </span>
+                                            )}
+                                            {shouldShowCountdown(reservation) && (
                                                 <CountdownTimer 
                                                     expiresAt={reservation.expires_at}
                                                     onExpire={() => {
@@ -370,7 +410,7 @@ function MySessions() {
                                         )}
                                     </div>
                                     
-                                    {reservation.payment_status === 'pending' && reservation.payment_transaction && (
+                                    {reservation.payment_status === 'pending' && reservation.payment_transaction && !expired && (
                                         <Button
                                             onClick={() => handlePaymentClick(reservation)}
                                             disabled={processingPayment[reservation.id]}
@@ -394,11 +434,17 @@ function MySessions() {
                                             )}
                                         </Button>
                                     )}
+                                    {expired && (
+                                        <div className="w-full sm:w-auto text-sm sm:text-base py-3 sm:py-3.5 px-5 sm:px-6 rounded-xl sm:rounded-2xl font-bold bg-gradient-to-r from-red-600/20 to-red-700/20 border-2 border-red-500/30 text-red-300 text-center">
+                                            زمان پرداخت این رزرو به پایان رسیده است
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
                     </div>
-                ))}
+                    );
+                })}
                 
                 {/* Infinite scroll sentinel */}
                 {hasMore && (

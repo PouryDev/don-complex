@@ -19,6 +19,7 @@ class ReservationResource extends JsonResource
             'validated_at' => $this->validated_at,
             'validated_by' => $this->validated_by,
             'cancelled_at' => $this->cancelled_at,
+            'expires_at' => $this->expires_at?->toIso8601String() ?: null,
             'user' => $this->whenLoaded('user', function () {
                 return [
                     'id' => $this->user->id,
