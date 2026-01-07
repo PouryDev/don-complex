@@ -10,6 +10,7 @@ use App\Models\Session;
 use App\Services\SessionService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Cache;
 
 class SessionController extends Controller
 {
@@ -65,7 +66,16 @@ class SessionController extends Controller
 
     public function show(Session $session): SessionResource
     {
-        $session->load(['branch', 'hall', 'sessionTemplate']);
+        // Only load relationships if not already loaded
+        if (!$session->relationLoaded('branch')) {
+            $session->load('branch');
+        }
+        if (!$session->relationLoaded('hall')) {
+            $session->load('hall');
+        }
+        if (!$session->relationLoaded('sessionTemplate')) {
+            $session->load('sessionTemplate');
+        }
 
         return new SessionResource($session);
     }
@@ -84,6 +94,9 @@ class SessionController extends Controller
         $session = Session::create($validated);
         $session->load(['branch', 'hall', 'sessionTemplate']);
 
+        // Clear session availability cache
+        Cache::forget("session_available_spots_{$session->id}_" . $session->updated_at->timestamp);
+
         return new SessionResource($session);
     }
 
@@ -99,8 +112,12 @@ class SessionController extends Controller
             'status' => ['sometimes', 'in:upcoming,ongoing,completed,cancelled'],
         ]);
 
+        $oldTimestamp = $session->updated_at->timestamp;
         $session->update($validated);
         $session->load(['branch', 'hall', 'sessionTemplate']);
+
+        // Clear session availability cache
+        Cache::forget("session_available_spots_{$session->id}_{$oldTimestamp}");
 
         return new SessionResource($session);
     }

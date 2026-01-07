@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 
 class PaymentGateway extends Model
 {
@@ -90,6 +91,23 @@ class PaymentGateway extends Model
     public function toggle(): void
     {
         $this->update(['is_active' => !$this->is_active]);
+    }
+
+    /**
+     * Boot the model
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Clear cache when payment gateway is updated
+        static::saved(function ($gateway) {
+            Cache::forget('payment_gateways_active');
+        });
+
+        static::deleted(function ($gateway) {
+            Cache::forget('payment_gateways_active');
+        });
     }
 }
 

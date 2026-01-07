@@ -7,6 +7,7 @@ use App\Models\MenuItem;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 
 class MenuItemController extends Controller
 {
@@ -15,18 +16,25 @@ class MenuItemController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = MenuItem::with('category')
-            ->where('is_available', true);
-
-        // Filter by branch_id if provided
-        if ($request->has('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
-        }
-
+        $branchId = $request->get('branch_id');
         $perPage = $request->get('per_page', 15);
-        $menuItems = $query->orderBy('order')
-            ->orderBy('name')
-            ->paginate($perPage);
+        
+        // Create cache key based on filters
+        $cacheKey = "menu_items_index_" . ($branchId ?? 'all') . "_per_page_{$perPage}";
+        
+        $menuItems = Cache::remember($cacheKey, 600, function () use ($branchId, $perPage) {
+            $query = MenuItem::with('category')
+                ->where('is_available', true);
+
+            // Filter by branch_id if provided
+            if ($branchId) {
+                $query->where('branch_id', $branchId);
+            }
+
+            return $query->orderBy('order')
+                ->orderBy('name')
+                ->paginate($perPage);
+        });
 
         return response()->json($menuItems);
     }
@@ -71,6 +79,9 @@ class MenuItemController extends Controller
 
         $menuItem = MenuItem::create($data);
         $menuItem->load('category');
+
+        // Clear cache for this branch and all menu items
+        $this->clearMenuItemsCache($validated['branch_id']);
 
         return response()->json($menuItem, 201);
     }
@@ -131,6 +142,9 @@ class MenuItemController extends Controller
         $menuItem->update($data);
         $menuItem->load('category');
 
+        // Clear cache for this branch
+        $this->clearMenuItemsCache($menuItem->branch_id);
+
         return response()->json($menuItem);
     }
 
@@ -144,8 +158,26 @@ class MenuItemController extends Controller
             Storage::disk('public')->delete($menuItem->image);
         }
 
+        $branchId = $menuItem->branch_id;
         $menuItem->delete();
 
+        // Clear cache for this branch
+        $this->clearMenuItemsCache($branchId);
+
         return response()->json(['message' => 'Menu item deleted successfully']);
+    }
+
+    /**
+     * Clear menu items cache for a branch
+     */
+    protected function clearMenuItemsCache(?int $branchId): void
+    {
+        Cache::forget("menu_items_index_" . ($branchId ?? 'all') . "_per_page_15");
+        Cache::forget("menu_items_index_all_per_page_15");
+        // Clear cache for all possible per_page values (common ones)
+        for ($i = 10; $i <= 50; $i += 5) {
+            Cache::forget("menu_items_index_" . ($branchId ?? 'all') . "_per_page_{$i}");
+            Cache::forget("menu_items_index_all_per_page_{$i}");
+        }
     }
 }

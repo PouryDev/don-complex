@@ -7,6 +7,7 @@ use App\Models\FeedItem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class FeedController extends Controller
 {
@@ -15,21 +16,27 @@ class FeedController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $now = Carbon::now();
-
-        // Get active feed items that are scheduled (or have no schedule)
-        $query = FeedItem::with('feedable')
-            ->where('is_active', true)
-            ->where(function ($query) use ($now) {
-                $query->whereNull('scheduled_at')
-                    ->orWhere('scheduled_at', '<=', $now);
-            })
-            ->orderBy('order')
-            ->orderBy('scheduled_at', 'desc')
-            ->orderBy('created_at', 'desc');
-
         $perPage = $request->get('per_page', 15);
-        $feedItems = $query->paginate($perPage);
+        $cacheKey = "feed_index_per_page_{$perPage}";
+        
+        // Cache feed items for 10 minutes
+        $feedItems = Cache::remember($cacheKey, 600, function () use ($perPage) {
+            $now = Carbon::now();
+
+            // Get active feed items that are scheduled (or have no schedule)
+            // Use select to only get needed columns for better performance
+            $query = FeedItem::with('feedable')
+                ->where('is_active', true)
+                ->where(function ($query) use ($now) {
+                    $query->whereNull('scheduled_at')
+                        ->orWhere('scheduled_at', '<=', $now);
+                })
+                ->orderBy('order')
+                ->orderBy('scheduled_at', 'desc')
+                ->orderBy('created_at', 'desc');
+
+            return $query->paginate($perPage);
+        });
 
         $feed = $feedItems->getCollection()->map(function ($feedItem) {
             $item = $feedItem->feedable;
@@ -77,8 +84,6 @@ class FeedController extends Controller
      */
     public function show(Request $request, string $type, int $id): JsonResponse
     {
-        $now = Carbon::now();
-
         // Map type to model class
         $typeMap = [
             'news' => 'App\Models\News',
@@ -91,17 +96,23 @@ class FeedController extends Controller
         }
 
         $modelClass = $typeMap[$type];
+        $cacheKey = "feed_show_{$type}_{$id}";
+        
+        // Cache individual feed items for 10 minutes
+        $feedItem = Cache::remember($cacheKey, 600, function () use ($modelClass, $id) {
+            $now = Carbon::now();
 
-        // Find the feed item by feedable type and id
-        $feedItem = FeedItem::with('feedable')
-            ->where('feedable_type', $modelClass)
-            ->where('feedable_id', $id)
-            ->where('is_active', true)
-            ->where(function ($query) use ($now) {
-                $query->whereNull('scheduled_at')
-                    ->orWhere('scheduled_at', '<=', $now);
-            })
-            ->first();
+            // Find the feed item by feedable type and id
+            return FeedItem::with('feedable')
+                ->where('feedable_type', $modelClass)
+                ->where('feedable_id', $id)
+                ->where('is_active', true)
+                ->where(function ($query) use ($now) {
+                    $query->whereNull('scheduled_at')
+                        ->orWhere('scheduled_at', '<=', $now);
+                })
+                ->first();
+        });
 
         if (!$feedItem || !$feedItem->feedable) {
             return response()->json(['message' => 'آیتم مورد نظر یافت نشد'], 404);

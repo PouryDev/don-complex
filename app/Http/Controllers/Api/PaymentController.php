@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class PaymentController extends Controller
 {
@@ -23,9 +24,12 @@ class PaymentController extends Controller
      */
     public function gateways(): JsonResponse
     {
-        $gateways = PaymentGateway::where('is_active', true)
-            ->orderBy('sort_order')
-            ->get();
+        // Cache payment gateways for 30 minutes as they rarely change
+        $gateways = Cache::remember('payment_gateways_active', 1800, function () {
+            return PaymentGateway::where('is_active', true)
+                ->orderBy('sort_order')
+                ->get();
+        });
 
         return response()->json([
             'success' => true,

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 
 class CategoryController extends Controller
 {
@@ -14,17 +15,24 @@ class CategoryController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Category::where('is_active', true);
-
-        // Filter by branch_id if provided
-        if ($request->has('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
-        }
-
+        $branchId = $request->get('branch_id');
         $perPage = $request->get('per_page', 15);
-        $categories = $query->orderBy('order')
-            ->orderBy('name')
-            ->paginate($perPage);
+        
+        // Create cache key based on filters
+        $cacheKey = "categories_index_" . ($branchId ?? 'all') . "_per_page_{$perPage}";
+        
+        $categories = Cache::remember($cacheKey, 600, function () use ($branchId, $perPage) {
+            $query = Category::where('is_active', true);
+
+            // Filter by branch_id if provided
+            if ($branchId) {
+                $query->where('branch_id', $branchId);
+            }
+
+            return $query->orderBy('order')
+                ->orderBy('name')
+                ->paginate($perPage);
+        });
 
         return response()->json($categories);
     }
@@ -48,6 +56,12 @@ class CategoryController extends Controller
             'is_active' => $validated['is_active'] ?? true,
         ]);
 
+        // Clear cache for this branch and all categories
+        Cache::forget("categories_index_{$validated['branch_id']}_per_page_15");
+        Cache::forget("categories_index_all_per_page_15");
+        Cache::forget("categories_index_{$validated['branch_id']}_per_page_" . $request->get('per_page', 15));
+        Cache::forget("categories_index_all_per_page_" . $request->get('per_page', 15));
+
         return response()->json($category, 201);
     }
 
@@ -70,7 +84,17 @@ class CategoryController extends Controller
             'is_active' => ['nullable', 'boolean'],
         ]);
 
+        $branchId = $category->branch_id;
         $category->update($validated);
+
+        // Clear cache for this branch and all categories
+        Cache::forget("categories_index_{$branchId}_per_page_15");
+        Cache::forget("categories_index_all_per_page_15");
+        // Clear cache for all possible per_page values (common ones)
+        for ($i = 10; $i <= 50; $i += 5) {
+            Cache::forget("categories_index_{$branchId}_per_page_{$i}");
+            Cache::forget("categories_index_all_per_page_{$i}");
+        }
 
         return response()->json($category);
     }
@@ -80,7 +104,17 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category): JsonResponse
     {
+        $branchId = $category->branch_id;
         $category->delete();
+
+        // Clear cache for this branch and all categories
+        Cache::forget("categories_index_{$branchId}_per_page_15");
+        Cache::forget("categories_index_all_per_page_15");
+        // Clear cache for all possible per_page values (common ones)
+        for ($i = 10; $i <= 50; $i += 5) {
+            Cache::forget("categories_index_{$branchId}_per_page_{$i}");
+            Cache::forget("categories_index_all_per_page_{$i}");
+        }
 
         return response()->json(['message' => 'Category deleted successfully']);
     }

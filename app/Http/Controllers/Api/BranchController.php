@@ -8,20 +8,29 @@ use App\Http\Resources\BranchResource;
 use App\Models\Branch;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Cache;
 
 class BranchController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Branch::query();
-
-        // Game master can only see their own branch
-        if ($request->user()->isGameMaster()) {
-            $query->where('id', $request->user()->branch_id);
+        $user = $request->user();
+        $perPage = $request->get('per_page', 15);
+        
+        // Game master can only see their own branch - no caching needed for single branch
+        if ($user->isGameMaster()) {
+            $branch = Branch::with('gameMasters')->find($user->branch_id);
+            if (!$branch) {
+                return BranchResource::collection(collect());
+            }
+            return BranchResource::collection(collect([$branch]));
         }
 
-        $perPage = $request->get('per_page', 15);
-        $branches = $query->with('gameMasters')->paginate($perPage);
+        // Cache branches list for admins (5 minutes)
+        $cacheKey = "branches_index_per_page_{$perPage}";
+        $branches = Cache::remember($cacheKey, 300, function () use ($perPage) {
+            return Branch::with('gameMasters')->paginate($perPage);
+        });
 
         return BranchResource::collection($branches);
     }
@@ -30,7 +39,10 @@ class BranchController extends Controller
     {
         $this->authorize('view', $branch);
 
-        $branch->load('gameMasters');
+        // Only load if not already loaded
+        if (!$branch->relationLoaded('gameMasters')) {
+            $branch->load('gameMasters');
+        }
 
         return new BranchResource($branch);
     }
@@ -47,6 +59,9 @@ class BranchController extends Controller
         $branch = Branch::create($validated);
         $branch->load('gameMasters');
 
+        // Clear branches cache
+        $this->clearBranchesCache();
+
         return new BranchResource($branch);
     }
 
@@ -57,6 +72,9 @@ class BranchController extends Controller
         $branch->update($request->validated());
         $branch->load('gameMasters');
 
+        // Clear branches cache
+        $this->clearBranchesCache();
+
         return new BranchResource($branch);
     }
 
@@ -66,7 +84,21 @@ class BranchController extends Controller
 
         $branch->delete();
 
+        // Clear branches cache
+        $this->clearBranchesCache();
+
         return response()->json(['message' => 'Branch deleted successfully']);
+    }
+
+    /**
+     * Clear branches cache
+     */
+    protected function clearBranchesCache(): void
+    {
+        // Clear cache for common per_page values
+        for ($i = 10; $i <= 50; $i += 5) {
+            Cache::forget("branches_index_per_page_{$i}");
+        }
     }
 }
 

@@ -7,6 +7,8 @@ use App\Models\SessionTemplate;
 use App\Services\ReservationService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class SessionService
 {
@@ -75,17 +77,23 @@ class SessionService
 
     /**
      * Calculate available spots for a session
+     * Uses cache to avoid repeated calculations
      */
     public function getAvailableSpots(Session $session): int
     {
-        // Expire unpaid reservations before calculating available spots
-        // Use app() to avoid circular dependency
-        app(ReservationService::class)->expireUnpaidReservations($session);
+        // Use cache key based on session ID and updated_at to invalidate on changes
+        $cacheKey = "session_available_spots_{$session->id}_{$session->updated_at->timestamp}";
         
-        // Refresh session to get updated pending_participants
-        $session->refresh();
-        
-        return max(0, $session->max_participants - $session->current_participants - $session->pending_participants);
+        return Cache::remember($cacheKey, 60, function () use ($session) {
+            // Expire unpaid reservations before calculating available spots
+            // Use app() to avoid circular dependency
+            app(ReservationService::class)->expireUnpaidReservations($session);
+            
+            // Refresh session to get updated pending_participants
+            $session->refresh();
+            
+            return max(0, $session->max_participants - $session->current_participants - $session->pending_participants);
+        });
     }
 
     /**
@@ -105,28 +113,110 @@ class SessionService
 
     /**
      * Get sessions with availability information
+     * Optimized to batch expire unpaid reservations
      */
     public function getSessionsWithAvailability($query): Collection
     {
-        return $query->get()->map(function ($session) {
-            $session->available_spots = $this->getAvailableSpots($session);
+        $sessions = $query->get();
+        
+        // Batch expire unpaid reservations for all sessions
+        $sessionIds = $sessions->pluck('id')->toArray();
+        if (!empty($sessionIds)) {
+            $this->batchExpireUnpaidReservations($sessionIds);
+        }
+        
+        // Refresh all sessions to get updated pending_participants
+        $sessions->each(function ($session) {
+            $session->refresh();
+        });
+        
+        // Calculate available spots for all sessions
+        return $sessions->map(function ($session) {
+            $session->available_spots = max(0, $session->max_participants - $session->current_participants - ($session->pending_participants ?? 0));
             return $session;
         });
     }
 
     /**
      * Get paginated sessions with availability information
+     * Optimized to batch expire unpaid reservations
      */
     public function getPaginatedSessionsWithAvailability($query, int $perPage = 15)
     {
         $paginated = $query->paginate($perPage);
         
+        // Batch expire unpaid reservations for all sessions in the collection
+        $sessionIds = $paginated->getCollection()->pluck('id')->toArray();
+        if (!empty($sessionIds)) {
+            $this->batchExpireUnpaidReservations($sessionIds);
+        }
+        
+        // Refresh all sessions to get updated pending_participants
+        $paginated->getCollection()->each(function ($session) {
+            $session->refresh();
+        });
+        
+        // Calculate available spots for all sessions
         $paginated->getCollection()->transform(function ($session) {
-            $session->available_spots = $this->getAvailableSpots($session);
+            $session->available_spots = max(0, $session->max_participants - $session->current_participants - ($session->pending_participants ?? 0));
             return $session;
         });
 
         return $paginated;
+    }
+
+    /**
+     * Batch expire unpaid reservations for multiple sessions
+     * This is more efficient than calling expireUnpaidReservations for each session
+     */
+    protected function batchExpireUnpaidReservations(array $sessionIds): void
+    {
+        if (empty($sessionIds)) {
+            return;
+        }
+
+        DB::transaction(function () use ($sessionIds) {
+            // Find all expired reservations for these sessions
+            $expiredReservations = DB::table('reservations')
+                ->whereIn('session_id', $sessionIds)
+                ->where('payment_status', 'pending')
+                ->whereNull('cancelled_at')
+                ->whereNotNull('expires_at')
+                ->where('expires_at', '<=', now())
+                ->lockForUpdate()
+                ->get();
+
+            if ($expiredReservations->isEmpty()) {
+                return;
+            }
+
+            // Group by session_id and calculate total expired participants per session
+            $expiredBySession = $expiredReservations->groupBy('session_id')
+                ->map(function ($reservations) {
+                    return $reservations->sum('number_of_people');
+                });
+
+            // Mark reservations as cancelled
+            DB::table('reservations')
+                ->whereIn('id', $expiredReservations->pluck('id'))
+                ->update([
+                    'cancelled_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+            // Update pending_participants for each affected session
+            // Also update updated_at to invalidate cache
+            foreach ($expiredBySession as $sessionId => $totalExpiredParticipants) {
+                DB::table('game_sessions')
+                    ->where('id', $sessionId)
+                    ->decrement('pending_participants', $totalExpiredParticipants);
+                
+                // Update updated_at to invalidate cache
+                DB::table('game_sessions')
+                    ->where('id', $sessionId)
+                    ->update(['updated_at' => now()]);
+            }
+        });
     }
 }
 

@@ -8,6 +8,7 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -73,7 +74,8 @@ class AuthController extends Controller
         $user = $request->user();
         
         // Load branch if user is a game master (might be needed for business logic)
-        if ($user->isGameMaster()) {
+        // No caching needed as user is already loaded from token and this is fast
+        if ($user->isGameMaster() && !$user->relationLoaded('branch')) {
             $user->load('branch');
         }
         
@@ -92,7 +94,7 @@ class AuthController extends Controller
         $user->update($validated);
 
         // Load branch if user is a game master
-        if ($user->isGameMaster()) {
+        if ($user->isGameMaster() && !$user->relationLoaded('branch')) {
             $user->load('branch');
         }
 

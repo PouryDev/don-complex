@@ -14,6 +14,7 @@ use App\Enums\PaymentStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 
 class ReservationController extends Controller
@@ -63,14 +64,20 @@ class ReservationController extends Controller
     {
         $this->authorize('view', $reservation);
 
-        // Eager load all nested relationships
-        $reservation->load([
-            'session.branch',
-            'session.hall',
-            'session.sessionTemplate',
-            'user',
-            'paymentTransaction'
-        ]);
+        // Only load relationships if not already loaded
+        if (!$reservation->relationLoaded('session')) {
+            $reservation->load('session.branch', 'session.hall', 'session.sessionTemplate');
+        } elseif (!$reservation->session->relationLoaded('branch')) {
+            $reservation->session->load('branch', 'hall', 'sessionTemplate');
+        }
+        
+        if (!$reservation->relationLoaded('user')) {
+            $reservation->load('user');
+        }
+        
+        if (!$reservation->relationLoaded('paymentTransaction')) {
+            $reservation->load('paymentTransaction');
+        }
 
         return new ReservationResource($reservation);
     }
@@ -110,6 +117,10 @@ class ReservationController extends Controller
                 'paymentTransaction'
             ]);
 
+            // Clear session availability cache
+            $session = $reservation->session;
+            Cache::forget("session_available_spots_{$session->id}_" . $session->updated_at->timestamp);
+
             return new ReservationResource($reservation);
         } catch (\Exception $e) {
             return response()->json([
@@ -122,7 +133,14 @@ class ReservationController extends Controller
     {
         $this->authorize('delete', $reservation);
 
+        $sessionId = $reservation->session_id;
         $this->reservationService->cancelReservation($reservation);
+
+        // Clear session availability cache
+        $session = \App\Models\Session::find($sessionId);
+        if ($session) {
+            Cache::forget("session_available_spots_{$session->id}_" . $session->updated_at->timestamp);
+        }
 
         return response()->json(['message' => 'Reservation cancelled successfully']);
     }
@@ -134,17 +152,23 @@ class ReservationController extends Controller
     {
         $user = $request->user();
 
+        // Use optimized query with proper indexes
         $reservations = Reservation::query()->with([
             'session.branch',
             'session.hall',
             'session.sessionTemplate',
             'paymentTransaction',
         ])
-            ->where('expires_at', '>', now())
-            ->where('payment_status', 'pending')
-            ->whereNull('cancelled_at')
             ->where('user_id', $user->id)
+            ->where('payment_status', PaymentStatus::PENDING)
+            ->whereNull('cancelled_at')
+            ->where(function ($q) {
+                $q->whereNull('expires_at')
+                  ->orWhere('expires_at', '>', Carbon::now());
+            })
+            ->orderBy('expires_at', 'asc')
             ->get();
+            
         return ReservationResource::collection($reservations);
     }
 }
