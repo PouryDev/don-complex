@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
-import { authService } from '../services/api';
+import { authService, reservationService } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 import Loading from '../Components/Loading';
 import ConfirmDialog from '../Components/ConfirmDialog';
 import Input from '../Components/Input';
+import CountdownTimer from '../Components/CountdownTimer';
 import { EditIcon, CalendarIcon, CashIcon, ShoppingCartIcon, CheckIcon, StarIcon } from '../Components/Icons';
 
 // Icon Components
@@ -91,10 +93,13 @@ function Profile() {
         totalOrders: 0,
     });
     const [dataLoading, setDataLoading] = useState(true);
+    const [unpaidReservations, setUnpaidReservations] = useState([]);
+    const [loadingUnpaid, setLoadingUnpaid] = useState(false);
 
     useEffect(() => {
         if (user) {
             fetchStats();
+            fetchUnpaidReservations();
         } else {
             setDataLoading(false);
         }
@@ -114,6 +119,59 @@ function Profile() {
         } finally {
             setDataLoading(false);
         }
+    };
+
+    const fetchUnpaidReservations = async () => {
+        try {
+            setLoadingUnpaid(true);
+            const reservations = await reservationService.getUnpaidReservations();
+            setUnpaidReservations(Array.isArray(reservations) ? reservations : []);
+        } catch (err) {
+            console.error('Error fetching unpaid reservations:', err);
+            setUnpaidReservations([]);
+        } finally {
+            setLoadingUnpaid(false);
+        }
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return new Intl.DateTimeFormat('fa-IR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        }).format(date);
+    };
+
+    const formatTime = (timeString) => {
+        if (!timeString) return '';
+        const [hours, minutes] = timeString.split(':');
+        return `${hours}:${minutes}`;
+    };
+
+    const formatPrice = (price) => {
+        return new Intl.NumberFormat('fa-IR').format(price);
+    };
+
+    const isReservationExpired = (reservation) => {
+        if (!reservation.expires_at) return false;
+        if (reservation.payment_status !== 'pending') return false;
+        try {
+            const now = new Date().getTime();
+            const expiry = new Date(reservation.expires_at).getTime();
+            if (isNaN(expiry)) return false;
+            return expiry <= now;
+        } catch (e) {
+            console.error('Error checking expiration:', e);
+            return false;
+        }
+    };
+
+    const shouldShowCountdown = (reservation) => {
+        return reservation.payment_status === 'pending' 
+            && reservation.expires_at 
+            && !isReservationExpired(reservation);
     };
 
     const displayStats = [
@@ -258,6 +316,158 @@ function Profile() {
                     </form>
                 )}
             </div>
+
+            {/* Unpaid Reservations Section */}
+            {loadingUnpaid ? (
+                <div className="cafe-card rounded-2xl p-6">
+                    <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+                    </div>
+                </div>
+            ) : unpaidReservations.length > 0 && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between px-2">
+                        <h3 className="text-lg font-semibold text-white">رزروهای در انتظار پرداخت</h3>
+                        <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs font-semibold">
+                            {unpaidReservations.length} مورد
+                        </span>
+                    </div>
+                    <div className="space-y-3">
+                        {unpaidReservations.map((reservation, index) => {
+                            const expired = isReservationExpired(reservation);
+                            return (
+                                <motion.div
+                                    key={reservation.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.1 }}
+                                    className={`relative overflow-hidden cafe-card rounded-2xl p-5 border-2 ${
+                                        expired 
+                                            ? 'border-red-500/30 bg-gradient-to-br from-red-500/10 via-transparent to-red-600/10' 
+                                            : 'border-yellow-500/30 bg-gradient-to-br from-yellow-500/10 via-transparent to-orange-500/10'
+                                    } group hover:scale-[1.02] transition-transform duration-200`}
+                                >
+                                    {/* Animated background glow */}
+                                    {!expired && (
+                                        <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/5 via-transparent to-orange-500/5 animate-pulse pointer-events-none"></div>
+                                    )}
+                                    
+                                    <div className="relative flex items-start gap-4">
+                                        {/* Icon with modern design */}
+                                        <div className={`relative w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-xl flex-shrink-0 transition-transform duration-300 group-hover:scale-110 ${
+                                            expired
+                                                ? 'bg-gradient-to-br from-red-600 to-red-700'
+                                                : 'bg-gradient-to-br from-yellow-500 to-orange-600'
+                                        }`}>
+                                            <CalendarIcon className="w-8 h-8" />
+                                            {/* Pulse effect for pending */}
+                                            {!expired && (
+                                                <div className="absolute inset-0 rounded-2xl bg-yellow-400/30 animate-ping"></div>
+                                            )}
+                                        </div>
+                                        
+                                        <div className="flex-1 min-w-0">
+                                            {reservation.session && (
+                                                <>
+                                                    {reservation.session.branch && (
+                                                        <h4 className="text-lg font-bold text-white mb-2 truncate">
+                                                            {reservation.session.branch.name}
+                                                        </h4>
+                                                    )}
+                                                    
+                                                    <div className="space-y-2 text-sm text-gray-300 mb-4">
+                                                        <div className="flex items-center gap-2 text-white/90">
+                                                            <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                            </svg>
+                                                            <p className="break-words">
+                                                                {formatDate(reservation.session.date)} - {formatTime(reservation.session.start_time)}
+                                                            </p>
+                                                        </div>
+                                                        
+                                                        {reservation.session.hall && (
+                                                            <div className="flex items-center gap-2">
+                                                                <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                                                </svg>
+                                                                <p>سالن: {reservation.session.hall.name}</p>
+                                                            </div>
+                                                        )}
+                                                        
+                                                        <div className="flex items-center gap-2">
+                                                            <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                            </svg>
+                                                            <p>تعداد نفرات: <span className="font-semibold text-white">{reservation.number_of_people}</span></p>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
+                                            
+                                            {/* Payment Status and Amount */}
+                                            <div className="flex flex-col gap-3 pt-4 border-t border-gradient-to-r from-yellow-500/20 via-yellow-500/10 to-transparent">
+                                                <div className="flex flex-wrap items-center gap-3">
+                                                    {expired ? (
+                                                        <span className="px-3.5 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-red-600 to-red-700 text-white whitespace-nowrap shadow-lg">
+                                                            منقضی شده
+                                                        </span>
+                                                    ) : (
+                                                        <span className="px-3.5 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-yellow-500 to-orange-500 text-white whitespace-nowrap shadow-lg">
+                                                            در انتظار پرداخت
+                                                        </span>
+                                                    )}
+                                                    
+                                                    {shouldShowCountdown(reservation) && (
+                                                        <CountdownTimer 
+                                                            expiresAt={reservation.expires_at}
+                                                            onExpire={() => {
+                                                                showToast('زمان پرداخت بلیط شما به پایان رسید. لطفا رزرو جدیدی انجام دهید.', 'error');
+                                                                fetchUnpaidReservations();
+                                                            }}
+                                                        />
+                                                    )}
+                                                    
+                                                    {reservation.payment_transaction && (
+                                                        <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-500/10 to-orange-600/10 rounded-xl px-4 py-2 border border-yellow-500/20">
+                                                            <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                            <span className="text-base font-bold text-yellow-300 whitespace-nowrap">
+                                                                {formatPrice(reservation.payment_transaction.amount)}
+                                                            </span>
+                                                            <span className="text-xs text-gray-400 font-normal">تومان</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                
+                                                {!expired && (
+                                                    <Link
+                                                        to="/my-sessions"
+                                                        className="block w-full px-5 py-3.5 bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-bold rounded-xl text-center transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-[1.02]"
+                                                    >
+                                                        <span className="flex items-center justify-center gap-2">
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                            پرداخت
+                                                        </span>
+                                                    </Link>
+                                                )}
+                                                
+                                                {expired && (
+                                                    <div className="w-full px-5 py-3.5 rounded-xl font-bold bg-gradient-to-r from-red-600/20 to-red-700/20 border-2 border-red-500/30 text-red-300 text-center">
+                                                        زمان پرداخت این رزرو به پایان رسیده است
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* Menu Items */}
             <div className="space-y-4">

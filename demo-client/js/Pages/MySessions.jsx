@@ -37,6 +37,10 @@ function MySessions() {
             const response = await paymentService.getGateways();
             const gatewaysList = response.data || response;
             setGateways(gatewaysList);
+            // Auto-select first gateway if only one exists
+            if (gatewaysList.length === 1) {
+                setSelectedGatewayId(gatewaysList[0].id);
+            }
         } catch (err) {
             console.error('Error fetching gateways:', err);
         }
@@ -54,13 +58,17 @@ function MySessions() {
         }
 
         setSelectedReservation(reservation);
-        setSelectedGatewayId(null);
+        // Auto-select first gateway if only one exists, otherwise reset selection
+        setSelectedGatewayId(gateways.length === 1 ? gateways[0].id : null);
         setGatewayError(null);
         setShowGatewayModal(true);
     };
 
     const handleGatewayConfirm = async () => {
-        if (!selectedGatewayId) {
+        // Use selected gateway or auto-select first one if only one exists
+        const gatewayId = selectedGatewayId || (gateways.length === 1 ? gateways[0].id : null);
+        
+        if (!gatewayId) {
             setGatewayError('لطفا درگاه پرداخت را انتخاب کنید');
             return;
         }
@@ -77,7 +85,7 @@ function MySessions() {
             
             const paymentResult = await paymentService.initiate(
                 selectedReservation.payment_transaction.id,
-                selectedGatewayId
+                gatewayId
             );
 
             if (paymentResult.success && paymentResult.data?.redirect_url) {

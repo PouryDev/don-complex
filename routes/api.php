@@ -59,6 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Reservations
     Route::apiResource('reservations', ReservationController::class)->except(['update']);
     Route::post('/sessions/{session}/reservations', [ReservationController::class, 'store']);
+    Route::get('/reservations/unpaid', [ReservationController::class, 'unpaid']);
 
     // Payment routes
     Route::post('/payments/{paymentTransaction}/initiate', [PaymentController::class, 'initiate']);

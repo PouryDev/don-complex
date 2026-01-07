@@ -321,6 +321,13 @@ export const reservationService = {
         }
         return res.data;
     }),
+    getUnpaidReservations: () => api.get('/reservations/unpaid').then(res => {
+        // Handle collection response
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return res.data;
+    }),
     createReservation: (sessionId, numberOfPeople) => {
         return api.post(`/sessions/${sessionId}/reservations`, {
             number_of_people: numberOfPeople,

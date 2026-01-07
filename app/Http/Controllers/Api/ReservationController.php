@@ -10,8 +10,10 @@ use App\Models\Session;
 use App\Services\PaymentService;
 use App\Services\ReservationService;
 use App\Services\SessionService;
+use App\Enums\PaymentStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Carbon\Carbon;
 
 class ReservationController extends Controller
 {
@@ -122,6 +124,41 @@ class ReservationController extends Controller
         $this->reservationService->cancelReservation($reservation);
 
         return response()->json(['message' => 'Reservation cancelled successfully']);
+    }
+
+    /**
+     * Get unpaid and non-expired reservations for the authenticated user
+     */
+    public function unpaid(Request $request): AnonymousResourceCollection
+    {
+        $query = Reservation::query()->with([
+            'session.branch',
+            'session.hall',
+            'session.sessionTemplate',
+            'paymentTransaction'
+        ]);
+
+        // Only customers can see their own unpaid reservations
+        if ($request->user()->isCustomer()) {
+            $query->where('reservations.user_id', $request->user()->id);
+        } else {
+            // For non-customers, return empty collection
+            return ReservationResource::collection(collect());
+        }
+
+        // Filter for unpaid reservations
+        $query->where('payment_status', PaymentStatus::PENDING);
+
+        // Filter for non-expired reservations
+        $query->where(function ($q) {
+            $q->whereNull('expires_at')
+              ->orWhere('expires_at', '>', Carbon::now());
+        });
+
+        // Order by expiration time (soonest first)
+        $reservations = $query->orderBy('expires_at', 'asc')->get();
+
+        return ReservationResource::collection($reservations);
     }
 }
 
