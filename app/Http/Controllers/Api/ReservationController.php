@@ -13,6 +13,7 @@ use App\Services\SessionService;
 use App\Enums\PaymentStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class ReservationController extends Controller
@@ -149,32 +150,48 @@ class ReservationController extends Controller
         $query->where('reservations.user_id', $user->id);
 
         // Filter for unpaid reservations - use raw query to avoid enum casting issues in production
-        // This handles both string and enum values
-        $query->where(function ($q) {
-            $q->whereRaw('payment_status = ?', [PaymentStatus::PENDING->value])
-              ->orWhere('payment_status', PaymentStatus::PENDING->value);
-        });
+        $query->whereRaw('payment_status = ?', [PaymentStatus::PENDING->value]);
 
         // Filter for non-cancelled reservations
         $query->whereNull('cancelled_at');
 
-        // Filter for non-expired reservations - use explicit comparison with timezone awareness
-        $now = Carbon::now();
-        $query->where(function ($q) use ($now) {
+        // Filter for non-expired reservations
+        // Use database NOW() function to ensure timezone-aware comparison
+        $query->where(function ($q) {
             $q->whereNull('expires_at')
-              ->orWhereRaw('expires_at > ?', [$now->format('Y-m-d H:i:s')]);
+              ->orWhereRaw('expires_at > NOW()');
         });
 
         // Order by expiration time (soonest first)
         $reservations = $query->orderBy('expires_at', 'asc')->get();
 
+        // Debug: Get all pending reservations for this user to see what's being filtered
+        $allPending = Reservation::where('user_id', $user->id)
+            ->whereRaw('payment_status = ?', [PaymentStatus::PENDING->value])
+            ->whereNull('cancelled_at')
+            ->get(['id', 'payment_status', 'expires_at', 'cancelled_at']);
+
         // Log for debugging in production
+        $now = Carbon::now();
         \Log::info('Unpaid reservations query', [
             'user_id' => $user->id,
             'user_role' => $user->role->value ?? 'unknown',
             'count' => $reservations->count(),
             'now' => $now->toDateTimeString(),
+            'now_timestamp' => $now->timestamp,
             'timezone' => config('app.timezone'),
+            'all_pending_count' => $allPending->count(),
+            'all_pending' => $allPending->map(function ($r) use ($now) {
+                return [
+                    'id' => $r->id,
+                    'payment_status' => $r->payment_status,
+                    'expires_at' => $r->expires_at?->toDateTimeString(),
+                    'expires_at_timestamp' => $r->expires_at?->timestamp,
+                    'is_expired' => $r->expires_at ? $r->expires_at->isPast() : null,
+                    'time_diff_seconds' => $r->expires_at ? $r->expires_at->diffInSeconds($now, false) : null,
+                    'cancelled_at' => $r->cancelled_at,
+                ];
+            })->toArray(),
             'sql' => $query->toSql(),
             'bindings' => $query->getBindings(),
             'reservation_ids' => $reservations->pluck('id')->toArray(),
