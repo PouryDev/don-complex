@@ -131,6 +131,13 @@ class ReservationController extends Controller
      */
     public function unpaid(Request $request): AnonymousResourceCollection
     {
+        $user = $request->user();
+        
+        // Only customers can see their own unpaid reservations
+        if (!$user->isCustomer()) {
+            return ReservationResource::collection(collect());
+        }
+
         $query = Reservation::query()->with([
             'session.branch',
             'session.hall',
@@ -138,25 +145,40 @@ class ReservationController extends Controller
             'paymentTransaction'
         ]);
 
-        // Only customers can see their own unpaid reservations
-        if ($request->user()->isCustomer()) {
-            $query->where('reservations.user_id', $request->user()->id);
-        } else {
-            // For non-customers, return empty collection
-            return ReservationResource::collection(collect());
-        }
+        // Filter by user
+        $query->where('reservations.user_id', $user->id);
 
-        // Filter for unpaid reservations
-        $query->where('payment_status', PaymentStatus::PENDING->value);
-
-        // Filter for non-expired reservations
+        // Filter for unpaid reservations - use raw query to avoid enum casting issues in production
+        // This handles both string and enum values
         $query->where(function ($q) {
+            $q->whereRaw('payment_status = ?', [PaymentStatus::PENDING->value])
+              ->orWhere('payment_status', PaymentStatus::PENDING->value);
+        });
+
+        // Filter for non-cancelled reservations
+        $query->whereNull('cancelled_at');
+
+        // Filter for non-expired reservations - use explicit comparison with timezone awareness
+        $now = Carbon::now();
+        $query->where(function ($q) use ($now) {
             $q->whereNull('expires_at')
-              ->orWhere('expires_at', '>', Carbon::now());
+              ->orWhereRaw('expires_at > ?', [$now->format('Y-m-d H:i:s')]);
         });
 
         // Order by expiration time (soonest first)
         $reservations = $query->orderBy('expires_at', 'asc')->get();
+
+        // Log for debugging in production
+        \Log::info('Unpaid reservations query', [
+            'user_id' => $user->id,
+            'user_role' => $user->role->value ?? 'unknown',
+            'count' => $reservations->count(),
+            'now' => $now->toDateTimeString(),
+            'timezone' => config('app.timezone'),
+            'sql' => $query->toSql(),
+            'bindings' => $query->getBindings(),
+            'reservation_ids' => $reservations->pluck('id')->toArray(),
+        ]);
 
         return ReservationResource::collection($reservations);
     }
