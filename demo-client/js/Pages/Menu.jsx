@@ -333,7 +333,7 @@ function Menu() {
                 
                 {/* Infinite scroll sentinel - only show when showing all items */}
                 {hasMore && selectedCategory === 'all' && (
-                    <div ref={observerTarget} className="col-span-2 py-4 text-center">
+                    <div ref={observerTarget} className="py-4 text-center sm:col-span-2">
                         {loadingMore && (
                             <div className="text-gray-400">در حال بارگذاری...</div>
                         )}
