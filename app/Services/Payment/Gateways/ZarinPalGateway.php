@@ -17,11 +17,8 @@ class ZarinPalGateway implements PaymentGatewayInterface
 
     // ZarinPal API endpoints
     protected const REQUEST_URL = 'https://api.zarinpal.com/pg/v4/payment/request.json';
-    protected const REQUEST_URL_SANDBOX = 'https://sandbox.zarinpal.com/pg/v4/payment/request.json';
     protected const VERIFY_URL = 'https://api.zarinpal.com/pg/v4/payment/verify.json';
-    protected const VERIFY_URL_SANDBOX = 'https://sandbox.zarinpal.com/pg/v4/payment/verify.json';
     protected const PAYMENT_URL = 'https://www.zarinpal.com/pg/StartPay/';
-    protected const PAYMENT_URL_SANDBOX = 'https://sandbox.zarinpal.com/pg/StartPay/';
 
     public function __construct(PaymentGateway $gateway)
     {
@@ -36,7 +33,8 @@ class ZarinPalGateway implements PaymentGatewayInterface
     public function initiate(PaymentTransaction $transaction, array $additionalData = []): array
     {
         try {
-            if (empty($this->merchantId)) {
+            // In sandbox mode, merchant_id is not required (we use test merchant)
+            if (!$this->sandbox && empty($this->merchantId)) {
                 return [
                     'success' => false,
                     'redirect_url' => null,
@@ -63,7 +61,12 @@ class ZarinPalGateway implements PaymentGatewayInterface
                 ],
             ];
 
-            $url = $this->sandbox ? self::REQUEST_URL_SANDBOX : self::REQUEST_URL;
+            // In sandbox mode, use test merchant
+            if ($this->sandbox) {
+                $requestData['merchant_id'] = 'eaa46b01-819e-42ef-8a67-ba2bb7f69a32'; // Test merchant ID
+            }
+
+            $url = self::REQUEST_URL;
 
             $response = Http::timeout(30)->post($url, $requestData);
 
@@ -86,7 +89,7 @@ class ZarinPalGateway implements PaymentGatewayInterface
 
             if ($responseData['data']['code'] == 100) {
                 $authority = $responseData['data']['authority'];
-                $paymentUrl = ($this->sandbox ? self::PAYMENT_URL_SANDBOX : self::PAYMENT_URL) . $authority;
+                $paymentUrl = self::PAYMENT_URL . $authority;
 
                 return [
                     'success' => true,
@@ -127,7 +130,8 @@ class ZarinPalGateway implements PaymentGatewayInterface
     public function verify(PaymentTransaction $transaction, array $callbackData = []): array
     {
         try {
-            if (empty($this->merchantId)) {
+            // In sandbox mode, merchant_id is not required (we use test merchant)
+            if (!$this->sandbox && empty($this->merchantId)) {
                 return [
                     'success' => false,
                     'verified' => false,
@@ -156,7 +160,12 @@ class ZarinPalGateway implements PaymentGatewayInterface
                 'amount' => $amount,
             ];
 
-            $url = $this->sandbox ? self::VERIFY_URL_SANDBOX : self::VERIFY_URL;
+            // In sandbox mode, use test merchant
+            if ($this->sandbox) {
+                $requestData['merchant_id'] = 'eaa46b01-819e-42ef-8a67-ba2bb7f69a32'; // Test merchant ID
+            }
+
+            $url = self::VERIFY_URL;
 
             $response = Http::timeout(30)->post($url, $requestData);
 
@@ -282,7 +291,17 @@ class ZarinPalGateway implements PaymentGatewayInterface
      */
     public function isAvailable(): bool
     {
-        return $this->gateway->is_active && !empty($this->merchantId);
+        if (!$this->gateway->is_active) {
+            return false;
+        }
+
+        // In sandbox mode, merchant is always test merchant, so we don't need to check merchant_id
+        if ($this->sandbox) {
+            return true;
+        }
+
+        // In production mode, merchant_id must be set
+        return !empty($this->merchantId);
     }
 
     /**

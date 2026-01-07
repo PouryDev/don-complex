@@ -317,7 +317,17 @@ class ZibalGateway implements PaymentGatewayInterface
      */
     public function isAvailable(): bool
     {
-        return $this->gateway->is_active && !empty($this->merchantId);
+        if (!$this->gateway->is_active) {
+            return false;
+        }
+
+        // In sandbox mode, merchant is always "zibal", so we don't need to check merchant_id
+        if ($this->sandbox) {
+            return true;
+        }
+
+        // In production mode, merchant_id must be set
+        return !empty($this->merchantId);
     }
 
     /**
