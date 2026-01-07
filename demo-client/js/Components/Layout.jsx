@@ -117,7 +117,7 @@ function Layout() {
         if (pathname.startsWith('/book/branch/')) return 'سانس‌های شعبه';
         if (pathname === '/profile') return 'پروفایل';
         if (pathname === '/orders') return 'سفارشات';
-        if (pathname === '/news') return 'هاب اخبار';
+        if (pathname === '/news') return 'هاب';
         if (pathname === '/admin') return 'مدیریت';
         if (pathname.startsWith('/admin/')) return 'مدیریت';
         if (pathname === '/invoices') return 'فاکتورها';
