@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GridIcon } from '../Components/Icons';
+import { GridIcon, NewsIcon, FormIcon, QuizIcon, ArrowLeftIcon } from '../Components/Icons';
 import { feedService } from '../services/api';
 import Loading from '../Components/Loading';
 
@@ -91,22 +91,97 @@ function News() {
         }
     }, [loadingMore, hasMore, currentPage]);
 
-    const getTypeLabel = (type) => {
-        const labels = {
-            news: 'اخبار',
-            form: 'فرم',
-            quiz: 'کوئیز',
+    // Get type-specific icon component
+    const getTypeIcon = (type) => {
+        const icons = {
+            news: NewsIcon,
+            form: FormIcon,
+            quiz: QuizIcon,
         };
-        return labels[type] || type;
+        return icons[type] || GridIcon;
     };
 
-    const getTypeColor = (type) => {
-        const colors = {
-            news: 'from-blue-500 to-blue-600',
-            form: 'from-green-500 to-green-600',
-            quiz: 'from-purple-500 to-purple-600',
+    // Get type-specific card styling
+    const getCardStyles = (type) => {
+        const styles = {
+            news: {
+                border: 'border-blue-500/30',
+                borderHover: 'hover:border-blue-500/50',
+                shadow: 'shadow-blue-500/10',
+                shadowHover: 'hover:shadow-blue-500/20',
+                bgHover: 'hover:bg-blue-500/5',
+                iconColor: 'text-blue-400',
+            },
+            form: {
+                border: 'border-purple-500/30',
+                borderHover: 'hover:border-purple-500/50',
+                shadow: 'shadow-purple-500/10',
+                shadowHover: 'hover:shadow-purple-500/20',
+                bgHover: 'hover:bg-purple-500/5',
+                iconColor: 'text-purple-400',
+            },
+            quiz: {
+                border: 'border-orange-500/30',
+                borderHover: 'hover:border-orange-500/50',
+                shadow: 'shadow-orange-500/10',
+                shadowHover: 'hover:shadow-orange-500/20',
+                bgHover: 'hover:bg-orange-500/5',
+                iconColor: 'text-orange-400',
+            },
         };
-        return colors[type] || 'from-gray-500 to-gray-600';
+        return styles[type] || styles.news;
+    };
+
+    // Get semantic badge color based on badge text and type
+    const getBadgeColor = (badge, type) => {
+        if (!badge) return null;
+        
+        const badgeText = badge.toLowerCase();
+        const urgentKeywords = ['فوری', 'urgent', 'تخفیف', 'discount', 'ویژه', 'special', 'محدود', 'limited'];
+        const isUrgent = urgentKeywords.some(keyword => badgeText.includes(keyword));
+        
+        if (isUrgent) {
+            return 'bg-red-500/20 border border-red-500/50 text-red-400';
+        }
+        
+        // Type-based default colors
+        const typeColors = {
+            news: 'bg-gray-500/20 border border-gray-500/50 text-gray-400',
+            form: 'bg-purple-500/20 border border-purple-500/50 text-purple-400',
+            quiz: 'bg-orange-500/20 border border-orange-500/50 text-orange-400',
+        };
+        
+        return typeColors[type] || typeColors.news;
+    };
+
+    // Get CTA text based on type
+    const getCTAText = (type) => {
+        const texts = {
+            form: 'تکمیل فرم',
+            quiz: 'مشاهده جزئیات',
+            news: 'ادامه مطلب',
+        };
+        return texts[type] || 'مشاهده جزئیات';
+    };
+
+    // Get CTA button styling based on type
+    const getCTAStyles = (type) => {
+        const styles = {
+            news: 'border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:border-blue-500 focus:ring-2 focus:ring-blue-500/50',
+            form: 'border-purple-500/50 text-purple-400 hover:bg-purple-500/10 hover:border-purple-500 focus:ring-2 focus:ring-purple-500/50',
+            quiz: 'border-orange-500/50 text-orange-400 hover:bg-orange-500/10 hover:border-orange-500 focus:ring-2 focus:ring-orange-500/50',
+        };
+        return styles[type] || styles.news;
+    };
+
+    // Get focus ring class for card container
+    const getFocusRingClass = (type) => {
+        const rings = {
+            news: 'focus-within:ring-2 focus-within:ring-blue-500/50',
+            form: 'focus-within:ring-2 focus-within:ring-purple-500/50',
+            quiz: 'focus-within:ring-2 focus-within:ring-orange-500/50',
+        };
+        return rings[type] || rings.news;
     };
 
     if (loading) {
@@ -147,76 +222,94 @@ function News() {
                     </p>
                 </div>
             ) : (
-                <div className="space-y-4">
-                    {feedItems.map((item) => (
-                        <div
-                            key={`${item.type}-${item.id}`}
-                            onClick={() => navigate(`/feed/${item.type}/${item.id}`)}
-                            className="cafe-card rounded-xl p-5 hover:scale-[1.01] transition-all duration-200 cursor-pointer"
-                        >
-                            {/* Item Header */}
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <h3 className="text-lg font-semibold text-white">
-                                            {item.title}
-                                        </h3>
-                                        <span
-                                            className={`px-2 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${getTypeColor(
-                                                item.type
-                                            )} text-white`}
-                                        >
-                                            {getTypeLabel(item.type)}
-                                        </span>
+                <div className="space-y-6">
+                    {feedItems.map((item) => {
+                        const TypeIcon = getTypeIcon(item.type);
+                        const cardStyles = getCardStyles(item.type);
+                        const badgeColor = getBadgeColor(item.badge, item.type);
+                        const ctaText = getCTAText(item.type);
+                        const ctaStyles = getCTAStyles(item.type);
+
+                        return (
+                            <div
+                                key={`${item.type}-${item.id}`}
+                                className={`cafe-card rounded-xl p-6 border-2 ${cardStyles.border} ${cardStyles.borderHover} ${cardStyles.shadow} ${cardStyles.shadowHover} ${cardStyles.bgHover} ${getFocusRingClass(item.type)} transition-all duration-300 ease-out hover:-translate-y-1 cursor-pointer`}
+                                onClick={() => navigate(`/feed/${item.type}/${item.id}`)}
+                            >
+                                {/* Item Header */}
+                                <div className="flex items-start gap-4 mb-5">
+                                    {/* Type Icon */}
+                                    <div className={`flex-shrink-0 ${cardStyles.iconColor}`}>
+                                        <TypeIcon className="w-6 h-6" />
                                     </div>
-                                    {item.description && (
-                                        <p className="text-sm text-gray-300">
-                                            {item.description}
-                                        </p>
-                                    )}
+                                    
+                                    {/* Title and Description */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-start justify-between gap-3 mb-3">
+                                            <h3 className="text-xl font-bold text-white leading-tight">
+                                                {item.title}
+                                            </h3>
+                                            {item.badge && badgeColor && (
+                                                <span className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 ${badgeColor}`}>
+                                                    {item.badge}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {item.description && (
+                                            <p className="text-sm text-gray-300 leading-relaxed">
+                                                {item.description}
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
-                                {item.badge && (
-                                    <div className="px-3 py-1 rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-semibold whitespace-nowrap">
-                                        {item.badge}
+
+                                {/* Item Content based on type */}
+                                {item.type === 'news' && item.image_url && (
+                                    <div className="mb-4 rounded-lg overflow-hidden">
+                                        <img
+                                            src={item.image_url}
+                                            alt={item.title}
+                                            className="w-full h-48 object-cover"
+                                        />
                                     </div>
                                 )}
-                            </div>
 
-                            {/* Item Content based on type */}
-                            {item.type === 'news' && item.image_url && (
-                                <div className="mb-4">
-                                    <img
-                                        src={item.image_url}
-                                        alt={item.title}
-                                        className="w-full h-48 object-cover rounded-lg"
-                                    />
-                                </div>
-                            )}
+                                {item.type === 'form' && item.fields && (
+                                    <div className="mb-4 p-3 bg-gray-800/50 rounded-lg border border-purple-500/20">
+                                        <p className="text-xs text-gray-400">
+                                            تعداد فیلدها: {item.fields.length}
+                                        </p>
+                                    </div>
+                                )}
 
-                            {item.type === 'form' && item.fields && (
-                                <div className="mb-4 p-3 bg-gray-800/50 rounded-lg">
-                                    <p className="text-xs text-gray-400 mb-2">
-                                        تعداد فیلدها: {item.fields.length}
+                                {item.type === 'quiz' && item.questions && (
+                                    <div className="mb-4 p-3 bg-gray-800/50 rounded-lg border border-orange-500/20">
+                                        <p className="text-xs text-gray-400">
+                                            تعداد سوالات: {item.questions.length}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Item Footer */}
+                                <div className="pt-4 mt-4 border-t border-gray-700/50 flex items-center justify-between">
+                                    <p className="text-xs text-gray-500 font-medium">
+                                        {new Date(item.created_at).toLocaleDateString('fa-IR')}
                                     </p>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/feed/${item.type}/${item.id}`);
+                                        }}
+                                        className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border-2 ${ctaStyles} transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] focus:outline-none`}
+                                        aria-label={ctaText}
+                                    >
+                                        <span>{ctaText}</span>
+                                        <ArrowLeftIcon className="w-4 h-4" />
+                                    </button>
                                 </div>
-                            )}
-
-                            {item.type === 'quiz' && item.questions && (
-                                <div className="mb-4 p-3 bg-gray-800/50 rounded-lg">
-                                    <p className="text-xs text-gray-400 mb-2">
-                                        تعداد سوالات: {item.questions.length}
-                                    </p>
-                                </div>
-                            )}
-
-                            {/* Item Footer */}
-                            <div className="pt-4 border-t border-red-900/50">
-                                <p className="text-xs text-gray-500">
-                                    {new Date(item.created_at).toLocaleDateString('fa-IR')}
-                                </p>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                     
                     {/* Infinite scroll sentinel */}
                     {hasMore && (
