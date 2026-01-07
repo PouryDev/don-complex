@@ -147,7 +147,7 @@ class ReservationController extends Controller
         }
 
         // Filter for unpaid reservations
-        $query->where('payment_status', PaymentStatus::PENDING);
+        $query->where('payment_status', PaymentStatus::PENDING->value);
 
         // Filter for non-expired reservations
         $query->where(function ($q) {
