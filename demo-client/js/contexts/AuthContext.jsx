@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import api, { cartService } from '../services/api';
+import api from '../services/api';
 
 const AuthContext = createContext();
 
@@ -46,16 +46,6 @@ export const AuthProvider = ({ children }) => {
         const response = await api.post('/login', loginData);
         localStorage.setItem('auth_token', response.data.token);
         setUser(response.data.user);
-        
-        // Merge cart after login (device_id will be handled by middleware in the request)
-        if (deviceId) {
-            try {
-                await cartService.mergeCart();
-            } catch (err) {
-                console.error('Failed to merge cart on login:', err);
-                // Don't fail login if cart merge fails
-            }
-        }
         
         return response.data;
     };

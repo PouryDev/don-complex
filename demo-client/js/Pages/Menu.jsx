@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { menuService, branchService } from '../services/api';
-import { useCart } from '../contexts/CartContext';
 import Loading from '../Components/Loading';
 import Select from '../Components/Select';
 import { getCategoryIcon, WarningIcon, SearchIcon } from '../Components/Icons';
@@ -11,7 +10,6 @@ function Menu() {
     const [menuItems, setMenuItems] = useState([]);
     const [branchId, setBranchId] = useState(null);
     const [branches, setBranches] = useState([]);
-    const { addToCart } = useCart();
     const [loading, setLoading] = useState(true);
     const [initialLoading, setInitialLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -298,28 +296,16 @@ function Menu() {
                                 })()}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h3 className="text-lg font-semibold text-white mb-1 truncate">
+                                <h3 className="text-base sm:text-lg font-semibold text-white mb-1.5 sm:mb-1 truncate">
                                     {item.name}
                                 </h3>
-                                <p className="text-sm text-gray-300 mb-2 line-clamp-2">
+                                <p className="text-xs sm:text-sm text-gray-300 mb-3 sm:mb-2 line-clamp-2 leading-relaxed">
                                     {item.description || 'بدون توضیحات'}
                                 </p>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-lg font-bold text-red-400">
+                                <div className="flex items-center mt-auto">
+                                    <span className="text-base sm:text-lg font-bold text-red-400">
                                         {formatPrice(item.price)} تومان
                                     </span>
-                                    <button
-                                        onClick={async () => {
-                                            try {
-                                                await addToCart(item);
-                                            } catch (err) {
-                                                console.error('Error adding to cart:', err);
-                                            }
-                                        }}
-                                        className="cafe-button px-4 py-2 rounded-lg text-sm font-semibold"
-                                    >
-                                        افزودن
-                                    </button>
                                 </div>
                             </div>
                         </div>

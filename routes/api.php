@@ -4,10 +4,12 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BranchController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\FeedController;
+use App\Http\Controllers\Api\FormResponseController;
 use App\Http\Controllers\Api\GameMasterController;
 use App\Http\Controllers\Api\HallController;
 use App\Http\Controllers\Api\MenuItemController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\QuizResponseController;
 use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\SessionTemplateController;
@@ -61,6 +63,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Payment routes
     Route::post('/payments/{paymentTransaction}/initiate', [PaymentController::class, 'initiate']);
     Route::get('/payments/{paymentTransaction}/status', [PaymentController::class, 'status']);
+
+    // Quiz and Form responses
+    Route::post('/quizzes/{quiz}/responses', [QuizResponseController::class, 'store']);
+    Route::get('/quizzes/{quiz}/responses', [QuizResponseController::class, 'show']);
+    Route::post('/forms/{form}/responses', [FormResponseController::class, 'store']);
+    Route::get('/forms/{form}/responses', [FormResponseController::class, 'show']);
 
     // Game Master routes
     Route::prefix('game-master')->group(function () {

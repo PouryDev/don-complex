@@ -2,8 +2,6 @@ import React, { useRef, useEffect, useState, useLayoutEffect, useMemo } from 're
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
-import { useCart } from '../contexts/CartContext';
-import Cart from './Cart';
 import { CalendarIcon, GridIcon, MySessionsIcon } from './Icons';
 
 // SVG Icon Components
@@ -119,14 +117,24 @@ function Layout() {
         if (pathname.startsWith('/book/branch/')) return 'سانس‌های شعبه';
         if (pathname === '/profile') return 'پروفایل';
         if (pathname === '/orders') return 'سفارشات';
-        if (pathname === '/news') return 'اخبار';
+        if (pathname === '/news') return 'هاب اخبار';
         if (pathname === '/admin') return 'مدیریت';
         if (pathname.startsWith('/admin/')) return 'مدیریت';
         if (pathname === '/invoices') return 'فاکتورها';
         if (pathname === '/payment/success') return 'پرداخت موفق';
         if (pathname === '/payment/error') return 'خطای پرداخت';
         if (pathname === '/role-distribution') return 'توزیع نقش';
-        if (pathname.startsWith('/feed/')) return 'جزئیات خبر';
+        if (pathname.startsWith('/feed/')) {
+            // Extract type from pathname: /feed/{type}/{id}
+            const parts = pathname.split('/');
+            if (parts.length >= 3) {
+                const type = parts[2];
+                if (type === 'quiz') return 'جزئیات کوییز';
+                if (type === 'form') return 'جزئیات فرم';
+                if (type === 'news') return 'جزئیات خبر';
+            }
+            return 'جزئیات خبر';
+        }
         if (pathname === '/login') return 'ورود';
         if (pathname === '/register') return 'ثبت‌نام';
         
@@ -145,14 +153,20 @@ function Layout() {
             pathnameToCheck = location.state.from;
         }
         
-        // For profile, check profile and sub-pages (invoices, admin)
+        // For profile, check profile and sub-pages (invoices, admin, orders, my-sessions, payment pages)
         if (path === '/profile') {
             return pathnameToCheck === '/profile' || 
                    pathnameToCheck === '/invoices' || 
                    pathnameToCheck === '/admin' ||
+                   pathnameToCheck === '/orders' ||
+                   pathnameToCheck === '/my-sessions' ||
                    pathnameToCheck.startsWith('/profile/') ||
                    pathnameToCheck.startsWith('/invoices/') ||
-                   pathnameToCheck.startsWith('/admin/');
+                   pathnameToCheck.startsWith('/admin/') ||
+                   pathnameToCheck.startsWith('/orders/') ||
+                   pathnameToCheck.startsWith('/my-sessions/') ||
+                   pathnameToCheck.startsWith('/payment/success') ||
+                   pathnameToCheck.startsWith('/payment/error');
         }
         
         // For orders, check exact match and sub-pages
@@ -165,19 +179,19 @@ function Layout() {
             return pathnameToCheck === '/menu' || pathnameToCheck.startsWith('/menu/');
         }
         
-        // For book, check book and sub-pages
+        // For book, check book and sub-pages (including branch sessions and session details)
         if (path === '/book') {
-            return pathnameToCheck === '/book' || pathnameToCheck.startsWith('/book/');
+            return pathnameToCheck === '/book' || 
+                   pathnameToCheck.startsWith('/book/') ||
+                   pathnameToCheck.startsWith('/book/branch/') ||
+                   pathnameToCheck.startsWith('/book/session/');
         }
         
-        // For my-sessions, check exact match
-        if (path === '/my-sessions') {
-            return pathnameToCheck === '/my-sessions' || pathnameToCheck.startsWith('/my-sessions/');
-        }
-        
-        // For news, check exact match
+        // For news, check exact match and feed detail pages
         if (path === '/news') {
-            return pathnameToCheck === '/news' || pathnameToCheck.startsWith('/news/');
+            return pathnameToCheck === '/news' || 
+                   pathnameToCheck.startsWith('/news/') ||
+                   pathnameToCheck.startsWith('/feed/');
         }
         
         // For other paths, check exact match or sub-paths
@@ -187,7 +201,38 @@ function Layout() {
     // Calculate active index using useMemo - always return a valid index
     const activeIndex = useMemo(() => {
         const currentIndex = navItems.findIndex(item => isActive(item.path, item.isGame));
-        // Always return a valid index (0 if no match found)
+        
+        // If no match found, try to map to appropriate menu item
+        if (currentIndex === -1) {
+            const pathnameToCheck = location.pathname;
+            
+            // Map /feed/* to /news (index of 'هاب')
+            if (pathnameToCheck.startsWith('/feed/')) {
+                const newsIndex = navItems.findIndex(item => item.path === '/news');
+                return newsIndex !== -1 ? newsIndex : 0;
+            }
+            
+            // Map /book/* to /book (index of 'رزرو وقت')
+            if (pathnameToCheck.startsWith('/book/')) {
+                const bookIndex = navItems.findIndex(item => item.path === '/book');
+                return bookIndex !== -1 ? bookIndex : 0;
+            }
+            
+            // Map /profile/*, /orders, /invoices, /admin/*, /my-sessions, /payment/* to /profile
+            if (pathnameToCheck.startsWith('/profile/') ||
+                pathnameToCheck === '/orders' ||
+                pathnameToCheck.startsWith('/orders/') ||
+                pathnameToCheck === '/invoices' ||
+                pathnameToCheck.startsWith('/invoices/') ||
+                pathnameToCheck.startsWith('/admin/') ||
+                pathnameToCheck === '/my-sessions' ||
+                pathnameToCheck.startsWith('/my-sessions/') ||
+                pathnameToCheck.startsWith('/payment/')) {
+                const profileIndex = navItems.findIndex(item => item.path === '/profile');
+                return profileIndex !== -1 ? profileIndex : 0;
+            }
+        }
+        
         return currentIndex !== -1 ? currentIndex : 0;
     }, [location.pathname, location.state, isActive]);
 

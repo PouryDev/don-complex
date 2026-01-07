@@ -210,10 +210,6 @@ api.interceptors.request.use(
         const deviceId = getDeviceId();
         if (deviceId) {
             config.headers['X-Device-ID'] = deviceId;
-            // Also add as param for cart endpoints
-            if (config.url?.includes('/cart')) {
-                config.params = { ...config.params, device_id: deviceId };
-            }
         }
         
         return config;
@@ -347,49 +343,6 @@ export const authService = {
     }),
 };
 
-// Cart Service
-export const cartService = {
-    getCart: () => {
-        const deviceId = getDeviceId();
-        return api.get('/cart', { params: { device_id: deviceId } }).then(res => res.data.cart);
-    },
-    addItem: (menuItemId, quantity = 1) => {
-        const deviceId = getDeviceId();
-        return api.post('/cart/items', {
-            menu_item_id: menuItemId,
-            quantity: quantity,
-        }, {
-            params: { device_id: deviceId }
-        }).then(res => res.data.cart);
-    },
-    updateItem: (menuItemId, quantity) => {
-        const deviceId = getDeviceId();
-        return api.put(`/cart/items/${menuItemId}`, {
-            quantity: quantity,
-        }, {
-            params: { device_id: deviceId }
-        }).then(res => res.data.cart);
-    },
-    removeItem: (menuItemId) => {
-        const deviceId = getDeviceId();
-        return api.delete(`/cart/items/${menuItemId}`, {
-            params: { device_id: deviceId }
-        }).then(res => res.data.cart);
-    },
-    clearCart: () => {
-        const deviceId = getDeviceId();
-        return api.delete('/cart', {
-            params: { device_id: deviceId }
-        }).then(res => res.data.cart);
-    },
-    mergeCart: () => {
-        const deviceId = getDeviceId();
-        return api.post('/cart/merge', {}, {
-            params: { device_id: deviceId }
-        }).then(res => res.data.cart);
-    },
-};
-
 // Feed Service
 export const feedService = {
     getFeed: (params = {}) => {
@@ -405,6 +358,41 @@ export const feedService = {
     },
     getFeedItem: (type, id) => {
         return api.get(`/feed/${type}/${id}`).then(res => res.data);
+    },
+    checkQuizResponse: async (quizId) => {
+        try {
+            const response = await api.get(`/quizzes/${quizId}/responses`);
+            return response.data;
+        } catch (error) {
+            if (error.response?.status === 404) {
+                return null;
+            }
+            throw error;
+        }
+    },
+    submitQuizResponse: async (quizId, answers, score) => {
+        const response = await api.post(`/quizzes/${quizId}/responses`, {
+            answers,
+            score
+        });
+        return response.data;
+    },
+    checkFormResponse: async (formId) => {
+        try {
+            const response = await api.get(`/forms/${formId}/responses`);
+            return response.data;
+        } catch (error) {
+            if (error.response?.status === 404) {
+                return null;
+            }
+            throw error;
+        }
+    },
+    submitFormResponse: async (formId, data) => {
+        const response = await api.post(`/forms/${formId}/responses`, {
+            data
+        });
+        return response.data;
     },
 };
 

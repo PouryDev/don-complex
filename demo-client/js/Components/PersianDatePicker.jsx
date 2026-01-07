@@ -277,8 +277,8 @@ const PersianDatePicker = ({
             {/* Input */}
             <div
                 onClick={() => !disabled && setIsOpen(!isOpen)}
-                className={`w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 cursor-pointer ${
-                    disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white/15'
+                className={`w-full bg-gradient-to-br from-gray-800/80 to-gray-900/80 border-2 border-red-500/30 active:border-red-500/60 hover:border-red-500/50 rounded-xl px-4 sm:px-4 py-3.5 sm:py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-transparent transition-all duration-200 cursor-pointer shadow-lg shadow-red-500/10 active:shadow-red-500/20 active:scale-[0.98] touch-manipulation min-h-[48px] flex items-center ${
+                    disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gradient-to-br hover:from-gray-700/80 hover:to-gray-800/80 active:bg-gradient-to-br active:from-gray-700/90 active:to-gray-800/90'
                 }`}
             >
                 <div className="flex items-center justify-between">

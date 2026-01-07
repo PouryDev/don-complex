@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { feedService } from '../services/api';
 import Loading from '../Components/Loading';
 import Input from '../Components/Input';
 import { WarningIcon, GridIcon } from '../Components/Icons';
 import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../contexts/AuthContext';
 
 function FeedDetail() {
     const { type, id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const { showToast } = useToast();
+    const { user } = useAuth();
     const [item, setItem] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -18,6 +21,9 @@ function FeedDetail() {
     // Form state
     const [formData, setFormData] = useState({});
     const [formSubmitting, setFormSubmitting] = useState(false);
+    const [formSubmitted, setFormSubmitted] = useState(false);
+    const [hasSubmittedForm, setHasSubmittedForm] = useState(false);
+    const [existingFormResponse, setExistingFormResponse] = useState(null);
     
     // Quiz state
     const [quizAnswers, setQuizAnswers] = useState({});
@@ -25,6 +31,8 @@ function FeedDetail() {
     const [quizScore, setQuizScore] = useState(null);
     const [scoreDisplay, setScoreDisplay] = useState(0);
     const [showScoreAnimation, setShowScoreAnimation] = useState(false);
+    const [hasSubmittedQuiz, setHasSubmittedQuiz] = useState(false);
+    const [existingQuizResponse, setExistingQuizResponse] = useState(null);
 
     useEffect(() => {
         fetchItem();
@@ -61,6 +69,44 @@ function FeedDetail() {
                 });
                 setQuizAnswers(initialAnswers);
             }
+            
+            // Check for existing responses if user is logged in
+            if (user) {
+                if (foundItem.type === 'quiz') {
+                    try {
+                        const existingResponse = await feedService.checkQuizResponse(foundItem.id);
+                        if (existingResponse) {
+                            setHasSubmittedQuiz(true);
+                            setExistingQuizResponse(existingResponse);
+                            setQuizSubmitted(true);
+                            setQuizScore(existingResponse.score);
+                            setScoreDisplay(existingResponse.score);
+                            setShowScoreAnimation(true);
+                            // Set previous answers
+                            if (existingResponse.answers) {
+                                setQuizAnswers(existingResponse.answers);
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Error checking quiz response:', err);
+                    }
+                } else if (foundItem.type === 'form') {
+                    try {
+                        const existingResponse = await feedService.checkFormResponse(foundItem.id);
+                        if (existingResponse) {
+                            setHasSubmittedForm(true);
+                            setExistingFormResponse(existingResponse);
+                            setFormSubmitted(true);
+                            // Set previous form data
+                            if (existingResponse.data) {
+                                setFormData(existingResponse.data);
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Error checking form response:', err);
+                    }
+                }
+            }
         } catch (err) {
             if (err.response?.status === 404) {
                 setError('آیتم مورد نظر یافت نشد.');
@@ -80,10 +126,20 @@ function FeedDetail() {
         }));
     };
 
-    const [formSubmitted, setFormSubmitted] = useState(false);
-
     const handleFormSubmit = async (e) => {
         e.preventDefault();
+        
+        // Check if user is logged in
+        if (!user) {
+            showToast('لطفاً ابتدا وارد حساب کاربری خود شوید', 'error');
+            return;
+        }
+        
+        // Check if already submitted
+        if (hasSubmittedForm) {
+            showToast('شما قبلاً این فرم را پر کرده‌اید', 'error');
+            return;
+        }
         
         // Validate required fields
         const requiredFields = item.fields?.filter(f => f.required) || [];
@@ -97,10 +153,9 @@ function FeedDetail() {
         setFormSubmitting(true);
         
         try {
-            // Here you would normally submit to an API
-            // For now, just show success message
-            await new Promise((resolve) => setTimeout(resolve, 1500));
+            await feedService.submitFormResponse(item.id, formData);
             setFormSubmitted(true);
+            setHasSubmittedForm(true);
             showToast('فرم با موفقیت ارسال شد!', 'success');
             
             // Auto redirect after 2 seconds
@@ -108,7 +163,13 @@ function FeedDetail() {
                 navigate('/news');
             }, 2000);
         } catch (err) {
-            showToast('خطا در ارسال فرم. لطفاً دوباره تلاش کنید.', 'error');
+            if (err.response?.status === 409) {
+                showToast('شما قبلاً این فرم را پر کرده‌اید', 'error');
+                setHasSubmittedForm(true);
+                setFormSubmitted(true);
+            } else {
+                showToast(err.response?.data?.message || 'خطا در ارسال فرم. لطفاً دوباره تلاش کنید.', 'error');
+            }
         } finally {
             setFormSubmitting(false);
         }
@@ -122,8 +183,20 @@ function FeedDetail() {
         }));
     };
 
-    const handleQuizSubmit = () => {
+    const handleQuizSubmit = async () => {
         if (!item || !item.questions) return;
+        
+        // Check if user is logged in
+        if (!user) {
+            showToast('لطفاً ابتدا وارد حساب کاربری خود شوید', 'error');
+            return;
+        }
+        
+        // Check if already submitted
+        if (hasSubmittedQuiz) {
+            showToast('شما قبلاً به این کوییز پاسخ داده‌اید', 'error');
+            return;
+        }
         
         let correct = 0;
         item.questions.forEach((question, index) => {
@@ -133,23 +206,50 @@ function FeedDetail() {
         });
         
         const score = Math.round((correct / item.questions.length) * 100);
-        setQuizSubmitted(true);
         
-        // Animate score counting
-        setShowScoreAnimation(true);
-        let currentScore = 0;
-        const increment = score / 30; // 30 steps for smooth animation
-        const timer = setInterval(() => {
-            currentScore += increment;
-            if (currentScore >= score) {
-                currentScore = score;
-                clearInterval(timer);
+        try {
+            // Submit to API
+            await feedService.submitQuizResponse(item.id, quizAnswers, score);
+            
+            setQuizSubmitted(true);
+            setHasSubmittedQuiz(true);
+            
+            // Animate score counting
+            setShowScoreAnimation(true);
+            let currentScore = 0;
+            const increment = score / 30; // 30 steps for smooth animation
+            const timer = setInterval(() => {
+                currentScore += increment;
+                if (currentScore >= score) {
+                    currentScore = score;
+                    clearInterval(timer);
+                }
+                setScoreDisplay(Math.round(currentScore));
+            }, 30);
+            
+            setQuizScore(score);
+            showToast(`امتیاز شما: ${score}%`, 'success');
+        } catch (err) {
+            if (err.response?.status === 409) {
+                showToast('شما قبلاً به این کوییز پاسخ داده‌اید', 'error');
+                setHasSubmittedQuiz(true);
+                // Try to get existing response
+                try {
+                    const existingResponse = await feedService.checkQuizResponse(item.id);
+                    if (existingResponse) {
+                        setExistingQuizResponse(existingResponse);
+                        setQuizSubmitted(true);
+                        setQuizScore(existingResponse.score);
+                        setScoreDisplay(existingResponse.score);
+                        setShowScoreAnimation(true);
+                    }
+                } catch (checkErr) {
+                    console.error('Error checking quiz response:', checkErr);
+                }
+            } else {
+                showToast(err.response?.data?.message || 'خطا در ارسال پاسخ. لطفاً دوباره تلاش کنید.', 'error');
             }
-            setScoreDisplay(Math.round(currentScore));
-        }, 30);
-        
-        setQuizScore(score);
-        showToast(`امتیاز شما: ${score}%`, 'success');
+        }
     };
 
     const renderField = (field) => {
@@ -338,7 +438,43 @@ function FeedDetail() {
                                 onSubmit={handleFormSubmit}
                                 className="relative z-10"
                             >
-                                {item.fields && item.fields.length > 0 ? (
+                                {!user ? (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="text-center py-8 sm:py-12 px-4"
+                                    >
+                                        <div className="text-5xl sm:text-6xl mb-4 sm:mb-6">🔒</div>
+                                        <p className="text-gray-300 text-base sm:text-lg mb-5 sm:mb-6 leading-relaxed px-2">
+                                            لطفاً ابتدا وارد حساب کاربری خود شوید
+                                        </p>
+                                        <motion.button
+                                            type="button"
+                                            onClick={() => navigate('/login', { state: { from: location.pathname } })}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            className="cafe-button px-8 py-3.5 sm:px-6 sm:py-3 rounded-xl font-semibold text-base sm:text-sm min-h-[48px] touch-manipulation shadow-lg"
+                                        >
+                                            ورود به حساب کاربری
+                                        </motion.button>
+                                    </motion.div>
+                                ) : hasSubmittedForm ? (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="text-center py-8 sm:py-12 px-4"
+                                    >
+                                        <div className="text-5xl sm:text-6xl mb-4 sm:mb-6">✅</div>
+                                        <p className="text-gray-300 text-base sm:text-lg mb-3 sm:mb-2 font-semibold">
+                                            شما قبلاً این فرم را پر کرده‌اید
+                                        </p>
+                                        {existingFormResponse && (
+                                            <p className="text-gray-400 text-sm sm:text-base mb-4">
+                                                تاریخ ارسال: {new Date(existingFormResponse.created_at).toLocaleDateString('fa-IR')}
+                                            </p>
+                                        )}
+                                    </motion.div>
+                                ) : item.fields && item.fields.length > 0 ? (
                                     <>
                                         <motion.div
                                             initial={{ opacity: 0 }}
@@ -362,14 +498,14 @@ function FeedDetail() {
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 0.5 }}
-                                            className="flex gap-4 mt-8"
+                                            className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6 sm:mt-8"
                                         >
                                             <motion.button
                                                 type="submit"
-                                                disabled={formSubmitting}
+                                                disabled={formSubmitting || hasSubmittedForm}
                                                 whileHover={{ scale: 1.02, boxShadow: "0 10px 30px rgba(34, 197, 94, 0.3)" }}
                                                 whileTap={{ scale: 0.98 }}
-                                                className="cafe-button flex-1 px-6 py-4 rounded-xl font-bold text-lg shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all relative overflow-hidden group"
+                                                className="cafe-button flex-1 px-6 py-4 sm:py-4 rounded-xl font-bold text-base sm:text-lg shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all relative overflow-hidden group min-h-[52px] sm:min-h-[56px] touch-manipulation"
                                             >
                                                 {formSubmitting ? (
                                                     <span className="flex items-center justify-center gap-2 relative z-10">
@@ -399,7 +535,7 @@ function FeedDetail() {
                                                 onClick={() => navigate('/news')}
                                                 whileHover={{ scale: 1.02 }}
                                                 whileTap={{ scale: 0.98 }}
-                                                className="flex-1 px-6 py-4 rounded-xl font-bold text-lg bg-gray-700/80 hover:bg-gray-600 text-white transition-all shadow-lg backdrop-blur-sm border border-gray-600/50"
+                                                className="flex-1 px-6 py-4 sm:py-4 rounded-xl font-bold text-base sm:text-lg bg-gray-700/80 hover:bg-gray-600 active:bg-gray-500 text-white transition-all shadow-lg backdrop-blur-sm border border-gray-600/50 min-h-[52px] sm:min-h-[56px] touch-manipulation"
                                             >
                                                 انصراف
                                             </motion.button>
@@ -475,14 +611,14 @@ function FeedDetail() {
                                         initial={{ opacity: 0, x: -30 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: 0.3 + qIndex * 0.1 }}
-                                        className="relative p-6 bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-xl border border-purple-500/20 shadow-xl hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-300"
+                                        className="relative p-4 sm:p-6 bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-xl border border-purple-500/20 shadow-xl hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-300"
                                     >
                                         {/* Question number badge */}
                                         <div className="absolute -top-3 -right-3 w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
                                             {qIndex + 1}
                                         </div>
                                         
-                                        <h3 className="text-xl font-bold text-white mb-5 pr-8">
+                                        <h3 className="text-lg sm:text-xl font-bold text-white mb-4 sm:mb-5 pr-8 sm:pr-10 leading-relaxed">
                                             {question.question}
                                         </h3>
                                         <div className="space-y-3">
@@ -514,13 +650,13 @@ function FeedDetail() {
                                                             type="button"
                                                             onClick={() => handleQuizAnswer(qIndex, oIndex)}
                                                             disabled={quizSubmitted}
-                                                            whileHover={!quizSubmitted ? { scale: 1.02, x: -5 } : {}}
-                                                            whileTap={!quizSubmitted ? { scale: 0.98 } : {}}
+                                                            whileHover={!quizSubmitted ? { scale: 1.01 } : {}}
+                                                            whileTap={!quizSubmitted ? { scale: 0.97 } : {}}
                                                             initial={{ opacity: 0, x: -20 }}
                                                             animate={{ opacity: 1, x: 0 }}
                                                             transition={{ delay: 0.4 + qIndex * 0.1 + oIndex * 0.05 }}
-                                                            className={`w-full text-right p-4 rounded-xl text-white font-medium transition-all duration-300 border-2 ${bgClass} ${glowClass} ${
-                                                                !quizSubmitted ? 'cursor-pointer hover:shadow-xl' : 'cursor-default'
+                                                            className={`w-full text-right p-4 sm:p-4 rounded-xl text-white font-medium transition-all duration-300 border-2 ${bgClass} ${glowClass} min-h-[56px] sm:min-h-[52px] touch-manipulation active:scale-[0.97] ${
+                                                                !quizSubmitted ? 'cursor-pointer hover:shadow-xl active:shadow-lg' : 'cursor-default'
                                                             }`}
                                                         >
                                                             <div className="flex items-center justify-between">
@@ -679,33 +815,79 @@ function FeedDetail() {
                                 )}
                             </AnimatePresence>
                             
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.6 }}
-                                className="flex gap-4 relative z-10"
-                            >
-                                {!quizSubmitted ? (
+                            {!user ? (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="text-center py-8 sm:py-12 px-4 relative z-10"
+                                >
+                                    <div className="text-5xl sm:text-6xl mb-4 sm:mb-6">🔒</div>
+                                    <p className="text-gray-300 text-base sm:text-lg mb-5 sm:mb-6 leading-relaxed px-2">
+                                        لطفاً ابتدا وارد حساب کاربری خود شوید
+                                    </p>
                                     <motion.button
-                                        onClick={handleQuizSubmit}
-                                        disabled={Object.values(quizAnswers).some((ans) => ans === null)}
+                                        type="button"
+                                        onClick={() => navigate('/login', { state: { from: location.pathname } })}
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
-                                        className="cafe-button flex-1 px-6 py-4 rounded-xl font-bold text-lg shadow-lg shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                        className="cafe-button px-8 py-3.5 sm:px-6 sm:py-3 rounded-xl font-semibold text-base sm:text-sm min-h-[48px] touch-manipulation shadow-lg"
                                     >
-                                        ارسال پاسخ‌ها
+                                        ورود به حساب کاربری
                                     </motion.button>
-                                ) : (
+                                </motion.div>
+                            ) : hasSubmittedQuiz && !quizSubmitted ? (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="text-center py-8 sm:py-12 px-4 relative z-10"
+                                >
+                                    <div className="text-5xl sm:text-6xl mb-4 sm:mb-6">✅</div>
+                                    <p className="text-gray-300 text-base sm:text-lg mb-3 sm:mb-2 font-semibold">
+                                        شما قبلاً به این کوییز پاسخ داده‌اید
+                                    </p>
+                                    {existingQuizResponse && (
+                                        <p className="text-gray-400 text-sm sm:text-base mb-5 sm:mb-4">
+                                            امتیاز شما: <span className="text-red-400 font-bold">{existingQuizResponse.score}%</span>
+                                        </p>
+                                    )}
                                     <motion.button
                                         onClick={() => navigate('/news')}
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
-                                        className="cafe-button flex-1 px-6 py-4 rounded-xl font-bold text-lg shadow-lg shadow-purple-500/30"
+                                        className="cafe-button px-8 py-3.5 sm:px-6 sm:py-3 rounded-xl font-semibold text-base sm:text-sm min-h-[48px] touch-manipulation shadow-lg"
                                     >
                                         بازگشت به هاب
                                     </motion.button>
-                                )}
-                            </motion.div>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.6 }}
+                                    className="flex flex-col sm:flex-row gap-3 sm:gap-4 relative z-10"
+                                >
+                                    {!quizSubmitted ? (
+                                        <motion.button
+                                            onClick={handleQuizSubmit}
+                                            disabled={Object.values(quizAnswers).some((ans) => ans === null) || hasSubmittedQuiz}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            className="cafe-button flex-1 px-6 py-4 sm:py-4 rounded-xl font-bold text-base sm:text-lg shadow-lg shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all min-h-[52px] sm:min-h-[56px] touch-manipulation"
+                                        >
+                                            ارسال پاسخ‌ها
+                                        </motion.button>
+                                    ) : (
+                                        <motion.button
+                                            onClick={() => navigate('/news')}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            className="cafe-button flex-1 px-6 py-4 sm:py-4 rounded-xl font-bold text-base sm:text-lg shadow-lg shadow-purple-500/30 min-h-[52px] sm:min-h-[56px] touch-manipulation"
+                                        >
+                                            بازگشت به هاب
+                                        </motion.button>
+                                    )}
+                                </motion.div>
+                            )}
                         </>
                     ) : (
                         <p className="text-gray-300 text-center py-8">
