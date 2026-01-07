@@ -23,6 +23,7 @@ class Session extends Model
         'price',
         'max_participants',
         'current_participants',
+        'pending_participants',
         'status',
     ];
 

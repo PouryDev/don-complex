@@ -210,6 +210,24 @@ function SessionDetails() {
             <form onSubmit={handleBooking} className="cafe-card rounded-xl p-4 sm:p-5 space-y-4">
                 <h2 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">اطلاعات رزرو</h2>
                 
+                {/* Warning about expiration - Modern Design */}
+                <div className="relative overflow-hidden bg-gradient-to-br from-yellow-500/15 via-orange-500/10 to-red-500/15 border-2 border-yellow-500/40 rounded-2xl sm:rounded-3xl p-4 sm:p-5 backdrop-blur-sm shadow-xl">
+                    {/* Animated background */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/5 via-transparent to-orange-500/5 animate-pulse"></div>
+                    
+                    <div className="relative flex items-start gap-3 sm:gap-4">
+                        <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-yellow-500/30 to-orange-500/30 flex items-center justify-center border-2 border-yellow-400/50">
+                            <WarningIcon className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-300" />
+                        </div>
+                        <div className="flex-1 text-xs sm:text-sm">
+                            <p className="font-bold text-yellow-200 mb-2 sm:mb-2.5 text-sm sm:text-base">⏰ توجه مهم</p>
+                            <p className="text-yellow-100/90 leading-relaxed">
+                                بعد از ثبت رزرو، شما <span className="font-bold text-yellow-200">15 دقیقه</span> فرصت دارید تا پرداخت را انجام دهید. در غیر این صورت، بلیط شما به صورت خودکار لغو می‌شود و ظرفیت آزاد می‌شود.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
                 <div className="space-y-1">
                     <Input
                         label="تعداد نفرات"

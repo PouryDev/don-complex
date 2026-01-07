@@ -13,6 +13,7 @@ function Menu() {
     const [branches, setBranches] = useState([]);
     const { addToCart } = useCart();
     const [loading, setLoading] = useState(true);
+    const [initialLoading, setInitialLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState(null);
     const [imageErrors, setImageErrors] = useState(new Set());
@@ -101,6 +102,7 @@ function Menu() {
             if (reset) {
                 setLoading(true);
                 setCurrentPage(1);
+                // Clear menuItems when resetting to show fresh data
                 setMenuItems([]);
             } else {
                 setLoadingMore(true);
@@ -141,6 +143,7 @@ function Menu() {
             const items = menuItemsData.data || menuItemsData;
             const paginationInfo = menuItemsData.current_page !== undefined ? menuItemsData : null;
             
+            // Always update menu items - if reset, items were already cleared above
             if (reset) {
                 setMenuItems(Array.isArray(items) ? items : []);
             } else {
@@ -164,6 +167,7 @@ function Menu() {
         } finally {
             setLoading(false);
             setLoadingMore(false);
+            setInitialLoading(false);
         }
     };
 
@@ -194,11 +198,11 @@ function Menu() {
         return new Intl.NumberFormat('fa-IR').format(price);
     };
 
-    if (loading) {
+    if (initialLoading && !branchId) {
         return <Loading />;
     }
 
-    if (error) {
+    if (error && menuItems.length === 0) {
         return (
             <div className="text-center py-12">
                 <div className="flex justify-center mb-4 text-red-500">
@@ -206,7 +210,7 @@ function Menu() {
                 </div>
                 <p className="text-gray-300 mb-4">{error}</p>
                 <button
-                    onClick={fetchData}
+                    onClick={() => fetchData(branchId, true)}
                     className="cafe-button px-6 py-2 rounded-lg"
                 >
                     تلاش مجدد
@@ -240,38 +244,40 @@ function Menu() {
             )}
 
             {/* Category Filter */}
-            <div className="relative flex gap-2 overflow-x-auto pb-2 scrollbar-hide py-3 px-1">
-                <button
-                    onClick={() => setSelectedCategory('all')}
-                    className={`flex-shrink-0 px-4 py-2 rounded-full font-medium transition-all duration-200 flex items-center gap-2 ${
-                        selectedCategory === 'all'
-                            ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg scale-105'
-                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-red-500/20'
-                    }`}
-                >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                    همه
-                </button>
-                {categories.map((category) => {
-                    const CategoryIcon = getCategoryIconComponent(category.name);
-                    return (
-                        <button
-                            key={category.id}
-                            onClick={() => setSelectedCategory(category.id)}
-                            className={`flex-shrink-0 px-4 py-2 rounded-full font-medium transition-all duration-200 flex items-center gap-2 ${
-                                selectedCategory === category.id || selectedCategory === category.id.toString()
-                                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg scale-105'
-                                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-red-500/20'
-                            }`}
-                        >
-                            <CategoryIcon className="w-5 h-5" />
-                            {category.name}
-                        </button>
-                    );
-                })}
-            </div>
+            {categories.length > 0 && (
+                <div className="relative flex gap-2 overflow-x-auto pb-2 scrollbar-hide py-3 px-1">
+                    <button
+                        onClick={() => setSelectedCategory('all')}
+                        className={`flex-shrink-0 px-4 py-2 rounded-full font-medium transition-all duration-200 flex items-center gap-2 ${
+                            selectedCategory === 'all'
+                                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg scale-105'
+                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-red-500/20'
+                        }`}
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        همه
+                    </button>
+                    {categories.map((category) => {
+                        const CategoryIcon = getCategoryIconComponent(category.name);
+                        return (
+                            <button
+                                key={category.id}
+                                onClick={() => setSelectedCategory(category.id)}
+                                className={`flex-shrink-0 px-4 py-2 rounded-full font-medium transition-all duration-200 flex items-center gap-2 ${
+                                    selectedCategory === category.id || selectedCategory === category.id.toString()
+                                        ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg scale-105'
+                                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-red-500/20'
+                                }`}
+                            >
+                                <CategoryIcon className="w-5 h-5" />
+                                {category.name}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
 
             {/* Menu Items Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -335,12 +341,19 @@ function Menu() {
                 )}
             </div>
 
-            {filteredItems.length === 0 && (
+            {filteredItems.length === 0 && !loading && !initialLoading && (
                 <div className="text-center py-12">
                     <div className="flex justify-center mb-4 text-red-500">
                         <SearchIcon className="w-16 h-16" />
                     </div>
                     <p className="text-gray-300">آیتمی در این دسته‌بندی یافت نشد</p>
+                </div>
+            )}
+
+            {/* Show loading indicator when loading more items */}
+            {loading && !initialLoading && filteredItems.length === 0 && (
+                <div className="text-center py-12">
+                    <Loading />
                 </div>
             )}
         </div>

@@ -9,6 +9,7 @@ use App\Models\Reservation;
 use App\Models\Session;
 use App\Services\PaymentService;
 use App\Services\ReservationService;
+use App\Services\SessionService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -16,11 +17,16 @@ class ReservationController extends Controller
 {
     protected ReservationService $reservationService;
     protected PaymentService $paymentService;
+    protected SessionService $sessionService;
 
-    public function __construct(ReservationService $reservationService, PaymentService $paymentService)
-    {
+    public function __construct(
+        ReservationService $reservationService,
+        PaymentService $paymentService,
+        SessionService $sessionService
+    ) {
         $this->reservationService = $reservationService;
         $this->paymentService = $paymentService;
+        $this->sessionService = $sessionService;
     }
 
     public function index(Request $request)
@@ -74,7 +80,8 @@ class ReservationController extends Controller
             $numberOfPeople = $request->validated()['number_of_people'];
 
             // Additional validation: check if requested number exceeds available spots
-            $availableSpots = $session->max_participants - $session->current_participants;
+            // Use SessionService to get accurate available spots (includes pending_participants)
+            $availableSpots = $this->sessionService->getAvailableSpots($session);
             if ($numberOfPeople > $availableSpots) {
                 return response()->json([
                     'message' => "حداکثر {$availableSpots} نفر می‌توانید رزرو کنید",

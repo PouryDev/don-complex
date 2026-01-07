@@ -9,6 +9,13 @@ use Illuminate\Support\Facades\DB;
 
 class PaymentService
 {
+    protected ReservationService $reservationService;
+
+    public function __construct(ReservationService $reservationService)
+    {
+        $this->reservationService = $reservationService;
+    }
+
     /**
      * Create a payment transaction for a reservation
      */
@@ -49,11 +56,19 @@ class PaymentService
             'metadata' => $metadata ?? $transaction->metadata,
         ]);
 
-        // Update reservation payment status
+        // Update reservation payment status and confirm payment if successful
         if ($transaction->reservation) {
-            $transaction->reservation->update([
+            $reservation = $transaction->reservation;
+            $wasPending = $reservation->payment_status === PaymentStatus::PENDING;
+            
+            $reservation->update([
                 'payment_status' => $status,
             ]);
+
+            // If payment is successful and was previously pending, confirm the reservation
+            if ($status === PaymentStatus::PAID && $wasPending) {
+                $this->reservationService->confirmPayment($reservation);
+            }
         }
     }
 

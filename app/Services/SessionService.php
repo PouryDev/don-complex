@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Session;
 use App\Models\SessionTemplate;
+use App\Services\ReservationService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -67,6 +68,7 @@ class SessionService
             'price' => $template->price,
             'max_participants' => $template->max_participants,
             'current_participants' => 0,
+            'pending_participants' => 0,
             'status' => 'upcoming',
         ]);
     }
@@ -76,7 +78,14 @@ class SessionService
      */
     public function getAvailableSpots(Session $session): int
     {
-        return max(0, $session->max_participants - $session->current_participants);
+        // Expire unpaid reservations before calculating available spots
+        // Use app() to avoid circular dependency
+        app(ReservationService::class)->expireUnpaidReservations($session);
+        
+        // Refresh session to get updated pending_participants
+        $session->refresh();
+        
+        return max(0, $session->max_participants - $session->current_participants - $session->pending_participants);
     }
 
     /**
@@ -84,6 +93,13 @@ class SessionService
      */
     public function hasEnoughSpots(Session $session, int $numberOfPeople): bool
     {
+        // Expire unpaid reservations before checking capacity
+        // Use app() to avoid circular dependency
+        app(ReservationService::class)->expireUnpaidReservations($session);
+        
+        // Refresh session to get updated pending_participants
+        $session->refresh();
+        
         return $this->getAvailableSpots($session) >= $numberOfPeople;
     }
 

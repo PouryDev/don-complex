@@ -101,10 +101,14 @@ class PaymentController extends Controller
                 ], 400);
             }
 
-            // Update transaction with gateway transaction ID (authority)
+            // Update transaction with gateway transaction ID (authority for ZarinPal, trackId for Zibal)
             if (isset($result['form_data']['authority'])) {
                 $paymentTransaction->update([
                     'gateway_transaction_id' => $result['form_data']['authority'],
+                ]);
+            } elseif (isset($result['form_data']['trackId'])) {
+                $paymentTransaction->update([
+                    'gateway_transaction_id' => $result['form_data']['trackId'],
                 ]);
             }
 
@@ -177,8 +181,8 @@ class PaymentController extends Controller
                     ->with('success', 'پرداخت قبلاً با موفقیت انجام شده است');
             }
 
-            // Get authority from callback data
-            $authority = $callbackData['Authority'] ?? $transaction->gateway_transaction_id;
+            // Get gateway transaction ID from callback data (Authority for ZarinPal, trackId for Zibal)
+            $gatewayTransactionId = $callbackData['Authority'] ?? $callbackData['trackId'] ?? $transaction->gateway_transaction_id;
 
             // Verify payment
             $verifyResult = $gatewayInstance->verify($transaction, $callbackData);
@@ -188,7 +192,7 @@ class PaymentController extends Controller
                 $this->paymentService->updateTransactionStatus(
                     $transaction,
                     \App\Enums\PaymentStatus::PAID,
-                    $authority,
+                    $gatewayTransactionId,
                     $verifyResult['data'] ?? null
                 );
 

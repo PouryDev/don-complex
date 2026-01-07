@@ -6,6 +6,7 @@ import { useToast } from '../contexts/ToastContext';
 import Loading from '../Components/Loading';
 import Button from '../Components/Button';
 import Checkbox from '../Components/Checkbox';
+import CountdownTimer from '../Components/CountdownTimer';
 import { CalendarIcon, WarningIcon, EmptyBoxIcon, CashIcon } from '../Components/Icons';
 
 function MySessions() {
@@ -252,17 +253,23 @@ function MySessions() {
                 <p className="text-sm sm:text-base text-gray-300">لیست رزروهای شما</p>
             </div>
 
-            {/* Total Spent Card */}
-            <div className="cafe-card rounded-xl p-4 sm:p-5 bg-gradient-to-r from-red-500/10 to-red-600/10 border-2 border-red-500/20">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5 sm:gap-3">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white flex-shrink-0">
-                            <CashIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+            {/* Total Spent Card - Modern Design */}
+            <div className="relative overflow-hidden cafe-card rounded-2xl sm:rounded-3xl p-5 sm:p-6 bg-gradient-to-br from-red-500/15 via-red-600/10 to-red-700/15 border-2 border-red-500/30 shadow-2xl">
+                {/* Animated background glow */}
+                <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-transparent to-red-600/10 animate-pulse"></div>
+                
+                <div className="relative flex items-center justify-between">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white shadow-xl flex-shrink-0">
+                            <CashIcon className="w-7 h-7 sm:w-8 sm:h-8" />
+                            {/* Glow effect */}
+                            <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-red-400/30 blur-xl"></div>
                         </div>
                         <div>
-                            <p className="text-xs sm:text-sm text-gray-300">مجموع پرداختی‌ها</p>
-                            <p className="text-lg sm:text-2xl font-bold text-white">
-                                {formatPrice(totalSpent)} <span className="text-xs sm:text-sm font-normal">تومان</span>
+                            <p className="text-xs sm:text-sm text-gray-300 mb-1 sm:mb-1.5 font-medium">مجموع پرداختی‌ها</p>
+                            <p className="text-xl sm:text-3xl font-bold text-white flex items-baseline gap-1.5">
+                                <span>{formatPrice(totalSpent)}</span>
+                                <span className="text-xs sm:text-sm font-normal text-gray-400">تومان</span>
                             </p>
                         </div>
                     </div>
@@ -274,53 +281,118 @@ function MySessions() {
                 {reservations.map((reservation) => (
                     <div
                         key={reservation.id}
-                        className="cafe-card rounded-xl p-4 sm:p-5"
+                        className="cafe-card rounded-2xl sm:rounded-3xl p-4 sm:p-5 overflow-hidden relative group"
                     >
-                        <div className="flex items-start gap-3 sm:gap-4">
-                            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white shadow-lg flex-shrink-0">
-                                <CalendarIcon className="w-6 h-6 sm:w-8 sm:h-8" />
+                        {/* Gradient overlay for pending reservations */}
+                        {reservation.payment_status === 'pending' && reservation.expires_at && (
+                            <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 via-transparent to-orange-500/5 pointer-events-none"></div>
+                        )}
+                        
+                        <div className="relative flex items-start gap-3 sm:gap-4">
+                            {/* Icon with modern design */}
+                            <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl flex items-center justify-center text-white shadow-xl flex-shrink-0 transition-transform duration-300 group-hover:scale-105 ${
+                                reservation.payment_status === 'paid' 
+                                    ? 'bg-gradient-to-br from-green-500 to-emerald-600' 
+                                    : reservation.payment_status === 'pending'
+                                    ? 'bg-gradient-to-br from-yellow-500 to-orange-600'
+                                    : 'bg-gradient-to-br from-red-500 to-red-600'
+                            }`}>
+                                <CalendarIcon className="w-7 h-7 sm:w-8 sm:h-8" />
+                                {/* Pulse effect for pending */}
+                                {reservation.payment_status === 'pending' && reservation.expires_at && (
+                                    <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-yellow-400/30 animate-ping"></div>
+                                )}
                             </div>
+                            
                             <div className="flex-1 min-w-0">
                                 {reservation.session && (
                                     <>
                                         {reservation.session.branch && (
-                                            <h3 className="text-base sm:text-lg font-semibold text-white mb-1 truncate">
+                                            <h3 className="text-base sm:text-lg font-bold text-white mb-1.5 sm:mb-2 truncate">
                                                 {reservation.session.branch.name}
                                             </h3>
                                         )}
-                                        <div className="space-y-0.5 sm:space-y-1 text-xs sm:text-sm text-gray-300 mb-2 sm:mb-3">
-                                            <p className="break-words">
-                                                {formatDate(reservation.session.date)} - {formatTime(reservation.session.start_time)}
-                                            </p>
+                                        <div className="space-y-1 sm:space-y-1.5 text-xs sm:text-sm text-gray-300 mb-3 sm:mb-4">
+                                            <div className="flex items-center gap-2 text-white/90">
+                                                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                                <p className="break-words">
+                                                    {formatDate(reservation.session.date)} - {formatTime(reservation.session.start_time)}
+                                                </p>
+                                            </div>
                                             {reservation.session.hall && (
-                                                <p className="break-words">سالن: {reservation.session.hall.name}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                                    </svg>
+                                                    <p className="break-words">سالن: {reservation.session.hall.name}</p>
+                                                </div>
                                             )}
-                                            <p>تعداد نفرات: {reservation.number_of_people}</p>
+                                            <div className="flex items-center gap-2">
+                                                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                </svg>
+                                                <p>تعداد نفرات: <span className="font-semibold text-white">{reservation.number_of_people}</span></p>
+                                            </div>
                                         </div>
                                     </>
                                 )}
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-red-500/20">
-                                    <div className="flex-1">
-                                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                                            <span className="text-xs sm:text-sm text-gray-300">وضعیت پرداخت: </span>
-                                            <span className={`px-2.5 sm:px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${getPaymentStatusColor(reservation.payment_status)} text-white whitespace-nowrap`}>
+                                
+                                {/* Payment Status Section */}
+                                <div className="flex flex-col gap-3 sm:gap-3.5 pt-3 sm:pt-4 border-t border-gradient-to-r from-red-500/20 via-red-500/10 to-transparent">
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3">
+                                        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                                            <span className="text-xs sm:text-sm text-gray-400">وضعیت:</span>
+                                            <span className={`px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold bg-gradient-to-r ${getPaymentStatusColor(reservation.payment_status)} text-white whitespace-nowrap shadow-lg`}>
                                                 {getPaymentStatusText(reservation.payment_status)}
                                             </span>
+                                            {reservation.payment_status === 'pending' && reservation.expires_at && (
+                                                <CountdownTimer 
+                                                    expiresAt={reservation.expires_at}
+                                                    onExpire={() => {
+                                                        showToast('زمان پرداخت بلیط شما به پایان رسید. لطفا رزرو جدیدی انجام دهید.', 'error');
+                                                        fetchReservations(true);
+                                                    }}
+                                                />
+                                            )}
                                         </div>
-                                        {reservation.payment_status === 'pending' && reservation.payment_transaction && (
-                                            <Button
-                                                onClick={() => handlePaymentClick(reservation)}
-                                                disabled={processingPayment[reservation.id]}
-                                                className="text-xs sm:text-sm py-2 sm:py-2.5 px-4 w-full sm:w-auto"
-                                            >
-                                                {processingPayment[reservation.id] ? 'در حال انتقال...' : 'پرداخت'}
-                                            </Button>
+                                        {reservation.payment_transaction && (
+                                            <div className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-red-500/10 to-red-600/10 rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2 sm:py-2.5 border border-red-500/20">
+                                                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span className="text-sm sm:text-base font-bold text-red-300 whitespace-nowrap">
+                                                    {formatPrice(reservation.payment_transaction.amount)}
+                                                </span>
+                                                <span className="text-xs sm:text-sm text-gray-400 font-normal">تومان</span>
+                                            </div>
                                         )}
                                     </div>
-                                    {reservation.payment_transaction && (
-                                        <span className="text-base sm:text-lg font-bold text-red-400 whitespace-nowrap">
-                                            {formatPrice(reservation.payment_transaction.amount)} <span className="text-xs sm:text-sm font-normal">تومان</span>
-                                        </span>
+                                    
+                                    {reservation.payment_status === 'pending' && reservation.payment_transaction && (
+                                        <Button
+                                            onClick={() => handlePaymentClick(reservation)}
+                                            disabled={processingPayment[reservation.id]}
+                                            className="w-full sm:w-auto text-sm sm:text-base py-3 sm:py-3.5 px-5 sm:px-6 rounded-xl sm:rounded-2xl font-bold shadow-xl hover:shadow-2xl transition-all duration-300"
+                                        >
+                                            {processingPayment[reservation.id] ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    در حال انتقال...
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                    پرداخت
+                                                </span>
+                                            )}
+                                        </Button>
                                     )}
                                 </div>
                             </div>

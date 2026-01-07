@@ -5,6 +5,7 @@ namespace App\Services\Payment;
 use App\Contracts\PaymentGatewayInterface;
 use App\Models\PaymentGateway;
 use App\Services\Payment\Gateways\ZarinPalGateway;
+use App\Services\Payment\Gateways\ZibalGateway;
 use InvalidArgumentException;
 
 class PaymentGatewayFactory
@@ -20,6 +21,7 @@ class PaymentGatewayFactory
     {
         return match ($gateway->type) {
             'zarinpal' => new ZarinPalGateway($gateway),
+            'zibal' => new ZibalGateway($gateway),
             default => throw new InvalidArgumentException("Gateway type '{$gateway->type}' is not supported"),
         };
     }
