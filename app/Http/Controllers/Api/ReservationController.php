@@ -133,72 +133,18 @@ class ReservationController extends Controller
     public function unpaid(Request $request): AnonymousResourceCollection
     {
         $user = $request->user();
-        
-        // Only customers can see their own unpaid reservations
-        if (!$user->isCustomer()) {
-            return ReservationResource::collection(collect());
-        }
 
-        $query = Reservation::query()->with([
+        $reservations = Reservation::query()->with([
             'session.branch',
             'session.hall',
             'session.sessionTemplate',
-            'paymentTransaction'
-        ]);
-
-        // Filter by user
-        $query->where('reservations.user_id', $user->id);
-
-        // Filter for unpaid reservations - use raw query to avoid enum casting issues in production
-        $query->whereRaw('payment_status = ?', [PaymentStatus::PENDING->value]);
-
-        // Filter for non-cancelled reservations
-        $query->whereNull('cancelled_at');
-
-        // Filter for non-expired reservations
-        // Use Carbon with UTC timezone to match expires_at storage format
-        $nowUtc = Carbon::now('UTC');
-        $query->where(function ($q) use ($nowUtc) {
-            $q->whereNull('expires_at')
-              ->orWhere('expires_at', '>', $nowUtc);
-        });
-
-        // Order by expiration time (soonest first)
-        $reservations = $query->orderBy('expires_at', 'asc')->get();
-
-        // Debug: Get all pending reservations for this user to see what's being filtered
-        $allPending = Reservation::where('user_id', $user->id)
-            ->whereRaw('payment_status = ?', [PaymentStatus::PENDING->value])
+            'paymentTransaction',
+        ])
+            ->where('expires_at', '<', now())
+            ->where('status', 'payment_status')
             ->whereNull('cancelled_at')
-            ->get(['id', 'payment_status', 'expires_at', 'cancelled_at']);
-
-        // Log for debugging in production
-        $nowUtc = Carbon::now('UTC');
-        \Log::info('Unpaid reservations query', [
-            'user_id' => $user->id,
-            'user_role' => $user->role->value ?? 'unknown',
-            'count' => $reservations->count(),
-            'now_utc' => $nowUtc->toDateTimeString(),
-            'now_timestamp' => $nowUtc->timestamp,
-            'timezone' => config('app.timezone'),
-            'all_pending_count' => $allPending->count(),
-            'all_pending' => $allPending->map(function ($r) use ($nowUtc) {
-                $expiresAt = $r->expires_at ? Carbon::parse($r->expires_at)->setTimezone('UTC') : null;
-                return [
-                    'id' => $r->id,
-                    'payment_status' => $r->payment_status,
-                    'expires_at' => $expiresAt?->toDateTimeString(),
-                    'expires_at_timestamp' => $expiresAt?->timestamp,
-                    'is_expired' => $expiresAt ? $expiresAt->isPast() : null,
-                    'time_diff_seconds' => $expiresAt ? $expiresAt->diffInSeconds($nowUtc, false) : null,
-                    'cancelled_at' => $r->cancelled_at,
-                ];
-            })->toArray(),
-            'sql' => $query->toSql(),
-            'bindings' => $query->getBindings(),
-            'reservation_ids' => $reservations->pluck('id')->toArray(),
-        ]);
-
+            ->where('user_id', $user->id)
+            ->get();
         return ReservationResource::collection($reservations);
     }
 }
