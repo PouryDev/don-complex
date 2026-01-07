@@ -140,7 +140,7 @@ class ReservationController extends Controller
             'session.sessionTemplate',
             'paymentTransaction',
         ])
-            ->where('expires_at', '<', now())
+            ->where('expires_at', '>', now())
             ->where('payment_status', 'pending')
             ->whereNull('cancelled_at')
             ->where('user_id', $user->id)
