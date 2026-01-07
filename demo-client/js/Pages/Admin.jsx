@@ -184,11 +184,6 @@ function Admin() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="text-center">
-                <h1 className="text-3xl font-bold text-white mb-2">مدیریت سفارش‌های کاربران</h1>
-                <p className="text-gray-600">مدیریت و کنترل سفارشات</p>
-            </div>
 
             {/* Quick Stats */}
             <div className="cafe-card rounded-xl p-6">

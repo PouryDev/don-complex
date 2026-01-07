@@ -102,11 +102,6 @@ function Invoices() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="text-center">
-                <h1 className="text-3xl font-bold text-white mb-2">فاکتورها</h1>
-                <p className="text-gray-300">مشاهده و مدیریت فاکتورهای خود</p>
-            </div>
 
             {/* Filter Tabs */}
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">

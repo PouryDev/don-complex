@@ -160,10 +160,6 @@ function SessionDetails() {
 
     return (
         <div className="space-y-4 sm:space-y-6 pb-4">
-            {/* Header */}
-            <div className="text-center px-1">
-                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1.5 sm:mb-2">رزرو سانس</h1>
-            </div>
 
             {/* Session Info Card */}
             <div className="cafe-card rounded-xl p-4 sm:p-5">

@@ -221,11 +221,6 @@ function Menu() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="text-center">
-                <h1 className="text-3xl font-bold text-white mb-2">منوی کافه</h1>
-                <p className="text-gray-300">انتخاب کنید و لذت ببرید</p>
-            </div>
 
             {/* Branch Selector */}
             {branches.length > 0 && (

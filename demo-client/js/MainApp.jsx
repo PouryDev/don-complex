@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { CartProvider } from './contexts/CartContext';
@@ -27,12 +27,29 @@ import { registerNavigate } from './helpers/navigation';
 
 function MainApp() {
     const navigate = useNavigate();
-    const [showIntro, setShowIntro] = useState(true);
+    const location = useLocation();
+    const isCallbackRoute = useMemo(() => {
+        const path = location.pathname || '';
+        // Hide intro on callback-like pages and payment redirects
+        return (
+            path.includes('/callback') ||
+            path.startsWith('/payment/success') ||
+            path.startsWith('/payment/error')
+        );
+    }, [location.pathname]);
+    const [showIntro, setShowIntro] = useState(() => !isCallbackRoute);
 
     // Register navigate function for use outside React context (e.g., in axios interceptors)
     useEffect(() => {
         registerNavigate(navigate);
     }, [navigate]);
+
+    // Ensure intro is hidden if navigating to callback routes
+    useEffect(() => {
+        if (isCallbackRoute) {
+            setShowIntro(false);
+        }
+    }, [isCallbackRoute]);
 
     const handleIntroComplete = () => {
         setShowIntro(false);

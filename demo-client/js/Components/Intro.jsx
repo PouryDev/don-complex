@@ -67,14 +67,14 @@ function Intro({ onComplete }) {
     const [isVisible, setIsVisible] = useState(true);
 
     useEffect(() => {
-        // Set timer for 3 seconds, then fade out
+        // Set timer for 1.5 seconds, then fade out
         const timer = setTimeout(() => {
             setIsVisible(false);
             // Call onComplete after fade out animation completes (0.4s)
             setTimeout(() => {
                 if (onComplete) onComplete();
             }, 400);
-        }, 3000);
+        }, 1500);
 
         return () => {
             clearTimeout(timer);

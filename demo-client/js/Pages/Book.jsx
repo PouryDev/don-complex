@@ -119,11 +119,6 @@ function Book() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="text-center">
-                <h1 className="text-3xl font-bold text-white mb-2">رزرو وقت</h1>
-                <p className="text-gray-300">شعبه مورد نظر خود را انتخاب کنید</p>
-            </div>
 
             {/* Branches List */}
             <div className="space-y-4">

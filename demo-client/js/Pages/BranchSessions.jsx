@@ -169,13 +169,6 @@ function BranchSessions() {
 
     return (
         <div className="space-y-4 sm:space-y-6 pb-4">
-            {/* Header */}
-            <div className="text-center px-1">
-                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1.5 sm:mb-2">
-                    {branch?.name || 'سانس‌ها'}
-                </h1>
-                <p className="text-sm sm:text-base text-gray-300">سانس مورد نظر خود را انتخاب کنید</p>
-            </div>
 
             {/* Date Filter */}
             <div className="cafe-card rounded-xl p-3 sm:p-4">

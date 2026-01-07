@@ -267,11 +267,6 @@ function MySessions() {
 
     return (
         <div className="space-y-4 sm:space-y-6 pb-4">
-            {/* Header */}
-            <div className="text-center px-1">
-                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1.5 sm:mb-2">سانس‌های من</h1>
-                <p className="text-sm sm:text-base text-gray-300">لیست رزروهای شما</p>
-            </div>
 
             {/* Total Spent Card - Modern Design */}
             <div className="relative overflow-hidden cafe-card rounded-2xl sm:rounded-3xl p-5 sm:p-6 bg-gradient-to-br from-red-500/15 via-red-600/10 to-red-700/15 border-2 border-red-500/30 shadow-2xl">

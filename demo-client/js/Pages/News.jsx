@@ -132,11 +132,6 @@ function News() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="text-center">
-                <h1 className="text-3xl font-bold text-white mb-2">هاب</h1>
-                <p className="text-gray-300">اخبار، فرم‌ها و کوئیزها</p>
-            </div>
 
             {/* Feed Items */}
             {feedItems.length === 0 ? (
