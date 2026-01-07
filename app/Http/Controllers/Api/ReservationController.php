@@ -141,7 +141,7 @@ class ReservationController extends Controller
             'paymentTransaction',
         ])
             ->where('expires_at', '<', now())
-            ->where('status', 'payment_status')
+            ->where('payment_status', 'pending')
             ->whereNull('cancelled_at')
             ->where('user_id', $user->id)
             ->get();
