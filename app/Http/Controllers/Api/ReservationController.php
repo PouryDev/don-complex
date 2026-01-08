@@ -163,8 +163,7 @@ class ReservationController extends Controller
             ->where('payment_status', PaymentStatus::PENDING)
             ->whereNull('cancelled_at')
             ->where(function ($q) {
-                $q->whereNull('expires_at')
-                  ->orWhere('expires_at', '>', Carbon::now());
+                $q->where('expires_at', '>', now());
             })
             ->orderBy('expires_at', 'asc')
             ->get();
