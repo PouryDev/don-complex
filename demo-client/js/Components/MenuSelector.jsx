@@ -105,7 +105,7 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
 
     if (error) {
         return (
-            <div className="text-center py-8 text-red-600">
+            <div className="text-center py-8 text-red-400">
                 {error}
             </div>
         );
@@ -116,11 +116,12 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
             {/* Category Filter */}
             <div className="flex gap-2 overflow-x-auto pb-2">
                 <button
+                    type="button"
                     onClick={() => setSelectedCategory('all')}
                     className={`px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
                         selectedCategory === 'all'
                             ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                     }`}
                 >
                     همه
@@ -128,11 +129,12 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
                 {categories.map(category => (
                     <button
                         key={category.id}
+                        type="button"
                         onClick={() => setSelectedCategory(category.id)}
                         className={`px-4 py-2 rounded-lg whitespace-nowrap transition-colors flex items-center gap-2 ${
                             selectedCategory === category.id
                                 ? 'bg-blue-600 text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                         }`}
                     >
                         {getCategoryIcon(category.name)}
@@ -154,13 +156,13 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
-                                className={`bg-white rounded-lg shadow-sm p-4 border-2 transition-colors ${
-                                    quantity > 0 ? 'border-blue-500' : 'border-gray-200'
+                                className={`bg-gray-800 rounded-lg shadow-sm p-4 border-2 transition-colors ${
+                                    quantity > 0 ? 'border-blue-500' : 'border-gray-700'
                                 }`}
                             >
                                 <div className="flex gap-3">
                                     {/* Image */}
-                                    <div className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
+                                    <div className="w-20 h-20 flex-shrink-0 bg-gray-700 rounded-lg overflow-hidden">
                                         {item.image ? (
                                             <img
                                                 src={item.image}
@@ -180,9 +182,9 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
 
                                     {/* Info */}
                                     <div className="flex-1 min-w-0">
-                                        <h4 className="font-semibold text-gray-900 truncate">{item.name}</h4>
+                                        <h4 className="font-semibold text-white truncate">{item.name}</h4>
                                         {item.description && (
-                                            <p className="text-sm text-gray-600 line-clamp-2 mt-1">
+                                            <p className="text-sm text-gray-400 line-clamp-2 mt-1">
                                                 {item.description}
                                             </p>
                                         )}
@@ -195,6 +197,7 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
                                     <div className="flex flex-col items-center justify-center gap-2">
                                         {quantity === 0 ? (
                                             <button
+                                                type="button"
                                                 onClick={() => handleQuantityChange(item.id, 1)}
                                                 className="w-10 h-10 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                                             >
@@ -203,15 +206,17 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
                                         ) : (
                                             <>
                                                 <button
+                                                    type="button"
                                                     onClick={() => handleQuantityChange(item.id, 1)}
                                                     className="w-8 h-8 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                                                 >
                                                     <PlusIcon />
                                                 </button>
-                                                <span className="text-lg font-bold text-gray-900">
+                                                <span className="text-lg font-bold text-white">
                                                     {quantity.toLocaleString('fa-IR')}
                                                 </span>
                                                 <button
+                                                    type="button"
                                                     onClick={() => handleQuantityChange(item.id, -1)}
                                                     className="w-8 h-8 flex items-center justify-center bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                                                 >
@@ -232,12 +237,12 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-blue-50 rounded-lg p-4 border border-blue-200"
+                    className="bg-gray-800/50 rounded-lg p-4 border border-gray-700"
                 >
                     <div className="flex justify-between items-center">
                         <div>
-                            <p className="text-sm text-gray-600">
-                                تعداد آیتم‌ها: <span className="font-bold">{getTotalItems().toLocaleString('fa-IR')}</span>
+                            <p className="text-sm text-gray-400">
+                                تعداد آیتم‌ها: <span className="font-bold text-white">{getTotalItems().toLocaleString('fa-IR')}</span>
                             </p>
                             <p className="text-lg font-bold text-blue-600 mt-1">
                                 مجموع: {getTotal().toLocaleString('fa-IR')} تومان
