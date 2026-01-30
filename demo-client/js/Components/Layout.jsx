@@ -297,16 +297,19 @@ function Layout() {
                 <div className="max-w-4xl mx-auto px-4 py-3">
                     <div className="relative flex items-center justify-between">
                         {/* User Info - Right side (first in RTL) */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                             <img 
                                 src="/logo.png" 
                                 alt="Don Club Logo" 
                                 className="w-10 h-10 rounded-full object-cover border-2 border-red-500/50"
                             />
                             {user && (
-                                <span className="text-sm text-gray-300 hidden sm:inline">
-                                    {user.name}
-                                </span>
+                                <>
+                                    <span className="text-sm text-gray-300 hidden sm:inline">
+                                        {user.name}
+                                    </span>
+                                    <CoinBalance />
+                                </>
                             )}
                         </div>
                         {/* Page Title - Centered (absolute positioned) */}

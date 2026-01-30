@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\SessionService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -9,6 +10,10 @@ class SessionResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        // Get accurate available spots (expires unpaid reservations first)
+        $sessionService = app(SessionService::class);
+        $availableSpots = $sessionService->getAvailableSpots($this->resource);
+
         return [
             'id' => $this->id,
             'branch_id' => $this->branch_id,
@@ -20,7 +25,7 @@ class SessionResource extends JsonResource
             'max_participants' => $this->max_participants,
             'current_participants' => $this->current_participants,
             'pending_participants' => $this->pending_participants ?? 0,
-            'available_spots' => $this->max_participants - $this->current_participants - ($this->pending_participants ?? 0),
+            'available_spots' => $availableSpots,
             'status' => $this->status->value,
             'branch' => $this->whenLoaded('branch', new BranchResource($this->branch)),
             'hall' => $this->whenLoaded('hall', new HallResource($this->hall)),

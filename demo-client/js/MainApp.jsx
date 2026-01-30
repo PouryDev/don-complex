@@ -20,6 +20,9 @@ import SessionDetails from './Pages/SessionDetails';
 import MySessions from './Pages/MySessions';
 import News from './Pages/News';
 import FeedDetail from './Pages/FeedDetail';
+import CoinHistory from './Pages/CoinHistory';
+import DiscountCodes from './Pages/DiscountCodes';
+import FreeTickets from './Pages/FreeTickets';
 import RoleDistribution from './Pages/RoleDistribution';
 import PaymentSuccess from './Pages/PaymentSuccess';
 import PaymentError from './Pages/PaymentError';
@@ -74,6 +77,11 @@ function MainApp() {
                         {/* News/Feed - public */}
                         <Route path="/news" element={<News />} />
                         <Route path="/feed/:type/:id" element={<FeedDetail />} />
+                        
+                        {/* DonEx (Loyalty Program) Routes */}
+                        <Route path="/coin-history" element={<ProtectedRoute><CoinHistory /></ProtectedRoute>} />
+                        <Route path="/discount-codes" element={<ProtectedRoute><DiscountCodes /></ProtectedRoute>} />
+                        <Route path="/free-tickets" element={<ProtectedRoute><FreeTickets /></ProtectedRoute>} />
                         
                         {/* Role Distribution - public */}
                         <Route path="/role-distribution" element={<RoleDistribution />} />
