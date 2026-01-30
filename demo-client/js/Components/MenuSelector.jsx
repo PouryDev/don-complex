@@ -70,7 +70,11 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
         }
     };
 
-    const handleQuantityChange = (menuItemId, delta) => {
+    const handleQuantityChange = (menuItemId, delta, e) => {
+        if (e) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
         setSelectedItems(prev => {
             const current = prev[menuItemId] || 0;
             const newQuantity = Math.max(0, current + delta);
@@ -114,10 +118,13 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
     return (
         <div className="space-y-4">
             {/* Category Filter */}
-            <div className="flex gap-2 overflow-x-auto pb-2">
+            <div className="flex gap-2 overflow-x-auto pb-2" onClick={(e) => e.stopPropagation()}>
                 <button
                     type="button"
-                    onClick={() => setSelectedCategory('all')}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedCategory('all');
+                    }}
                     className={`px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
                         selectedCategory === 'all'
                             ? 'bg-blue-600 text-white'
@@ -130,7 +137,10 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
                     <button
                         key={category.id}
                         type="button"
-                        onClick={() => setSelectedCategory(category.id)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCategory(category.id);
+                        }}
                         className={`px-4 py-2 rounded-lg whitespace-nowrap transition-colors flex items-center gap-2 ${
                             selectedCategory === category.id
                                 ? 'bg-blue-600 text-white'
@@ -194,11 +204,11 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
                                     </div>
 
                                     {/* Quantity Controls */}
-                                    <div className="flex flex-col items-center justify-center gap-2">
+                                    <div className="flex flex-col items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
                                         {quantity === 0 ? (
                                             <button
                                                 type="button"
-                                                onClick={() => handleQuantityChange(item.id, 1)}
+                                                onClick={(e) => handleQuantityChange(item.id, 1, e)}
                                                 className="w-10 h-10 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                                             >
                                                 <PlusIcon />
@@ -207,7 +217,7 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
                                             <>
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleQuantityChange(item.id, 1)}
+                                                    onClick={(e) => handleQuantityChange(item.id, 1, e)}
                                                     className="w-8 h-8 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                                                 >
                                                     <PlusIcon />
@@ -217,7 +227,7 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
                                                 </span>
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleQuantityChange(item.id, -1)}
+                                                    onClick={(e) => handleQuantityChange(item.id, -1, e)}
                                                     className="w-8 h-8 flex items-center justify-center bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                                                 >
                                                     <MinusIcon />
