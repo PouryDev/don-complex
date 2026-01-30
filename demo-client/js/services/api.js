@@ -83,11 +83,12 @@ export const menuService = {
     },
 };
 
-// Order Service
-export const orderService = {
-    getOrders: () => api.get('/orders').then(res => res.data),
-    getOrder: (id) => api.get(`/orders/${id}`).then(res => res.data),
-    createOrder: (data) => api.post('/orders', data).then(res => res.data),
+// Order Service (for reservation food orders)
+export const reservationOrderService = {
+    getOrders: (reservationId) => api.get(`/reservations/${reservationId}/orders`).then(res => res.data),
+    createOrder: (reservationId, data) => api.post(`/reservations/${reservationId}/orders`, data).then(res => res.data),
+    updateOrder: (orderId, data) => api.put(`/orders/${orderId}`, data).then(res => res.data),
+    deleteOrder: (orderId) => api.delete(`/orders/${orderId}`).then(res => res.data),
 };
 
 // Invoice Service
@@ -328,9 +329,20 @@ export const reservationService = {
         }
         return res.data;
     }),
-    createReservation: (sessionId, numberOfPeople) => {
-        return api.post(`/sessions/${sessionId}/reservations`, {
+    createReservation: (sessionId, numberOfPeople, orderItems = null, orderNotes = null) => {
+        const data = {
             number_of_people: numberOfPeople,
+        };
+        
+        if (orderItems && orderItems.length > 0) {
+            data.order_items = orderItems;
+        }
+        
+        if (orderNotes) {
+            data.order_notes = orderNotes;
+        }
+        
+        return api.post(`/sessions/${sessionId}/reservations`, data
         }).then(res => {
             // Handle single resource response
             if (res.data && res.data.data) {

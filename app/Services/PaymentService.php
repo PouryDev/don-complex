@@ -92,6 +92,32 @@ class PaymentService
     }
 
     /**
+     * Recalculate transaction amount based on reservation and orders
+     */
+    public function recalculateTransactionAmount(Reservation $reservation): void
+    {
+        // Only recalculate if payment is still pending
+        if ($reservation->payment_status !== PaymentStatus::PENDING) {
+            throw new \Exception('نمی‌توان مبلغ تراکنش پرداخت شده را تغییر داد.');
+        }
+
+        $transaction = $reservation->paymentTransaction;
+        if (!$transaction) {
+            throw new \Exception('تراکنش پرداخت یافت نشد.');
+        }
+
+        // Calculate new total amount
+        $newAmount = $reservation->getTotalAmount();
+
+        // Update transaction amount
+        DB::transaction(function () use ($transaction, $newAmount) {
+            $transaction->update([
+                'amount' => $newAmount,
+            ]);
+        });
+    }
+
+    /**
      * Handle payment gateway callback (placeholder for actual gateway integration)
      */
     public function handleGatewayCallback(

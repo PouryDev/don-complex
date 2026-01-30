@@ -12,10 +12,12 @@ use Carbon\Carbon;
 class ReservationService
 {
     protected SessionService $sessionService;
+    protected OrderService $orderService;
 
-    public function __construct(SessionService $sessionService)
+    public function __construct(SessionService $sessionService, OrderService $orderService)
     {
         $this->sessionService = $sessionService;
+        $this->orderService = $orderService;
     }
 
     /**
@@ -52,11 +54,45 @@ class ReservationService
     }
 
     /**
-     * Calculate total price for a reservation
+     * Create a reservation with optional order
+     */
+    public function createReservationWithOrder(
+        User $user,
+        Session $session,
+        int $numberOfPeople,
+        ?array $orderItems = null,
+        ?string $orderNotes = null
+    ): Reservation {
+        return DB::transaction(function () use ($user, $session, $numberOfPeople, $orderItems, $orderNotes) {
+            // Create the reservation first
+            $reservation = $this->createReservation($user, $session, $numberOfPeople);
+
+            // Create order if items provided
+            if (!empty($orderItems)) {
+                $this->orderService->createOrder($reservation, $orderItems, $orderNotes);
+            }
+
+            // Load relations for response
+            $reservation->load(['orders.orderItems.menuItem', 'session.branch']);
+
+            return $reservation;
+        });
+    }
+
+    /**
+     * Calculate total price for a reservation (tickets only)
      */
     public function calculateTotalPrice(Session $session, int $numberOfPeople): float
     {
         return (float) ($session->price * $numberOfPeople);
+    }
+
+    /**
+     * Calculate total price including orders
+     */
+    public function calculateTotalPriceWithOrders(Reservation $reservation): float
+    {
+        return $reservation->getTotalAmount();
     }
 
     /**
@@ -124,6 +160,11 @@ class ReservationService
                 $reservation->update([
                     'cancelled_at' => now(),
                 ]);
+                
+                // Cancel and soft delete all orders for this reservation
+                $reservation->orders()->update(['status' => \App\Enums\OrderStatus::CANCELLED]);
+                $reservation->orders()->delete();
+                
                 $totalExpiredParticipants += $reservation->number_of_people;
                 $expiredCount++;
             }

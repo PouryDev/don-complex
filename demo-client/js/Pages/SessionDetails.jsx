@@ -6,7 +6,8 @@ import Loading from '../Components/Loading';
 import Input from '../Components/Input';
 import Button from '../Components/Button';
 import Checkbox from '../Components/Checkbox';
-import { WarningIcon, CalendarIcon } from '../Components/Icons';
+import MenuSelector from '../Components/MenuSelector';
+import { WarningIcon, CalendarIcon, MenuDefaultIcon } from '../Components/Icons';
 
 function SessionDetails() {
     const { sessionId } = useParams();
@@ -20,6 +21,9 @@ function SessionDetails() {
     const [gateways, setGateways] = useState([]);
     const [selectedGatewayId, setSelectedGatewayId] = useState(null);
     const [loadingGateways, setLoadingGateways] = useState(false);
+    const [showFoodMenu, setShowFoodMenu] = useState(false);
+    const [orderItems, setOrderItems] = useState([]);
+    const [orderNotes, setOrderNotes] = useState('');
 
     useEffect(() => {
         fetchSession();
@@ -81,8 +85,19 @@ function SessionDetails() {
         try {
             setSubmitting(true);
             
-            // Create reservation
-            const reservation = await reservationService.createReservation(sessionId, numberOfPeople);
+            // Create reservation with optional food order
+            const reservationData = {
+                number_of_people: numberOfPeople
+            };
+            
+            if (orderItems.length > 0) {
+                reservationData.order_items = orderItems;
+                if (orderNotes.trim()) {
+                    reservationData.order_notes = orderNotes.trim();
+                }
+            }
+            
+            const reservation = await reservationService.createReservation(sessionId, reservationData.number_of_people, reservationData.order_items, reservationData.order_notes);
             
             // Get payment transaction from reservation
             const paymentTransactionId = reservation.payment_transaction?.id;
@@ -132,9 +147,27 @@ function SessionDetails() {
         return new Intl.NumberFormat('fa-IR').format(price);
     };
 
-    const calculateTotal = () => {
+    const calculateTicketTotal = () => {
         if (!session) return 0;
         return session.price * numberOfPeople;
+    };
+
+    const calculateFoodTotal = () => {
+        if (!session || orderItems.length === 0) return 0;
+        // This will be calculated from MenuSelector's selection
+        return orderItems.reduce((total, item) => {
+            // We need to get the actual menu item to calculate price
+            // For now, return 0 as MenuSelector will show the total
+            return total;
+        }, 0);
+    };
+
+    const calculateGrandTotal = () => {
+        return calculateTicketTotal() + calculateFoodTotal();
+    };
+
+    const handleFoodSelectionChange = (items) => {
+        setOrderItems(items);
     };
 
     if (loading) {
@@ -269,15 +302,79 @@ function SessionDetails() {
                     </div>
                 )}
 
+                {/* Food Order Section (Optional) */}
+                <div className="space-y-3">
+                    <button
+                        type="button"
+                        onClick={() => setShowFoodMenu(!showFoodMenu)}
+                        className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-orange-500/20 to-red-500/20 border-2 border-orange-500/40 rounded-xl hover:from-orange-500/30 hover:to-red-500/30 transition-all"
+                    >
+                        <div className="flex items-center gap-3">
+                            <MenuDefaultIcon className="w-6 h-6 text-orange-400" />
+                            <span className="text-white font-semibold">
+                                {showFoodMenu ? 'بستن منوی غذا' : 'سفارش غذا (اختیاری)'}
+                            </span>
+                        </div>
+                        {orderItems.length > 0 && (
+                            <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
+                                {orderItems.length} آیتم
+                            </span>
+                        )}
+                    </button>
+
+                    {showFoodMenu && session?.branch?.id && (
+                        <div className="cafe-card rounded-xl p-4 space-y-3">
+                            <MenuSelector
+                                branchId={session.branch.id}
+                                onSelectionChange={handleFoodSelectionChange}
+                                initialItems={orderItems}
+                            />
+                            
+                            <div className="mt-4">
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    یادداشت سفارش (اختیاری)
+                                </label>
+                                <textarea
+                                    value={orderNotes}
+                                    onChange={(e) => setOrderNotes(e.target.value)}
+                                    placeholder="مثلاً: بدون پیاز، کم نمک، ..."
+                                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red-500 resize-none"
+                                    rows={3}
+                                    maxLength={500}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {orderNotes.length}/500 کاراکتر
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 {/* Total Price Card */}
-                <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-xl p-4 sm:p-5 border-2 border-red-500/30 shadow-lg">
+                <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-xl p-4 sm:p-5 border-2 border-red-500/30 shadow-lg space-y-2">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full -mr-16 -mt-16"></div>
                     <div className="absolute bottom-0 left-0 w-24 h-24 bg-red-500/5 rounded-full -ml-12 -mb-12"></div>
-                    <div className="relative flex justify-between items-center">
-                        <span className="text-sm sm:text-base text-gray-300 font-medium">جمع کل</span>
-                        <span className="text-lg sm:text-2xl text-red-400 font-bold">
-                            {formatPrice(calculateTotal())} <span className="text-xs sm:text-sm text-gray-400 font-normal">تومان</span>
-                        </span>
+                    
+                    <div className="relative space-y-2">
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-400">قیمت بلیط ({numberOfPeople} نفر)</span>
+                            <span className="text-gray-300">{formatPrice(calculateTicketTotal())} تومان</span>
+                        </div>
+                        
+                        {orderItems.length > 0 && (
+                            <div className="flex justify-between items-center text-sm pb-2 border-b border-gray-700">
+                                <span className="text-gray-400">سفارش غذا ({orderItems.length} آیتم)</span>
+                                <span className="text-orange-400">محاسبه در مرحله بعد</span>
+                            </div>
+                        )}
+                        
+                        <div className="flex justify-between items-center pt-2">
+                            <span className="text-sm sm:text-base text-gray-300 font-medium">جمع کل</span>
+                            <span className="text-lg sm:text-2xl text-red-400 font-bold">
+                                {formatPrice(calculateTicketTotal())} <span className="text-xs sm:text-sm text-gray-400 font-normal">تومان</span>
+                                {orderItems.length > 0 && <span className="text-xs text-orange-400"> + غذا</span>}
+                            </span>
+                        </div>
                     </div>
                 </div>
 

@@ -87,7 +87,8 @@ class ReservationController extends Controller
         $this->authorize('create', Reservation::class);
 
         try {
-            $numberOfPeople = $request->validated()['number_of_people'];
+            $validated = $request->validated();
+            $numberOfPeople = $validated['number_of_people'];
 
             // Additional validation: check if requested number exceeds available spots
             // Use SessionService to get accurate available spots (includes pending_participants)
@@ -98,14 +99,22 @@ class ReservationController extends Controller
                 ], 422)->header('Content-Type', 'application/json');
             }
 
-            $reservation = $this->reservationService->createReservation(
+            // Create reservation with optional order
+            $orderItems = $validated['order_items'] ?? null;
+            $orderNotes = $validated['order_notes'] ?? null;
+
+            $reservation = $this->reservationService->createReservationWithOrder(
                 $request->user(),
                 $session,
-                $numberOfPeople
+                $numberOfPeople,
+                $orderItems,
+                $orderNotes
             );
 
-            // Create payment transaction
-            $totalPrice = $this->reservationService->calculateTotalPrice($session, $numberOfPeople);
+            // Calculate total price (reservation + orders)
+            $totalPrice = $reservation->getTotalAmount();
+            
+            // Create payment transaction with total amount
             $this->paymentService->createTransaction($reservation, $totalPrice);
 
             // Eager load all nested relationships
@@ -114,7 +123,8 @@ class ReservationController extends Controller
                 'session.hall',
                 'session.sessionTemplate',
                 'user',
-                'paymentTransaction'
+                'paymentTransaction',
+                'orders.orderItems.menuItem'
             ]);
 
             // Clear session availability cache

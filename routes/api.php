@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\FreeTicketController;
 use App\Http\Controllers\Api\GameMasterController;
 use App\Http\Controllers\Api\HallController;
 use App\Http\Controllers\Api\MenuItemController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\QuizResponseController;
 use App\Http\Controllers\Api\ReservationController;
@@ -64,6 +65,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reservations/unpaid', [ReservationController::class, 'unpaid']);
     Route::apiResource('reservations', ReservationController::class)->except(['update']);
     Route::post('/sessions/{session}/reservations', [ReservationController::class, 'store']);
+
+    // Orders (for reservations)
+    Route::get('/reservations/{reservation}/orders', [OrderController::class, 'index']);
+    Route::post('/reservations/{reservation}/orders', [OrderController::class, 'store']);
+    Route::put('/orders/{order}', [OrderController::class, 'update']);
+    Route::delete('/orders/{order}', [OrderController::class, 'destroy']);
 
     // Payment routes
     Route::post('/payments/{paymentTransaction}/initiate', [PaymentController::class, 'initiate']);

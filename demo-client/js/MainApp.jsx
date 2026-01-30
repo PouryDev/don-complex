@@ -17,6 +17,7 @@ import NotFound from './Pages/NotFound';
 import Book from './Pages/Book';
 import BranchSessions from './Pages/BranchSessions';
 import SessionDetails from './Pages/SessionDetails';
+import ReservationDetails from './Pages/ReservationDetails';
 import MySessions from './Pages/MySessions';
 import News from './Pages/News';
 import FeedDetail from './Pages/FeedDetail';
@@ -121,6 +122,14 @@ function MainApp() {
                             element={
                                 <ProtectedRoute>
                                     <MySessions />
+                                </ProtectedRoute>
+                            } 
+                        />
+                        <Route 
+                            path="/reservations/:reservationId" 
+                            element={
+                                <ProtectedRoute>
+                                    <ReservationDetails />
                                 </ProtectedRoute>
                             } 
                         />

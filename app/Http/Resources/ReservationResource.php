@@ -36,6 +36,11 @@ class ReservationResource extends JsonResource
                     'status' => $this->paymentTransaction->status->value,
                 ];
             }),
+            'orders' => OrderResource::collection($this->whenLoaded('orders')),
+            'total_amount' => $this->when(
+                $this->relationLoaded('session'),
+                fn() => $this->getTotalAmount()
+            ),
         ];
     }
 }

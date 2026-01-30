@@ -1,0 +1,245 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { menuService } from '../services/api';
+import Loading from './Loading';
+import { MenuDefaultIcon, PlusIcon, MinusIcon, getCategoryIcon } from './Icons';
+
+function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
+    const [categories, setCategories] = useState([]);
+    const [menuItems, setMenuItems] = useState([]);
+    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [selectedItems, setSelectedItems] = useState({});
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        // Initialize selected items from initialItems
+        if (initialItems && initialItems.length > 0) {
+            const items = {};
+            initialItems.forEach(item => {
+                items[item.menu_item_id] = item.quantity;
+            });
+            setSelectedItems(items);
+        }
+    }, [initialItems]);
+
+    useEffect(() => {
+        if (branchId) {
+            fetchData();
+        }
+    }, [branchId]);
+
+    useEffect(() => {
+        // Notify parent of selection changes
+        const items = Object.entries(selectedItems)
+            .filter(([_, quantity]) => quantity > 0)
+            .map(([menuItemId, quantity]) => ({
+                menu_item_id: parseInt(menuItemId),
+                quantity: quantity
+            }));
+        
+        onSelectionChange(items);
+    }, [selectedItems]);
+
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            const [categoriesData, menuItemsData] = await Promise.all([
+                menuService.getCategories(branchId),
+                menuService.getMenuItems(branchId)
+            ]);
+            
+            setCategories(categoriesData);
+            setMenuItems(menuItemsData.data || menuItemsData);
+        } catch (err) {
+            console.error('Error fetching menu:', err);
+            setError('خطا در بارگذاری منو');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleQuantityChange = (menuItemId, delta) => {
+        setSelectedItems(prev => {
+            const current = prev[menuItemId] || 0;
+            const newQuantity = Math.max(0, current + delta);
+            
+            if (newQuantity === 0) {
+                const { [menuItemId]: _, ...rest } = prev;
+                return rest;
+            }
+            
+            return { ...prev, [menuItemId]: newQuantity };
+        });
+    };
+
+    const getTotal = () => {
+        return Object.entries(selectedItems).reduce((total, [menuItemId, quantity]) => {
+            const item = menuItems.find(mi => mi.id === parseInt(menuItemId));
+            return total + (item ? item.price * quantity : 0);
+        }, 0);
+    };
+
+    const getTotalItems = () => {
+        return Object.values(selectedItems).reduce((sum, qty) => sum + qty, 0);
+    };
+
+    const filteredMenuItems = selectedCategory === 'all'
+        ? menuItems
+        : menuItems.filter(item => item.category_id === selectedCategory);
+
+    if (loading) {
+        return <Loading />;
+    }
+
+    if (error) {
+        return (
+            <div className="text-center py-8 text-red-600">
+                {error}
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            {/* Category Filter */}
+            <div className="flex gap-2 overflow-x-auto pb-2">
+                <button
+                    onClick={() => setSelectedCategory('all')}
+                    className={`px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
+                        selectedCategory === 'all'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                >
+                    همه
+                </button>
+                {categories.map(category => (
+                    <button
+                        key={category.id}
+                        onClick={() => setSelectedCategory(category.id)}
+                        className={`px-4 py-2 rounded-lg whitespace-nowrap transition-colors flex items-center gap-2 ${
+                            selectedCategory === category.id
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                    >
+                        {getCategoryIcon(category.name)}
+                        {category.name}
+                    </button>
+                ))}
+            </div>
+
+            {/* Menu Items */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+                <AnimatePresence mode="popLayout">
+                    {filteredMenuItems.map(item => {
+                        const quantity = selectedItems[item.id] || 0;
+                        
+                        return (
+                            <motion.div
+                                key={item.id}
+                                layout
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                className={`bg-white rounded-lg shadow-sm p-4 border-2 transition-colors ${
+                                    quantity > 0 ? 'border-blue-500' : 'border-gray-200'
+                                }`}
+                            >
+                                <div className="flex gap-3">
+                                    {/* Image */}
+                                    <div className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
+                                        {item.image ? (
+                                            <img
+                                                src={item.image}
+                                                alt={item.name}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    e.target.style.display = 'none';
+                                                    e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center text-gray-400"><svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/></svg></div>';
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                                <MenuDefaultIcon />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Info */}
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-semibold text-gray-900 truncate">{item.name}</h4>
+                                        {item.description && (
+                                            <p className="text-sm text-gray-600 line-clamp-2 mt-1">
+                                                {item.description}
+                                            </p>
+                                        )}
+                                        <p className="text-lg font-bold text-blue-600 mt-2">
+                                            {item.price.toLocaleString('fa-IR')} تومان
+                                        </p>
+                                    </div>
+
+                                    {/* Quantity Controls */}
+                                    <div className="flex flex-col items-center justify-center gap-2">
+                                        {quantity === 0 ? (
+                                            <button
+                                                onClick={() => handleQuantityChange(item.id, 1)}
+                                                className="w-10 h-10 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                            >
+                                                <PlusIcon />
+                                            </button>
+                                        ) : (
+                                            <>
+                                                <button
+                                                    onClick={() => handleQuantityChange(item.id, 1)}
+                                                    className="w-8 h-8 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                                >
+                                                    <PlusIcon />
+                                                </button>
+                                                <span className="text-lg font-bold text-gray-900">
+                                                    {quantity.toLocaleString('fa-IR')}
+                                                </span>
+                                                <button
+                                                    onClick={() => handleQuantityChange(item.id, -1)}
+                                                    className="w-8 h-8 flex items-center justify-center bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                                >
+                                                    <MinusIcon />
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        );
+                    })}
+                </AnimatePresence>
+            </div>
+
+            {/* Summary */}
+            {getTotalItems() > 0 && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-blue-50 rounded-lg p-4 border border-blue-200"
+                >
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <p className="text-sm text-gray-600">
+                                تعداد آیتم‌ها: <span className="font-bold">{getTotalItems().toLocaleString('fa-IR')}</span>
+                            </p>
+                            <p className="text-lg font-bold text-blue-600 mt-1">
+                                مجموع: {getTotal().toLocaleString('fa-IR')} تومان
+                            </p>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+        </div>
+    );
+}
+
+export default MenuSelector;
+

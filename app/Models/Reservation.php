@@ -6,6 +6,7 @@ use App\Enums\PaymentStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 
 class Reservation extends Model
@@ -49,6 +50,29 @@ class Reservation extends Model
     public function validator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'validated_by');
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Get total amount including reservation price and orders
+     */
+    public function getTotalAmount(): float
+    {
+        // Calculate reservation price (session price * number of people)
+        $sessionPrice = $this->session->price * $this->number_of_people;
+        
+        // Calculate orders total
+        $ordersTotal = $this->orders()
+            ->whereNull('deleted_at')
+            ->where('status', '!=', \App\Enums\OrderStatus::CANCELLED)
+            ->get()
+            ->sum('total_amount');
+        
+        return (float) ($sessionPrice + $ordersTotal);
     }
 
     /**
