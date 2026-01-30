@@ -15,7 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Trust all proxies for HTTPS detection
         $middleware->trustProxies(
             at: '*',
-            headers: \Illuminate\Http\Request::HEADER_X_FORWARDED_ALL
+            headers: \Symfony\Component\HttpFoundation\Request::HEADER_X_FORWARDED_FOR |
+                     \Symfony\Component\HttpFoundation\Request::HEADER_X_FORWARDED_HOST |
+                     \Symfony\Component\HttpFoundation\Request::HEADER_X_FORWARDED_PORT |
+                     \Symfony\Component\HttpFoundation\Request::HEADER_X_FORWARDED_PROTO |
+                     \Symfony\Component\HttpFoundation\Request::HEADER_X_FORWARDED_PREFIX
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
