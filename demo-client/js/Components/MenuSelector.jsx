@@ -51,8 +51,17 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
                 menuService.getMenuItems(branchId)
             ]);
             
-            setCategories(categoriesData);
-            setMenuItems(menuItemsData.data || menuItemsData);
+            // Handle categories response
+            const categoriesArray = Array.isArray(categoriesData) 
+                ? categoriesData 
+                : (categoriesData?.data || []);
+            setCategories(categoriesArray);
+            
+            // Handle menu items response (could be paginated or simple array)
+            const menuItemsArray = Array.isArray(menuItemsData)
+                ? menuItemsData
+                : (menuItemsData?.data || []);
+            setMenuItems(menuItemsArray);
         } catch (err) {
             console.error('Error fetching menu:', err);
             setError('خطا در بارگذاری منو');
