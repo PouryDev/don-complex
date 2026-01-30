@@ -13,13 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Trust all proxies for HTTPS detection
-        $middleware->trustProxies(at: '*', headers: [
-            'X-Forwarded-For',
-            'X-Forwarded-Host',
-            'X-Forwarded-Port',
-            'X-Forwarded-Proto',
-            'X-Forwarded-Prefix',
-        ]);
+        $middleware->trustProxies(
+            at: '*',
+            headers: \Illuminate\Http\Request::HEADER_X_FORWARDED_ALL
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
