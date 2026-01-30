@@ -342,8 +342,7 @@ export const reservationService = {
             data.order_notes = orderNotes;
         }
         
-        return api.post(`/sessions/${sessionId}/reservations`, data
-        }).then(res => {
+        return api.post(`/sessions/${sessionId}/reservations`, data).then(res => {
             // Handle single resource response
             if (res.data && res.data.data) {
                 return res.data.data;
