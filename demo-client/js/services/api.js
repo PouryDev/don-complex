@@ -83,7 +83,14 @@ export const menuService = {
     },
 };
 
-// Order Service (for reservation food orders)
+// Order Service (original - for general food orders)
+export const orderService = {
+    getOrders: () => api.get('/orders').then(res => res.data),
+    getOrder: (id) => api.get(`/orders/${id}`).then(res => res.data),
+    createOrder: (data) => api.post('/orders', data).then(res => res.data),
+};
+
+// Reservation Order Service (for reservation food orders)
 export const reservationOrderService = {
     getOrders: (reservationId) => api.get(`/reservations/${reservationId}/orders`).then(res => res.data),
     createOrder: (reservationId, data) => api.post(`/reservations/${reservationId}/orders`, data).then(res => res.data),
