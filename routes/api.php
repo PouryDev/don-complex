@@ -3,8 +3,11 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BranchController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CoinController;
+use App\Http\Controllers\Api\DiscountCodeController;
 use App\Http\Controllers\Api\FeedController;
 use App\Http\Controllers\Api\FormResponseController;
+use App\Http\Controllers\Api\FreeTicketController;
 use App\Http\Controllers\Api\GameMasterController;
 use App\Http\Controllers\Api\HallController;
 use App\Http\Controllers\Api\MenuItemController;
@@ -71,6 +74,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/quizzes/{quiz}/responses', [QuizResponseController::class, 'show']);
     Route::post('/forms/{form}/responses', [FormResponseController::class, 'store']);
     Route::get('/forms/{form}/responses', [FormResponseController::class, 'show']);
+
+    // Coins
+    Route::get('/coins/balance', [CoinController::class, 'balance']);
+    Route::get('/coins/history', [CoinController::class, 'history']);
+    
+    // Discount Codes
+    Route::get('/discount-codes', [DiscountCodeController::class, 'index']);
+    Route::post('/discount-codes/{discountCode}/purchase', [DiscountCodeController::class, 'purchase']);
+    Route::get('/discount-codes/my-codes', [DiscountCodeController::class, 'myCodes']);
+    Route::post('/discount-codes/validate', [DiscountCodeController::class, 'validate']);
+    
+    // Free Tickets
+    Route::get('/free-tickets', [FreeTicketController::class, 'index']);
+    Route::post('/free-tickets/purchase', [FreeTicketController::class, 'purchase']);
+    Route::post('/free-tickets/{freeTicket}/use', [FreeTicketController::class, 'use']);
+    
+    // Feed view tracking (for coin rewards)
+    Route::post('/feed/{type}/{id}/view', [FeedController::class, 'trackView']);
 
     // Game Master routes
     Route::prefix('game-master')->group(function () {

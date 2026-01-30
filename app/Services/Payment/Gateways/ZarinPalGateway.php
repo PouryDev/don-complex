@@ -52,6 +52,13 @@ class ZarinPalGateway implements PaymentGatewayInterface
             // Convert Toman to Rials (ZarinPal uses Rials)
             $amount = $transaction->amount * 10;
 
+            // Log callback URL for debugging
+            Log::info('ZarinPal initiate - callback URL', [
+                'callback_url' => $callbackUrl,
+                'transaction_id' => $transaction->id,
+                'sandbox' => $this->sandbox,
+            ]);
+
             $requestData = [
                 'merchant_id' => $this->merchantId,
                 'amount' => $amount,

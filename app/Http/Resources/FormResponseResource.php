@@ -19,6 +19,7 @@ class FormResponseResource extends JsonResource
             'user_id' => $this->user_id,
             'form_id' => $this->form_id,
             'data' => $this->data,
+            'coins_awarded' => $this->when(isset($this->coins_awarded), $this->coins_awarded),
             'created_at' => $this->created_at?->toISOString(),
         ];
     }

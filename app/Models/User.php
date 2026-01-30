@@ -7,6 +7,7 @@ use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -67,6 +68,26 @@ class User extends Authenticatable
     public function validatedReservations(): HasMany
     {
         return $this->hasMany(Reservation::class, 'validated_by');
+    }
+
+    public function coin(): HasOne
+    {
+        return $this->hasOne(Coin::class);
+    }
+
+    public function coinTransactions(): HasMany
+    {
+        return $this->hasMany(CoinTransaction::class);
+    }
+
+    public function userDiscountCodes(): HasMany
+    {
+        return $this->hasMany(UserDiscountCode::class);
+    }
+
+    public function freeTickets(): HasMany
+    {
+        return $this->hasMany(FreeTicket::class);
     }
 
     public function isCustomer(): bool

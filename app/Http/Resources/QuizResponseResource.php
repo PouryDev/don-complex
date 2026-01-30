@@ -20,6 +20,7 @@ class QuizResponseResource extends JsonResource
             'quiz_id' => $this->quiz_id,
             'answers' => $this->answers,
             'score' => $this->score,
+            'coins_awarded' => $this->when(isset($this->coins_awarded), $this->coins_awarded),
             'created_at' => $this->created_at?->toISOString(),
         ];
     }

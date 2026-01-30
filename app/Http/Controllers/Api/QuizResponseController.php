@@ -5,13 +5,22 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreQuizResponseRequest;
 use App\Http\Resources\QuizResponseResource;
+use App\Models\CoinRewardRule;
 use App\Models\Quiz;
 use App\Models\QuizResponse;
+use App\Services\CoinService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
 class QuizResponseController extends Controller
 {
+    protected CoinService $coinService;
+
+    public function __construct(CoinService $coinService)
+    {
+        $this->coinService = $coinService;
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -43,6 +52,25 @@ class QuizResponseController extends Controller
                 'answers' => $answers,
                 'score' => $score,
             ]);
+
+            // Award coins based on reward rule
+            $coinsAwarded = 0;
+            $coins = CoinRewardRule::getCoinsFor($quiz);
+            if ($coins) {
+                // Check if user already received coins for this quiz
+                $existingTransaction = \App\Models\CoinTransaction::where('user_id', $user->id)
+                    ->where('source', 'quiz')
+                    ->where('related_type', get_class($quiz))
+                    ->where('related_id', $quiz->id)
+                    ->first();
+
+                if (!$existingTransaction) {
+                    $this->coinService->awardCoins($user, $coins, 'quiz', $quiz);
+                    $coinsAwarded = $coins;
+                }
+            }
+
+            $response->coins_awarded = $coinsAwarded;
 
             return new QuizResponseResource($response);
         } catch (\Illuminate\Database\QueryException $e) {

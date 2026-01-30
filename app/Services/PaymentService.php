@@ -3,17 +3,21 @@
 namespace App\Services;
 
 use App\Enums\PaymentStatus;
+use App\Models\CoinRewardRule;
 use App\Models\PaymentTransaction;
 use App\Models\Reservation;
+use App\Services\CoinService;
 use Illuminate\Support\Facades\DB;
 
 class PaymentService
 {
     protected ReservationService $reservationService;
+    protected CoinService $coinService;
 
-    public function __construct(ReservationService $reservationService)
+    public function __construct(ReservationService $reservationService, CoinService $coinService)
     {
         $this->reservationService = $reservationService;
+        $this->coinService = $coinService;
     }
 
     /**
@@ -68,6 +72,21 @@ class PaymentService
             // If payment is successful and was previously pending, confirm the reservation
             if ($status === PaymentStatus::PAID && $wasPending) {
                 $this->reservationService->confirmPayment($reservation);
+                
+                // Award coins for successful reservation payment
+                $coins = CoinRewardRule::getCoinsFor($reservation);
+                if ($coins) {
+                    // Check if user already received coins for this reservation
+                    $existingTransaction = \App\Models\CoinTransaction::where('user_id', $reservation->user_id)
+                        ->where('source', 'reservation')
+                        ->where('related_type', get_class($reservation))
+                        ->where('related_id', $reservation->id)
+                        ->first();
+
+                    if (!$existingTransaction) {
+                        $this->coinService->awardCoins($reservation->user, $coins, 'reservation', $reservation);
+                    }
+                }
             }
         }
     }

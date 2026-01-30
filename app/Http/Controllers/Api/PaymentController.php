@@ -25,6 +25,7 @@ class PaymentController extends Controller
     public function gateways(): JsonResponse
     {
         // Cache payment gateways for 30 minutes as they rarely change
+        // Note: We don't cache the gateway instance used in initiate() - that's always fresh from DB
         $gateways = Cache::remember('payment_gateways_active', 1800, function () {
             return PaymentGateway::where('is_active', true)
                 ->orderBy('sort_order')
@@ -88,9 +89,18 @@ class PaymentController extends Controller
                 'gateway' => $gateway->type,
             ]);
 
+            // Build callback URL - ensure it's absolute for production
+            $callbackUrl = route('payment.callback', ['gateway' => $gateway->type], true);
+            
+            Log::info('Payment initiate - callback URL', [
+                'callback_url' => $callbackUrl,
+                'gateway_type' => $gateway->type,
+                'transaction_id' => $paymentTransaction->id,
+            ]);
+
             // Initiate payment
             $result = $gatewayInstance->initiate($paymentTransaction, [
-                'callback_url' => route('payment.callback', ['gateway' => $gateway->type]),
+                'callback_url' => $callbackUrl,
             ]);
 
             if (!$result['success']) {

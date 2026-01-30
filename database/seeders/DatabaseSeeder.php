@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             TestDataSeeder::class,
             MenuSeeder::class,
+            CoinRewardRuleSeeder::class,
+            DiscountCodeSeeder::class,
         ]);
     }
 }

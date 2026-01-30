@@ -403,5 +403,66 @@ export const feedService = {
     },
 };
 
+// Coin Service
+export const coinService = {
+    getBalance: () => api.get('/coins/balance').then(res => res.data),
+    getHistory: (params = {}) => {
+        const queryParams = { ...params };
+        if (!queryParams.per_page) queryParams.per_page = 20;
+        return api.get('/coins/history', { params: queryParams }).then(res => {
+            if (res.data && res.data.data) {
+                return res.data;
+            }
+            return res.data;
+        });
+    },
+};
+
+// Discount Code Service
+export const discountCodeService = {
+    getAvailable: () => api.get('/discount-codes').then(res => {
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return Array.isArray(res.data) ? res.data : [];
+    }),
+    purchase: (discountCodeId) => api.post(`/discount-codes/${discountCodeId}/purchase`).then(res => res.data),
+    getMyCodes: () => api.get('/discount-codes/my-codes').then(res => {
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return Array.isArray(res.data) ? res.data : [];
+    }),
+    validate: (code, orderAmount) => api.post('/discount-codes/validate', {
+        code,
+        order_amount: orderAmount,
+    }).then(res => res.data),
+};
+
+// Free Ticket Service
+export const freeTicketService = {
+    getTickets: (unusedOnly = false) => {
+        const params = unusedOnly ? { unused_only: true } : {};
+        return api.get('/free-tickets', { params }).then(res => {
+            if (res.data && res.data.data) {
+                return res.data.data;
+            }
+            return Array.isArray(res.data) ? res.data : [];
+        });
+    },
+    purchase: (coinsCost) => api.post('/free-tickets/purchase', {
+        coins_cost: coinsCost,
+    }).then(res => res.data),
+    useTicket: (ticketId, sessionId) => api.post(`/free-tickets/${ticketId}/use`, {
+        session_id: sessionId,
+    }).then(res => res.data),
+};
+
+// Feed Service - add trackView
+feedService.trackView = async (type, id) => {
+    const response = await api.post(`/feed/${type}/${id}/view`);
+    return response.data;
+};
+
 export default api;
 

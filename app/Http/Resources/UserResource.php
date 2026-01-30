@@ -16,6 +16,13 @@ class UserResource extends JsonResource
             'phone' => $this->phone,
             'role' => $this->role->value,
             'branch' => $this->whenLoaded('branch', new BranchResource($this->branch)),
+            'coin_balance' => $this->when($this->relationLoaded('coin'), function () {
+                return $this->coin->balance;
+            }, function () {
+                // Lazy load if not already loaded
+                $coin = $this->coin;
+                return $coin ? $coin->balance : 0;
+            }),
         ];
     }
 }

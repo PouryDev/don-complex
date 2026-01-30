@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { CalendarIcon, GridIcon, MySessionsIcon } from './Icons';
+import CoinBalance from './CoinBalance';
 
 // SVG Icon Components
 const MenuIcon = ({ active }) => (

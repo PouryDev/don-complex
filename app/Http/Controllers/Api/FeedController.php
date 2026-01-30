@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\CoinRewardRule;
 use App\Models\FeedItem;
+use App\Services\CoinService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -11,6 +13,13 @@ use Illuminate\Support\Facades\Cache;
 
 class FeedController extends Controller
 {
+    protected CoinService $coinService;
+
+    public function __construct(CoinService $coinService)
+    {
+        $this->coinService = $coinService;
+    }
+
     /**
      * Display a listing of all feed items (news, forms, quizzes).
      */
@@ -161,5 +170,65 @@ class FeedController extends Controller
         ];
 
         return $typeMap[$className] ?? 'unknown';
+    }
+
+    /**
+     * Track feed item view and award coins
+     */
+    public function trackView(Request $request, string $type, int $id): JsonResponse
+    {
+        $user = $request->user();
+        
+        // Map type to model class
+        $typeMap = [
+            'news' => 'App\Models\News',
+            'form' => 'App\Models\Form',
+            'quiz' => 'App\Models\Quiz',
+        ];
+
+        if (!isset($typeMap[$type])) {
+            return response()->json(['message' => 'نوع نامعتبر'], 404);
+        }
+
+        $modelClass = $typeMap[$type];
+        $feedItem = FeedItem::where('feedable_type', $modelClass)
+            ->where('feedable_id', $id)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$feedItem || !$feedItem->feedable) {
+            return response()->json(['message' => 'آیتم مورد نظر یافت نشد'], 404);
+        }
+
+        $item = $feedItem->feedable;
+
+        // Check if user already viewed this item today
+        $today = Carbon::today();
+        $existingView = \App\Models\CoinTransaction::where('user_id', $user->id)
+            ->where('source', 'feed_view')
+            ->where('related_type', $modelClass)
+            ->where('related_id', $id)
+            ->whereDate('created_at', $today)
+            ->first();
+
+        if ($existingView) {
+            return response()->json([
+                'message' => 'شما امروز برای این محتوا سکه دریافت کرده‌اید',
+                'coins_awarded' => 0,
+            ]);
+        }
+
+        // Award coins based on reward rule
+        $coinsAwarded = 0;
+        $coins = CoinRewardRule::getCoinsFor($feedItem);
+        if ($coins) {
+            $this->coinService->awardCoins($user, $coins, 'feed_view', $feedItem);
+            $coinsAwarded = $coins;
+        }
+
+        return response()->json([
+            'message' => 'محتوا مشاهده شد',
+            'coins_awarded' => $coinsAwarded,
+        ]);
     }
 }
