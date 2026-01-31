@@ -19,6 +19,7 @@ class Session extends Model
         'hall_id',
         'session_template_id',
         'game_master_id',
+        'best_player_metadata',
         'date',
         'start_time',
         'price',
