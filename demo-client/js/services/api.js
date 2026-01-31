@@ -482,5 +482,64 @@ feedService.trackView = async (type, id) => {
     return response.data;
 };
 
+// Cashier Service
+export const cashierService = {
+    getReservations: (params = {}) => {
+        const queryParams = new URLSearchParams();
+        Object.keys(params).forEach(key => {
+            if (params[key] !== null && params[key] !== undefined) {
+                queryParams.append(key, params[key]);
+            }
+        });
+        const queryString = queryParams.toString();
+        return api.get(`/cashier/reservations${queryString ? '?' + queryString : ''}`).then(res => {
+            if (res.data && res.data.data) {
+                return res.data;
+            }
+            return res.data;
+        });
+    },
+    getReservation: (id) => api.get(`/cashier/reservations/${id}`).then(res => {
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return res.data;
+    }),
+    processPayment: (reservationId, note = null) => {
+        const data = {};
+        if (note) {
+            data.note = note;
+        }
+        return api.post(`/cashier/reservations/${reservationId}/process-payment`, data).then(res => {
+            if (res.data && res.data.data) {
+                return res.data.data;
+            }
+            return res.data;
+        });
+    },
+    getOrders: (reservationId) => api.get(`/cashier/reservations/${reservationId}/orders`).then(res => {
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return Array.isArray(res.data) ? res.data : [];
+    }),
+    getTransactions: (params = {}) => {
+        const queryParams = new URLSearchParams();
+        Object.keys(params).forEach(key => {
+            if (params[key] !== null && params[key] !== undefined) {
+                queryParams.append(key, params[key]);
+            }
+        });
+        const queryString = queryParams.toString();
+        return api.get(`/cashier/transactions${queryString ? '?' + queryString : ''}`).then(res => {
+            if (res.data && res.data.data) {
+                return res.data;
+            }
+            return res.data;
+        });
+    },
+    getStats: () => api.get('/cashier/stats').then(res => res.data),
+};
+
 export default api;
 

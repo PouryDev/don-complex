@@ -135,5 +135,31 @@ class PaymentService
             $metadata
         );
     }
+
+    /**
+     * Mark payment as paid by cashier (for cash payments)
+     */
+    public function markAsPaidByCashier(
+        PaymentTransaction $transaction,
+        ?string $cashierNote = null
+    ): void {
+        if ($transaction->status === PaymentStatus::PAID) {
+            throw new \Exception('این تراکنش قبلاً پرداخت شده است.');
+        }
+
+        $metadata = $transaction->metadata ?? [];
+        $metadata['cashier_processed'] = true;
+        $metadata['processed_at'] = now()->toIso8601String();
+        if ($cashierNote) {
+            $metadata['cashier_note'] = $cashierNote;
+        }
+
+        $this->updateTransactionStatus(
+            $transaction,
+            PaymentStatus::PAID,
+            'cash_' . $transaction->id, // Use cash prefix for cash payments
+            $metadata
+        );
+    }
 }
 

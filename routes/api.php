@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DiscountCodeController;
 use App\Http\Controllers\Api\FeedController;
 use App\Http\Controllers\Api\FormResponseController;
 use App\Http\Controllers\Api\FreeTicketController;
+use App\Http\Controllers\Api\CashierController;
 use App\Http\Controllers\Api\GameMasterController;
 use App\Http\Controllers\Api\HallController;
 use App\Http\Controllers\Api\MenuItemController;
@@ -105,6 +106,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/sessions', [GameMasterController::class, 'sessions']);
         Route::get('/sessions/{session}/reservations', [GameMasterController::class, 'sessionReservations']);
         Route::post('/reservations/{reservation}/validate', [GameMasterController::class, 'validateReservation']);
+    });
+
+    // Cashier routes
+    Route::prefix('cashier')->group(function () {
+        Route::get('/reservations', [CashierController::class, 'indexReservations']);
+        Route::get('/reservations/{reservation}', [CashierController::class, 'showReservation']);
+        Route::post('/reservations/{reservation}/process-payment', [CashierController::class, 'processPayment']);
+        Route::get('/reservations/{reservation}/orders', [CashierController::class, 'getOrders']);
+        Route::get('/transactions', [CashierController::class, 'getTransactions']);
+        Route::get('/stats', [CashierController::class, 'getStats']);
     });
 
     // Admin routes

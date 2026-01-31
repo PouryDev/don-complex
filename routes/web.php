@@ -12,10 +12,15 @@ Route::get('/', function () {
     return view('app');
 });
 
+// Cashier panel route
+Route::get('/cashier/{any?}', function () {
+    return view('cashier');
+})->where('any', '.*');
+
 // Serve React app for all frontend routes (catch-all)
 // API routes are handled separately in routes/api.php
 // Payment callback routes are handled above
 // This ensures that all frontend routes are handled by React Router
 Route::get('/{any}', function () {
     return view('app');
-})->where('any', '^(?!api|payment/callback).*$');
+})->where('any', '^(?!api|payment/callback|cashier).*$');

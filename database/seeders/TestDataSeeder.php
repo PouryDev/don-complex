@@ -71,6 +71,23 @@ class TestDataSeeder extends Seeder
             'phone' => '09123456794',
         ]);
 
+        // Create Cashier users
+        $cashier1 = User::create([
+            'name' => 'Cashier 1',
+            'email' => 'cashier1@mafiacafe.com',
+            'password' => Hash::make('password'),
+            'role' => UserRole::CASHIER,
+            'phone' => '09123456795',
+        ]);
+
+        $cashier2 = User::create([
+            'name' => 'Cashier 2',
+            'email' => 'cashier2@mafiacafe.com',
+            'password' => Hash::make('password'),
+            'role' => UserRole::CASHIER,
+            'phone' => '09123456796',
+        ]);
+
         // Create Branches
         $branch1 = Branch::create([
             'name' => 'شعبه مرکز',
@@ -90,6 +107,10 @@ class TestDataSeeder extends Seeder
         // Assign game masters to branches
         $gameMaster1->update(['branch_id' => $branch1->id]);
         $gameMaster2->update(['branch_id' => $branch2->id]);
+
+        // Assign cashiers to branches
+        $cashier1->update(['branch_id' => $branch1->id]);
+        $cashier2->update(['branch_id' => $branch2->id]);
 
         // Create Halls
         $hall1 = Hall::create([
@@ -308,6 +329,8 @@ class TestDataSeeder extends Seeder
         $this->command->info('  - Customer 1: customer1@test.com / password');
         $this->command->info('  - Customer 2: customer2@test.com / password');
         $this->command->info('  - Customer 3: customer3@test.com / password');
+        $this->command->info('  - Cashier 1: cashier1@mafiacafe.com / password');
+        $this->command->info('  - Cashier 2: cashier2@mafiacafe.com / password');
         $this->command->info('');
         $this->command->info('Note: To seed menu data, run: php artisan db:seed --class=MenuSeeder');
     }
