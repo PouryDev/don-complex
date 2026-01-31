@@ -97,7 +97,7 @@ function Profile() {
     const [loadingUnpaid, setLoadingUnpaid] = useState(false);
     const [activeSession, setActiveSession] = useState(null);
     const [loadingActiveSession, setLoadingActiveSession] = useState(false);
-    const [menuItems, setMenuItems] = useState([]);
+    const [availableMenuItems, setAvailableMenuItems] = useState([]);
     const [loadingMenuItems, setLoadingMenuItems] = useState(false);
     const [cart, setCart] = useState({}); // { menuItemId: quantity }
     const [submittingOrder, setSubmittingOrder] = useState(false);
@@ -164,10 +164,10 @@ function Profile() {
             setLoadingMenuItems(true);
             const data = await menuService.getMenuItems(branchId, { per_page: 100 });
             const items = Array.isArray(data) ? data : (data.data || []);
-            setMenuItems(items);
+            setAvailableMenuItems(items);
         } catch (err) {
             console.error('Error fetching menu items:', err);
-            setMenuItems([]);
+            setAvailableMenuItems([]);
         } finally {
             setLoadingMenuItems(false);
         }
@@ -216,7 +216,7 @@ function Profile() {
         return Object.entries(cart)
             .filter(([_, qty]) => qty > 0)
             .map(([itemId, quantity]) => {
-                const item = menuItems.find(mi => mi.id === parseInt(itemId));
+                const item = availableMenuItems.find(mi => mi.id === parseInt(itemId));
                 if (!item) return null;
                 return {
                     ...item,
@@ -720,13 +720,13 @@ function Profile() {
                             <div className="flex items-center justify-center py-8">
                                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-500"></div>
                             </div>
-                        ) : menuItems.length === 0 ? (
+                        ) : availableMenuItems.length === 0 ? (
                             <p className="text-gray-400 text-sm text-center py-4">منویی برای این شعبه یافت نشد</p>
                         ) : (
                             <>
                                 {/* Menu Items Grid */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 max-h-96 overflow-y-auto">
-                                    {menuItems.map((item) => {
+                                    {availableMenuItems.map((item) => {
                                         const CategoryIcon = getCategoryIcon(item.category?.name || '');
                                         return (
                                             <div
