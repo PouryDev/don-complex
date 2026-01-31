@@ -8,7 +8,7 @@ import ReservationCard from '../../Components/Cashier/ReservationCard';
 
 function Reservations() {
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const { showToast } = useToast();
     const [loading, setLoading] = useState(true);
     const [reservations, setReservations] = useState([]);
@@ -21,7 +21,7 @@ function Reservations() {
     });
 
     useEffect(() => {
-        fetchReservations();
+        fetchReservations(1);
     }, [selectedFilter]);
 
     const fetchReservations = async (page = 1) => {
@@ -79,7 +79,14 @@ function Reservations() {
                         key={filter.id}
                         onClick={() => {
                             setSelectedFilter(filter.id);
-                            fetchReservations(1);
+                            // Update URL params
+                            const newParams = new URLSearchParams(searchParams);
+                            if (filter.id === 'all') {
+                                newParams.delete('payment_status');
+                            } else {
+                                newParams.set('payment_status', filter.id);
+                            }
+                            setSearchParams(newParams);
                         }}
                         className={`flex-shrink-0 px-4 py-2 rounded-full font-medium transition-all duration-200 ${
                             selectedFilter === filter.id

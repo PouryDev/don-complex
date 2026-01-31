@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { cashierService } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import Loading from '../../Components/Loading';
+import { formatPersianDateTime } from '../../utils/dateUtils';
 
 function Orders() {
     const navigate = useNavigate();
@@ -50,18 +51,6 @@ function Orders() {
         return new Intl.NumberFormat('fa-IR').format(Math.round(price));
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return new Intl.DateTimeFormat('fa-IR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        }).format(date);
-    };
-
     if (loading && reservations.length === 0) {
         return <Loading />;
     }
@@ -90,7 +79,7 @@ function Orders() {
                                         سفارش #{order.id}
                                     </h3>
                                     <p className="text-sm text-gray-500 mt-1">
-                                        رزرو #{reservation.id} - {reservation.user?.name || 'کاربر'} - {formatDate(order.created_at)}
+                                        رزرو #{reservation.id} - {reservation.user?.name || 'کاربر'} - {formatPersianDateTime(order.created_at)}
                                     </p>
                                 </div>
                                 <div className="text-right">

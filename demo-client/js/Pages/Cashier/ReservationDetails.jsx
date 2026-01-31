@@ -5,6 +5,7 @@ import { cashierService } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import Loading from '../../Components/Loading';
 import PaymentModal from '../../Components/Cashier/PaymentModal';
+import { formatPersianDateTime, formatPersianDateOnly } from '../../utils/dateUtils';
 
 function ReservationDetails() {
     const { id } = useParams();
@@ -39,18 +40,6 @@ function ReservationDetails() {
 
     const formatPrice = (price) => {
         return new Intl.NumberFormat('fa-IR').format(Math.round(price));
-    };
-
-    const formatDate = (dateString) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return new Intl.DateTimeFormat('fa-IR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        }).format(date);
     };
 
     if (loading) {
@@ -112,7 +101,7 @@ function ReservationDetails() {
                         </div>
                         <div>
                             <p className="text-sm text-gray-400">تاریخ ایجاد</p>
-                            <p className="text-white font-medium">{formatDate(reservation.created_at)}</p>
+                            <p className="text-white font-medium">{formatPersianDateTime(reservation.created_at)}</p>
                         </div>
                     </div>
                 </div>
@@ -132,7 +121,7 @@ function ReservationDetails() {
                         <div>
                             <p className="text-sm text-gray-400">تاریخ و زمان</p>
                             <p className="text-white font-medium">
-                                {reservation.session?.date ? formatDate(reservation.session.date) : '-'}
+                                {reservation.session?.date ? formatPersianDateOnly(reservation.session.date) : '-'}
                                 {reservation.session?.start_time && ` - ${reservation.session.start_time}`}
                             </p>
                         </div>

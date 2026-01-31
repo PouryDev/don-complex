@@ -1,24 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { formatPersianDateTime, formatPersianDateOnly } from '../../utils/dateUtils';
 
 function ReservationCard({ reservation, onViewDetails, onPaymentProcessed }) {
     const navigate = useNavigate();
 
     const formatPrice = (price) => {
         return new Intl.NumberFormat('fa-IR').format(Math.round(price));
-    };
-
-    const formatDate = (dateString) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return new Intl.DateTimeFormat('fa-IR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        }).format(date);
     };
 
     const getStatusColor = (status) => {
@@ -60,7 +49,7 @@ function ReservationCard({ reservation, onViewDetails, onPaymentProcessed }) {
                         رزرو #{reservation.id}
                     </h3>
                     <p className="text-sm text-gray-500 mt-1">
-                        {reservation.user?.name || 'کاربر'} - {formatDate(reservation.created_at)}
+                        {reservation.user?.name || 'کاربر'} - {formatPersianDateTime(reservation.created_at)}
                     </p>
                 </div>
                 <div className={`px-4 py-2 rounded-full bg-gradient-to-r ${getStatusColor(reservation.payment_status)} text-white text-sm font-semibold`}>
@@ -76,7 +65,7 @@ function ReservationCard({ reservation, onViewDetails, onPaymentProcessed }) {
                 <div>
                     <p className="text-sm text-gray-400">سانس</p>
                     <p className="text-white font-semibold">
-                        {reservation.session?.date ? formatDate(reservation.session.date) : '-'}
+                        {reservation.session?.date ? formatPersianDateOnly(reservation.session.date) : '-'}
                     </p>
                 </div>
                 <div>
