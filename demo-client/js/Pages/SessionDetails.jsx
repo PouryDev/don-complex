@@ -24,6 +24,8 @@ function SessionDetails() {
     const [showFoodMenu, setShowFoodMenu] = useState(false);
     const [orderItems, setOrderItems] = useState([]);
     const [orderNotes, setOrderNotes] = useState('');
+    const [foodTotal, setFoodTotal] = useState(0);
+    const [foodItemsDetails, setFoodItemsDetails] = useState([]);
 
     useEffect(() => {
         fetchSession();
@@ -153,13 +155,7 @@ function SessionDetails() {
     };
 
     const calculateFoodTotal = () => {
-        if (!session || orderItems.length === 0) return 0;
-        // This will be calculated from MenuSelector's selection
-        return orderItems.reduce((total, item) => {
-            // We need to get the actual menu item to calculate price
-            // For now, return 0 as MenuSelector will show the total
-            return total;
-        }, 0);
+        return foodTotal;
     };
 
     const calculateGrandTotal = () => {
@@ -168,6 +164,11 @@ function SessionDetails() {
 
     const handleFoodSelectionChange = (items) => {
         setOrderItems(items);
+    };
+
+    const handleFoodTotalChange = (total, itemsDetails) => {
+        setFoodTotal(total);
+        setFoodItemsDetails(itemsDetails || []);
     };
 
     if (loading) {
@@ -328,6 +329,7 @@ function SessionDetails() {
                                 branchId={session.branch.id}
                                 onSelectionChange={handleFoodSelectionChange}
                                 initialItems={orderItems}
+                                onTotalChange={handleFoodTotalChange}
                             />
                             
                             <div className="mt-4">
@@ -351,28 +353,46 @@ function SessionDetails() {
                 </div>
 
                 {/* Total Price Card */}
-                <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-xl p-4 sm:p-5 border-2 border-red-500/30 shadow-lg space-y-2">
+                <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-xl p-4 sm:p-5 border-2 border-red-500/30 shadow-lg space-y-3">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full -mr-16 -mt-16"></div>
                     <div className="absolute bottom-0 left-0 w-24 h-24 bg-red-500/5 rounded-full -ml-12 -mb-12"></div>
                     
-                    <div className="relative space-y-2">
+                    <div className="relative space-y-3">
+                        <h3 className="text-sm sm:text-base font-bold text-white mb-3">فاکتور</h3>
+                        
+                        {/* Ticket Price */}
                         <div className="flex justify-between items-center text-sm">
                             <span className="text-gray-400">قیمت بلیط ({numberOfPeople} نفر)</span>
                             <span className="text-gray-300">{formatPrice(calculateTicketTotal())} تومان</span>
                         </div>
                         
-                        {orderItems.length > 0 && (
-                            <div className="flex justify-between items-center text-sm pb-2 border-b border-gray-700">
-                                <span className="text-gray-400">سفارش غذا ({orderItems.length} آیتم)</span>
-                                <span className="text-orange-400">محاسبه در مرحله بعد</span>
+                        {/* Food Order Details */}
+                        {foodItemsDetails.length > 0 && (
+                            <div className="space-y-2 pb-2 border-b border-gray-700">
+                                <div className="flex justify-between items-center text-sm mb-2">
+                                    <span className="text-gray-400">سفارش غذا</span>
+                                    <span className="text-orange-400 font-semibold">{formatPrice(foodTotal)} تومان</span>
+                                </div>
+                                <div className="space-y-1.5 pr-4">
+                                    {foodItemsDetails.map((item, index) => (
+                                        <div key={item.id || index} className="flex justify-between items-center text-xs text-gray-400">
+                                            <span className="flex-1 truncate">
+                                                {item.name} × {item.quantity.toLocaleString('fa-IR')}
+                                            </span>
+                                            <span className="text-gray-300 mr-2">
+                                                {formatPrice(item.total)} تومان
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
                         
-                        <div className="flex justify-between items-center pt-2">
+                        {/* Grand Total */}
+                        <div className="flex justify-between items-center pt-2 border-t border-gray-700">
                             <span className="text-sm sm:text-base text-gray-300 font-medium">جمع کل</span>
                             <span className="text-lg sm:text-2xl text-red-400 font-bold">
-                                {formatPrice(calculateTicketTotal())} <span className="text-xs sm:text-sm text-gray-400 font-normal">تومان</span>
-                                {orderItems.length > 0 && <span className="text-xs text-orange-400"> + غذا</span>}
+                                {formatPrice(calculateGrandTotal())} <span className="text-xs sm:text-sm text-gray-400 font-normal">تومان</span>
                             </span>
                         </div>
                     </div>

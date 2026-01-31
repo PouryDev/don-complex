@@ -1,25 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { menuService } from '../services/api';
 import Loading from './Loading';
 import { MenuDefaultIcon, PlusIcon, MinusIcon, getCategoryIcon } from './Icons';
 
-function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
+function MenuSelector({ branchId, onSelectionChange, initialItems = [], onTotalChange }) {
     const [categories, setCategories] = useState([]);
     const [menuItems, setMenuItems] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedItems, setSelectedItems] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const initialItemsRef = useRef(null);
+    const isInitializedRef = useRef(false);
 
     useEffect(() => {
-        // Initialize selected items from initialItems
-        if (initialItems && initialItems.length > 0) {
+        // Only initialize once or when initialItems actually changes (deep comparison)
+        const currentInitialItems = JSON.stringify(initialItems || []);
+        const previousInitialItems = initialItemsRef.current;
+        
+        // Only initialize if:
+        // 1. Not initialized yet AND initialItems has data
+        // 2. OR initialItems has actually changed (not just reference)
+        if ((!isInitializedRef.current && initialItems && initialItems.length > 0) ||
+            (previousInitialItems !== currentInitialItems && initialItems && initialItems.length > 0)) {
             const items = {};
             initialItems.forEach(item => {
                 items[item.menu_item_id] = item.quantity;
             });
             setSelectedItems(items);
+            initialItemsRef.current = currentInitialItems;
+            isInitializedRef.current = true;
+        } else if ((!initialItems || initialItems.length === 0) && isInitializedRef.current) {
+            // Reset if initialItems becomes empty and we were previously initialized
+            setSelectedItems({});
+            initialItemsRef.current = currentInitialItems;
+        } else {
+            // Update ref even if we don't change state
+            initialItemsRef.current = currentInitialItems;
         }
     }, [initialItems]);
 
@@ -39,7 +57,14 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
             }));
         
         onSelectionChange(items);
-    }, [selectedItems]);
+        
+        // Calculate and notify parent of total price and items details if callback provided
+        if (onTotalChange && menuItems.length > 0) {
+            const total = getTotal();
+            const itemsDetails = getSelectedItemsDetails();
+            onTotalChange(total, itemsDetails);
+        }
+    }, [selectedItems, menuItems, onSelectionChange, onTotalChange]);
 
     const fetchData = async () => {
         try {
@@ -97,6 +122,22 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [] }) {
 
     const getTotalItems = () => {
         return Object.values(selectedItems).reduce((sum, qty) => sum + qty, 0);
+    };
+
+    const getSelectedItemsDetails = () => {
+        return Object.entries(selectedItems)
+            .filter(([_, quantity]) => quantity > 0)
+            .map(([menuItemId, quantity]) => {
+                const item = menuItems.find(mi => mi.id === parseInt(menuItemId));
+                return item ? {
+                    id: item.id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: quantity,
+                    total: item.price * quantity
+                } : null;
+            })
+            .filter(item => item !== null);
     };
 
     const filteredMenuItems = selectedCategory === 'all'
