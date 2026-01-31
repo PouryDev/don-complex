@@ -127,6 +127,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/sessions/{session}/reservations', [SupervisorController::class, 'sessionReservations']);
         Route::get('/reservations/{reservation}', [SupervisorController::class, 'showReservation']);
         Route::post('/reservations/{reservation}/cancel', [SupervisorController::class, 'cancelReservation']);
+        Route::post('/reservations/{reservation}/fraud-report', [SupervisorController::class, 'reportFraud']);
         Route::post('/reservations/{reservation}/game-result', [SupervisorController::class, 'registerGameResult']);
         Route::post('/sessions/{session}/best-player', [SupervisorController::class, 'selectBestPlayer']);
         Route::get('/stats', [SupervisorController::class, 'getStats']);
@@ -135,6 +136,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/sessions/{session}/assign-game-master', [SupervisorController::class, 'assignGameMaster']);
         
         // Session Template management
+        Route::get('/halls', [SupervisorController::class, 'getHalls']);
         Route::get('/halls/{hall}/session-templates', [SupervisorController::class, 'getSessionTemplates']);
         Route::post('/halls/{hall}/session-templates', [SupervisorController::class, 'createSessionTemplate']);
         Route::put('/session-templates/{sessionTemplate}', [SupervisorController::class, 'updateSessionTemplate']);

@@ -19,12 +19,17 @@ class SessionPolicy
 
     public function create(User $user): bool
     {
-        return $user->isAdmin() || $user->isGameMaster();
+        return $user->isAdmin() || $user->isGameMaster() || $user->isSupervisor();
     }
 
     public function update(User $user, Session $session): bool
     {
         if ($user->isAdmin()) {
+            return true;
+        }
+
+        // Supervisor has full control over sessions in their branch
+        if ($user->isSupervisor() && $user->branch?->id === $session->branch_id) {
             return true;
         }
 
@@ -35,6 +40,11 @@ class SessionPolicy
     public function delete(User $user, Session $session): bool
     {
         if ($user->isAdmin()) {
+            return true;
+        }
+
+        // Supervisor has full control over sessions in their branch
+        if ($user->isSupervisor() && $user->branch?->id === $session->branch_id) {
             return true;
         }
 

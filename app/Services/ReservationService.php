@@ -216,5 +216,38 @@ class ReservationService
             }
         });
     }
+
+    /**
+     * Report fraud: Cancel reservation without refund and restore capacity
+     * This is used by supervisors to burn tickets when fraud is detected
+     */
+    public function reportFraud(Reservation $reservation, User $reportedBy): void
+    {
+        if ($reservation->cancelled_at) {
+            throw new \Exception('این رزرو قبلاً لغو شده است');
+        }
+
+        DB::transaction(function () use ($reservation, $reportedBy) {
+            $session = Session::lockForUpdate()->findOrFail($reservation->session_id);
+
+            // Mark reservation as cancelled (fraud)
+            $reservation->update([
+                'cancelled_at' => now(),
+            ]);
+
+            // If reservation was paid, decrement from current_participants to restore capacity
+            // No refund is given - tickets are burned
+            if ($reservation->payment_status === PaymentStatus::PAID) {
+                $session->decrement('current_participants', $reservation->number_of_people);
+            } elseif ($reservation->payment_status === PaymentStatus::PENDING) {
+                // If pending, decrement from pending_participants
+                $session->decrement('pending_participants', $reservation->number_of_people);
+            }
+
+            // Store fraud report metadata if game_result_metadata column exists
+            // Otherwise, we can add it to a separate metadata field or use cancelled_at
+            // For now, we'll just use cancelled_at to mark it as fraud
+        });
+    }
 }
 

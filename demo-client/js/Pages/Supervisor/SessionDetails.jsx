@@ -57,13 +57,17 @@ function SessionDetails() {
         }
     };
 
-    const handleValidateReservation = async (reservation) => {
+    const handleFraudReport = async (reservation) => {
+        if (!window.confirm('آیا مطمئن هستید که می‌خواهید این رزرو را به عنوان تقلب گزارش کنید؟ این عمل غیرقابل بازگشت است و بلیط‌ها بدون بازگشت پول سوزانده می‌شوند.')) {
+            return;
+        }
+        
         try {
-            await supervisorService.validateReservation(reservation.id);
-            showToast('رزرو با موفقیت تایید شد', 'success');
+            await supervisorService.reportFraud(reservation.id);
+            showToast('رزرو به عنوان تقلب گزارش شد و بلیط‌ها سوزانده شدند', 'success');
             fetchReservations(pagination.current_page);
         } catch (error) {
-            showToast(error.response?.data?.message || 'خطا در تایید رزرو', 'error');
+            showToast(error.response?.data?.message || 'خطا در گزارش تقلب', 'error');
         }
     };
 
@@ -181,7 +185,7 @@ function SessionDetails() {
                             key={reservation.id}
                             reservation={reservation}
                             onViewDetails={() => navigate(`/supervisor/reservations/${reservation.id}`)}
-                            onValidate={handleValidateReservation}
+                            onFraudReport={handleFraudReport}
                         />
                     ))}
                 </div>

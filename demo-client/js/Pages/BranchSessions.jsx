@@ -146,6 +146,27 @@ function BranchSessions() {
         return statusMap[status] || status;
     };
 
+    const getCapacityBadge = (session) => {
+        if (session.available_spots === 0) {
+            return {
+                text: 'پر',
+                color: 'bg-red-500/80 text-white',
+            };
+        }
+        // Low capacity: less than 2 spots or less than 10% of max capacity
+        const lowThreshold = Math.max(2, Math.floor(session.max_participants * 0.1));
+        if (session.available_spots <= lowThreshold) {
+            return {
+                text: 'کم',
+                color: 'bg-yellow-500/80 text-white',
+            };
+        }
+        return {
+            text: 'خالی',
+            color: 'bg-green-500/80 text-white',
+        };
+    };
+
     if (loading) {
         return <Loading />;
     }
@@ -188,56 +209,84 @@ function BranchSessions() {
             {/* Sessions List */}
             <div className="space-y-3">
                 {sessions
-                    .filter(session => session.available_spots > 0 && session.status === 'upcoming')
-                    .map((session) => (
-                        <button
-                            key={session.id}
-                            onClick={() => handleSessionSelect(session.id)}
-                            className="w-full cafe-card rounded-xl p-3 sm:p-4 active:scale-[0.98] transition-all duration-200 text-right touch-manipulation"
-                        >
-                            <div className="flex items-center gap-3 sm:gap-4">
-                                {/* Time Icon */}
-                                <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white shadow-lg">
-                                    <CalendarIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-                                </div>
-                                
-                                {/* Content */}
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-start justify-between gap-2 mb-1.5">
-                                        <h3 className="text-base sm:text-lg font-bold text-white leading-tight">
-                                            {formatTime(session.start_time)}
-                                        </h3>
-                                        <span className="flex-shrink-0 px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-700/80 text-red-400 rounded-lg text-[10px] sm:text-xs font-semibold whitespace-nowrap">
-                                            {getStatusText(session.status)}
-                                        </span>
+                    .filter(session => session.status === 'upcoming')
+                    .map((session) => {
+                        const capacityBadge = getCapacityBadge(session);
+                        const isFull = session.available_spots === 0;
+                        const isDisabled = isFull;
+                        
+                        return (
+                            <button
+                                key={session.id}
+                                onClick={() => !isDisabled && handleSessionSelect(session.id)}
+                                disabled={isDisabled}
+                                className={`w-full cafe-card rounded-xl p-3 sm:p-4 transition-all duration-200 text-right touch-manipulation ${
+                                    isDisabled 
+                                        ? 'opacity-60 cursor-not-allowed' 
+                                        : 'active:scale-[0.98] hover:scale-[1.01]'
+                                }`}
+                            >
+                                <div className="flex items-center gap-3 sm:gap-4">
+                                    {/* Time Icon */}
+                                    <div className={`flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center text-white shadow-lg ${
+                                        isFull 
+                                            ? 'bg-gradient-to-br from-gray-500 to-gray-600' 
+                                            : 'bg-gradient-to-br from-red-500 to-red-600'
+                                    }`}>
+                                        <CalendarIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                                     </div>
                                     
-                                    {/* Info Row */}
-                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm text-gray-300">
-                                        <span className="font-medium text-white">{formatPrice(session.price)} تومان</span>
-                                        <span className="text-gray-500">•</span>
-                                        <span className="text-green-400 font-medium">{session.available_spots} جا خالی</span>
-                                        <span className="text-gray-500">•</span>
-                                        <span className="text-gray-400">حداکثر {session.max_participants} نفر</span>
+                                    {/* Content */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                                            <h3 className="text-base sm:text-lg font-bold text-white leading-tight">
+                                                {formatTime(session.start_time)}
+                                            </h3>
+                                            <div className="flex gap-1.5 items-center">
+                                                <span className={`flex-shrink-0 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-semibold whitespace-nowrap ${capacityBadge.color}`}>
+                                                    {capacityBadge.text}
+                                                </span>
+                                                <span className="flex-shrink-0 px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-700/80 text-red-400 rounded-lg text-[10px] sm:text-xs font-semibold whitespace-nowrap">
+                                                    {getStatusText(session.status)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Info Row */}
+                                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm text-gray-300">
+                                            <span className="font-medium text-white">{formatPrice(session.price)} تومان</span>
+                                            <span className="text-gray-500">•</span>
+                                            <span className={`font-medium ${
+                                                isFull 
+                                                    ? 'text-red-400' 
+                                                    : session.available_spots <= Math.max(2, Math.floor(session.max_participants * 0.1))
+                                                    ? 'text-yellow-400'
+                                                    : 'text-green-400'
+                                            }`}>
+                                                {session.available_spots} جا خالی
+                                            </span>
+                                            <span className="text-gray-500">•</span>
+                                            <span className="text-gray-400">حداکثر {session.max_participants} نفر</span>
+                                        </div>
+                                        
+                                        {/* Hall Name */}
+                                        {session.hall && (
+                                            <p className="text-[10px] sm:text-xs text-gray-400 mt-1.5 truncate">
+                                                سالن: {session.hall.name}
+                                            </p>
+                                        )}
                                     </div>
                                     
-                                    {/* Hall Name */}
-                                    {session.hall && (
-                                        <p className="text-[10px] sm:text-xs text-gray-400 mt-1.5 truncate">
-                                            سالن: {session.hall.name}
-                                        </p>
-                                    )}
+                                    {/* Arrow Icon */}
+                                    <div className={`flex-shrink-0 ${isDisabled ? 'text-gray-600' : 'text-gray-400'}`} style={{transform: 'rotate(180deg)'}}>
+                                        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </div>
                                 </div>
-                                
-                                {/* Arrow Icon */}
-                                <div className="flex-shrink-0 text-gray-400" style={{transform: 'rotate(180deg)'}}>
-                                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </button>
-                    ))}
+                            </button>
+                        );
+                    })}
                 
                 {/* Infinite scroll sentinel */}
                 {hasMore && (
@@ -249,7 +298,7 @@ function BranchSessions() {
                 )}
             </div>
 
-            {sessions.filter(s => s.available_spots > 0 && s.status === 'upcoming').length === 0 && (
+            {sessions.filter(s => s.status === 'upcoming').length === 0 && (
                 <div className="text-center py-8 sm:py-12">
                     <div className="flex justify-center mb-3 sm:mb-4 text-red-500">
                         <EmptyBoxIcon className="w-12 h-12 sm:w-16 sm:h-16" />

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { formatPersianDateTime } from '../../utils/dateUtils';
 
-function ReservationCard({ reservation, onViewDetails, onValidate }) {
+function ReservationCard({ reservation, onViewDetails, onFraudReport }) {
     const navigate = useNavigate();
 
     const handleViewDetails = () => {
@@ -99,17 +99,17 @@ function ReservationCard({ reservation, onViewDetails, onValidate }) {
             </div>
 
             <div className="pt-4 border-t border-red-900/50 flex gap-2">
-                {!reservation.validated_at && (
+                {!reservation.cancelled_at && reservation.payment_status === 'paid' && (
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            if (onValidate) {
-                                onValidate(reservation);
+                            if (onFraudReport) {
+                                onFraudReport(reservation);
                             }
                         }}
-                        className="flex-1 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all font-semibold"
+                        className="flex-1 px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-lg hover:from-orange-700 hover:to-orange-800 transition-all font-semibold"
                     >
-                        تایید رزرو
+                        گزارش تقلب
                     </button>
                 )}
                 <button

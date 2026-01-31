@@ -8,6 +8,7 @@ import Login from './Pages/Supervisor/Login';
 import Dashboard from './Pages/Supervisor/Dashboard';
 import Sessions from './Pages/Supervisor/Sessions';
 import SessionDetails from './Pages/Supervisor/SessionDetails';
+import SessionManagement from './Pages/Supervisor/SessionManagement';
 import ReservationDetails from './Pages/Supervisor/ReservationDetails';
 import GameResults from './Pages/Supervisor/GameResults';
 import NotFound from './Pages/NotFound';
@@ -40,6 +41,14 @@ function SupervisorApp() {
                             element={
                                 <SupervisorProtectedRoute>
                                     <SessionDetails />
+                                </SupervisorProtectedRoute>
+                            } 
+                        />
+                        <Route 
+                            path="/supervisor/session-management" 
+                            element={
+                                <SupervisorProtectedRoute>
+                                    <SessionManagement />
                                 </SupervisorProtectedRoute>
                             } 
                         />

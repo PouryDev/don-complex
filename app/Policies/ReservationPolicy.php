@@ -19,6 +19,11 @@ class ReservationPolicy
             return true;
         }
 
+        // Supervisor has full control over reservations in their branch
+        if ($user->isSupervisor() && $user->branch?->id === $reservation->session->branch_id) {
+            return true;
+        }
+
         // Game master can view reservations for sessions in their branch
         if ($user->isGameMaster() && $user->branch?->id === $reservation->session->branch_id) {
             return true;
@@ -44,6 +49,11 @@ class ReservationPolicy
     {
         // Users can cancel their own reservations
         if ($reservation->user_id === $user->id) {
+            return true;
+        }
+
+        // Supervisor has full control over reservations in their branch
+        if ($user->isSupervisor() && $user->branch?->id === $reservation->session->branch_id) {
             return true;
         }
 

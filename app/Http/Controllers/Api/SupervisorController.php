@@ -274,6 +274,48 @@ class SupervisorController extends Controller
     }
 
     /**
+     * Report fraud: Cancel reservation without refund and restore capacity
+     * This burns the tickets and adds capacity back to the session
+     */
+    public function reportFraud(Request $request, Reservation $reservation)
+    {
+        // Ensure the reservation's session belongs to the supervisor's branch
+        if ($reservation->session->branch_id !== $request->user()->branch->id) {
+            abort(403, 'You can only report fraud for reservations in your branch');
+        }
+
+        if ($reservation->cancelled_at) {
+            return response()->json([
+                'message' => 'این رزرو قبلاً لغو شده است',
+            ], 400);
+        }
+
+        try {
+            $this->reservationService->reportFraud($reservation, $request->user());
+
+            // Clear session availability cache
+            $session = $reservation->session;
+            Cache::forget("session_available_spots_{$session->id}_" . $session->updated_at->timestamp);
+
+            // Eager load all nested relationships
+            $reservation->load([
+                'session.branch',
+                'session.hall',
+                'session.sessionTemplate',
+                'user',
+                'paymentTransaction',
+                'validator'
+            ]);
+
+            return new ReservationResource($reservation);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
+    /**
      * Register game result for a reservation
      */
     public function registerGameResult(Request $request, Reservation $reservation)
@@ -534,6 +576,23 @@ class SupervisorController extends Controller
         $session->load(['branch', 'hall', 'sessionTemplate', 'gameMaster']);
 
         return new SessionResource($session);
+    }
+
+    /**
+     * Get halls for supervisor's branch
+     */
+    public function getHalls(Request $request): AnonymousResourceCollection
+    {
+        $user = $request->user();
+        $branch = $user->branch;
+
+        if (!$branch) {
+            abort(403, 'Supervisor must be assigned to a branch');
+        }
+
+        $halls = $branch->halls()->get();
+
+        return \App\Http\Resources\HallResource::collection($halls);
     }
 
     /**

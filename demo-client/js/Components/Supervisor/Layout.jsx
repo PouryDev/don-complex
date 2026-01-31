@@ -22,9 +22,16 @@ const GameResultsIcon = ({ active }) => (
     </svg>
 );
 
+const SessionManagementIcon = ({ active }) => (
+    <svg className={`w-6 h-6 ${active ? 'text-red-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+    </svg>
+);
+
 const navItems = [
     { path: '/supervisor/dashboard', label: 'داشبورد', icon: DashboardIcon },
     { path: '/supervisor/sessions', label: 'سانس‌ها', icon: SessionsIcon },
+    { path: '/supervisor/session-management', label: 'مدیریت سانس‌ها', icon: SessionManagementIcon },
     { path: '/supervisor/game-results', label: 'نتایج بازی', icon: GameResultsIcon },
 ];
 

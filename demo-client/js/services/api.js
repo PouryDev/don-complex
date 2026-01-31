@@ -612,6 +612,52 @@ export const supervisorService = {
         }
         return res.data;
     }),
+    reportFraud: (reservationId) => api.post(`/supervisor/reservations/${reservationId}/fraud-report`).then(res => {
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return res.data;
+    }),
+    getHalls: () => api.get('/supervisor/halls').then(res => {
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return res.data;
+    }),
+    getSessionTemplates: (hallId, params = {}) => {
+        const queryParams = new URLSearchParams();
+        Object.keys(params).forEach(key => {
+            if (params[key] !== null && params[key] !== undefined) {
+                queryParams.append(key, params[key]);
+            }
+        });
+        const queryString = queryParams.toString();
+        return api.get(`/supervisor/halls/${hallId}/session-templates${queryString ? '?' + queryString : ''}`).then(res => {
+            if (res.data && res.data.data) {
+                return res.data;
+            }
+            return res.data;
+        });
+    },
+    createSessionTemplate: (hallId, data) => api.post(`/supervisor/halls/${hallId}/session-templates`, data).then(res => {
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return res.data;
+    }),
+    updateSessionTemplate: (templateId, data) => api.put(`/supervisor/session-templates/${templateId}`, data).then(res => {
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return res.data;
+    }),
+    deleteSessionTemplate: (templateId) => api.delete(`/supervisor/session-templates/${templateId}`).then(res => res.data),
+    createSession: (data) => api.post('/supervisor/sessions', data).then(res => {
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return res.data;
+    }),
 };
 
 export default api;

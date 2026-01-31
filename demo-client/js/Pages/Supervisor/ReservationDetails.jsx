@@ -32,13 +32,17 @@ function ReservationDetails() {
         }
     };
 
-    const handleValidate = async () => {
+    const handleFraudReport = async () => {
+        if (!window.confirm('آیا مطمئن هستید که می‌خواهید این رزرو را به عنوان تقلب گزارش کنید؟ این عمل غیرقابل بازگشت است و بلیط‌ها بدون بازگشت پول سوزانده می‌شوند.')) {
+            return;
+        }
+        
         try {
-            await supervisorService.validateReservation(id);
-            showToast('رزرو با موفقیت تایید شد', 'success');
+            await supervisorService.reportFraud(id);
+            showToast('رزرو به عنوان تقلب گزارش شد و بلیط‌ها سوزانده شدند', 'success');
             fetchReservation();
         } catch (error) {
-            showToast(error.response?.data?.message || 'خطا در تایید رزرو', 'error');
+            showToast(error.response?.data?.message || 'خطا در گزارش تقلب', 'error');
         }
     };
 
@@ -81,12 +85,12 @@ function ReservationDetails() {
                     <h1 className="text-3xl font-bold text-white">جزئیات رزرو #{reservation.id}</h1>
                 </div>
                 <div className="flex gap-2">
-                    {!reservation.validated_at && (
+                    {!reservation.cancelled_at && reservation.payment_status === 'paid' && (
                         <button
-                            onClick={handleValidate}
-                            className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all font-semibold"
+                            onClick={handleFraudReport}
+                            className="px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-lg hover:from-orange-700 hover:to-orange-800 transition-all font-semibold"
                         >
-                            تایید رزرو
+                            گزارش تقلب
                         </button>
                     )}
                     <button
