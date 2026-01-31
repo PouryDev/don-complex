@@ -58,15 +58,31 @@ class SupervisorController extends Controller
         }
 
         if ($request->has('status')) {
+            $today = Carbon::today();
+            $now = Carbon::now();
+            $threeHoursAgo = $now->copy()->subHours(3);
+            
             if ($request->status === 'upcoming') {
-                // Fix: Filter out past sessions when status is "upcoming"
-                $today = Carbon::today();
-                $now = Carbon::now();
+                // Filter for upcoming sessions (future date or today with future time)
                 $query->where(function($q) use ($today, $now) {
                     $q->where('date', '>', $today)
                       ->orWhere(function($q2) use ($today, $now) {
                           $q2->where('date', $today)
                              ->where('start_time', '>', $now->format('H:i:s'));
+                      });
+                });
+            } elseif ($request->status === 'ongoing') {
+                // Filter for ongoing sessions (today, start time passed, but less than 3 hours ago)
+                $query->where('date', $today)
+                      ->where('start_time', '<=', $now->format('H:i:s'))
+                      ->whereRaw("TIMESTAMP(CONCAT(date, ' ', start_time)) >= ?", [$threeHoursAgo->format('Y-m-d H:i:s')]);
+            } elseif ($request->status === 'completed') {
+                // Filter for completed sessions (past date or more than 3 hours ago today)
+                $query->where(function($q) use ($today, $threeHoursAgo) {
+                    $q->where('date', '<', $today)
+                      ->orWhere(function($q2) use ($today, $threeHoursAgo) {
+                          $q2->where('date', $today)
+                             ->whereRaw("TIMESTAMP(CONCAT(date, ' ', start_time)) < ?", [$threeHoursAgo->format('Y-m-d H:i:s')]);
                       });
                 });
             } else {

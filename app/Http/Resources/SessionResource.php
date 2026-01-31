@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Services\SessionService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -13,6 +14,9 @@ class SessionResource extends JsonResource
         // Get accurate available spots (expires unpaid reservations first)
         $sessionService = app(SessionService::class);
         $availableSpots = $sessionService->getAvailableSpots($this->resource);
+
+        // Calculate actual status based on date and time
+        $actualStatus = $this->calculateActualStatus();
 
         return [
             'id' => $this->id,
@@ -26,7 +30,7 @@ class SessionResource extends JsonResource
             'current_participants' => $this->current_participants,
             'pending_participants' => $this->pending_participants ?? 0,
             'available_spots' => $availableSpots,
-            'status' => $this->status->value,
+            'status' => $actualStatus,
             'branch' => $this->whenLoaded('branch', new BranchResource($this->branch)),
             'hall' => $this->whenLoaded('hall', new HallResource($this->hall)),
             'session_template' => $this->whenLoaded('sessionTemplate', new SessionTemplateResource($this->sessionTemplate)),
@@ -39,5 +43,44 @@ class SessionResource extends JsonResource
             }),
             'best_player_metadata' => $this->best_player_metadata,
         ];
+    }
+
+    /**
+     * Calculate actual status based on date and time
+     * If status is cancelled, keep it as cancelled
+     * Otherwise, calculate based on current date/time vs session date/time
+     */
+    protected function calculateActualStatus(): string
+    {
+        // If cancelled, always return cancelled
+        if ($this->status->value === 'cancelled') {
+            return 'cancelled';
+        }
+
+        $now = Carbon::now();
+        $sessionDate = Carbon::parse($this->date->format('Y-m-d'));
+        $sessionDateTime = Carbon::parse($this->date->format('Y-m-d') . ' ' . $this->start_time);
+
+        // If session date is in the past, it's completed
+        if ($sessionDate->isPast() && !$sessionDate->isToday()) {
+            return 'completed';
+        }
+
+        // If session is today, check the time
+        if ($sessionDate->isToday()) {
+            // If start time has passed, it's ongoing or completed
+            if ($sessionDateTime->isPast()) {
+                // Consider it completed if it's been more than 3 hours (typical game session duration)
+                if ($now->diffInHours($sessionDateTime) >= 3) {
+                    return 'completed';
+                }
+                return 'ongoing';
+            }
+            // If start time hasn't passed yet, it's upcoming
+            return 'upcoming';
+        }
+
+        // If session date is in the future, it's upcoming
+        return 'upcoming';
     }
 }

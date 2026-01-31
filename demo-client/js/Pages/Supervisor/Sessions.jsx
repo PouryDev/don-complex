@@ -59,7 +59,7 @@ function Sessions() {
     const statusFilters = [
         { id: 'all', name: 'همه' },
         { id: 'upcoming', name: 'آینده' },
-        { id: 'active', name: 'فعال' },
+        { id: 'ongoing', name: 'در حال انجام' },
         { id: 'completed', name: 'تکمیل شده' },
     ];
 

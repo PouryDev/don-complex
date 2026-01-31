@@ -17,7 +17,7 @@ function SessionCard({ session, onViewDetails }) {
     const getStatusColor = (status) => {
         const colors = {
             'upcoming': 'from-blue-500 to-cyan-500',
-            'active': 'from-green-500 to-emerald-500',
+            'ongoing': 'from-green-500 to-emerald-500',
             'completed': 'from-gray-500 to-gray-600',
             'cancelled': 'from-red-500 to-red-600',
         };
@@ -27,7 +27,7 @@ function SessionCard({ session, onViewDetails }) {
     const getStatusText = (status) => {
         const texts = {
             'upcoming': 'آینده',
-            'active': 'فعال',
+            'ongoing': 'در حال انجام',
             'completed': 'تکمیل شده',
             'cancelled': 'لغو شده',
         };
