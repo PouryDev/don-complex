@@ -96,6 +96,20 @@ class ReservationController extends Controller
             $validated = $request->validated();
             $numberOfPeople = $validated['number_of_people'];
 
+            // Validate that purchase is within allowed time window (30 minutes after session start)
+            $now = TimezoneHelper::now();
+            $sessionStartTime = TimezoneHelper::createFromDateAndTime(
+                $session->date->format('Y-m-d'),
+                $session->start_time
+            );
+            $deadline = $sessionStartTime->copy()->addMinutes(30);
+            
+            if ($now->gt($deadline)) {
+                return response()->json([
+                    'message' => 'امکان خرید بلیط برای این سانس تا 30 دقیقه بعد از شروع سانس وجود دارد',
+                ], 422)->header('Content-Type', 'application/json');
+            }
+
             // Additional validation: check if requested number exceeds available spots
             // Use SessionService to get accurate available spots (includes pending_participants)
             $availableSpots = $this->sessionService->getAvailableSpots($session);
