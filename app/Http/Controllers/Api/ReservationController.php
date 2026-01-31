@@ -256,15 +256,19 @@ class ReservationController extends Controller
     }
 
     /**
-     * Get active session (paid reservation where session started less than 1 hour ago)
+     * Get active session (paid reservation where session started and is within 30 minutes after start time)
+     * Users can place menu orders up to 30 minutes after session start time
      */
     public function getActiveSession(Request $request)
     {
         $user = $request->user();
         $now = TimezoneHelper::now();
-        $oneHourAgo = $now->copy()->subHour();
+        // Sessions can be ordered up to 30 minutes after start time
+        // So we need to check sessions that started within the last 1.5 hours (90 minutes)
+        // This covers: sessions that started 90 minutes ago (still within 30 min window) to sessions that just started
+        $oneAndHalfHoursAgo = $now->copy()->subHours(1)->subMinutes(30);
 
-        // Get paid reservations where session started within the last hour
+        // Get paid reservations where session started and is within ordering window (30 min after start)
         $reservations = Reservation::query()
             ->with([
                 'session.branch',
@@ -276,21 +280,21 @@ class ReservationController extends Controller
             ->where('user_id', $user->id)
             ->where('payment_status', PaymentStatus::PAID)
             ->whereNull('cancelled_at')
-            ->whereHas('session', function ($query) use ($oneHourAgo, $now) {
-                // Check if session datetime is within the last hour
-                $query->where(function ($q) use ($oneHourAgo, $now) {
-                    $q->where(function ($subQ) use ($oneHourAgo, $now) {
+            ->whereHas('session', function ($query) use ($oneAndHalfHoursAgo, $now) {
+                // Check if session datetime is within the ordering window
+                $query->where(function ($q) use ($oneAndHalfHoursAgo, $now) {
+                    $q->where(function ($subQ) use ($oneAndHalfHoursAgo, $now) {
                         // For same day sessions, check time range
-                        $subQ->where('date', $oneHourAgo->format('Y-m-d'))
-                            ->where('start_time', '>=', $oneHourAgo->format('H:i:s'))
+                        $subQ->where('date', $oneAndHalfHoursAgo->format('Y-m-d'))
+                            ->where('start_time', '>=', $oneAndHalfHoursAgo->format('H:i:s'))
                             ->where('start_time', '<=', $now->format('H:i:s'));
                     })
-                    ->orWhere(function ($subQ) use ($oneHourAgo, $now) {
+                    ->orWhere(function ($subQ) use ($oneAndHalfHoursAgo, $now) {
                         // For sessions between the date range
-                        $subQ->where('date', '>', $oneHourAgo->format('Y-m-d'))
+                        $subQ->where('date', '>', $oneAndHalfHoursAgo->format('Y-m-d'))
                             ->where('date', '<', $now->format('Y-m-d'));
                     })
-                    ->orWhere(function ($subQ) use ($oneHourAgo, $now) {
+                    ->orWhere(function ($subQ) use ($oneAndHalfHoursAgo, $now) {
                         // For today, check if time is before now
                         $subQ->where('date', $now->format('Y-m-d'))
                             ->where('start_time', '<=', $now->format('H:i:s'));
@@ -301,8 +305,8 @@ class ReservationController extends Controller
             ->get();
 
         // Filter by actual datetime (combining date and time)
-        // Only include sessions that have started (not in the future) and within last hour
-        $activeReservation = $reservations->first(function ($reservation) use ($oneHourAgo, $now) {
+        // Only include sessions that have started and are within 30 minutes after start time
+        $activeReservation = $reservations->first(function ($reservation) use ($now) {
             $session = $reservation->session;
             if (!$session) return false;
             
@@ -312,8 +316,11 @@ class ReservationController extends Controller
                 $session->start_time
             );
             
-            // Session must have started (not in the future) and be within last hour
-            return $sessionDateTime->lte($now) && $sessionDateTime->gte($oneHourAgo);
+            // Session must have started (not in the future)
+            // And current time must be within 30 minutes after session start
+            $thirtyMinutesAfterStart = $sessionDateTime->copy()->addMinutes(30);
+            
+            return $sessionDateTime->lte($now) && $now->lte($thirtyMinutesAfterStart);
         });
 
         if (!$activeReservation) {
