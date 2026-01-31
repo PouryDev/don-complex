@@ -44,10 +44,24 @@ class TimezoneHelper
     /**
      * Create a Carbon instance from date and time strings in Iran timezone
      * Useful for combining session date and start_time
+     * Handles both H:i and H:i:s formats
      */
     public static function createFromDateAndTime(string $date, string $time): Carbon
     {
-        return Carbon::createFromFormat('Y-m-d H:i:s', $date . ' ' . $time, 'Asia/Tehran');
+        // Normalize time format - ensure it has seconds
+        $timeParts = explode(':', trim($time));
+        
+        // Take only first 3 parts (hour, minute, second)
+        $hour = $timeParts[0] ?? '00';
+        $minute = $timeParts[1] ?? '00';
+        $second = $timeParts[2] ?? '00';
+        
+        // Reconstruct time in H:i:s format
+        $normalizedTime = sprintf('%02d:%02d:%02d', (int)$hour, (int)$minute, (int)$second);
+        
+        // Combine date and time and parse in Iran timezone
+        $dateTimeString = $date . ' ' . $normalizedTime;
+        return Carbon::createFromFormat('Y-m-d H:i:s', $dateTimeString, 'Asia/Tehran');
     }
 }
 

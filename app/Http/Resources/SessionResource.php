@@ -66,7 +66,7 @@ class SessionResource extends JsonResource
         )->startOfDay();
         $sessionDateTime = TimezoneHelper::createFromDateAndTime(
             $this->date->format('Y-m-d'),
-            $this->start_time . ':00' // Ensure time has seconds
+            $this->start_time // createFromDateAndTime handles both H:i and H:i:s formats
         );
 
         // If session date is in the past, it's completed

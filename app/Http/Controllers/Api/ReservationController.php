@@ -247,7 +247,7 @@ class ReservationController extends Controller
             // Parse session date and time as if they are in Iran timezone
             $sessionDateTime = TimezoneHelper::createFromDateAndTime(
                 $session->date->format('Y-m-d'),
-                $session->start_time . ':00' // Ensure time has seconds
+                $session->start_time // createFromDateAndTime handles both H:i and H:i:s formats
             );
             return $sessionDateTime->between($fiveHoursBefore, $fiveHoursAfter);
         });
