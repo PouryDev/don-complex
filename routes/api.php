@@ -60,8 +60,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/session-templates/{sessionTemplate}', [SessionTemplateController::class, 'destroy']);
 
     // Sessions
-    Route::apiResource('sessions', SessionController::class)->except(['destroy']);
+    // Important: available-for-menu route must be before apiResource to avoid route model binding conflict
     Route::get('/sessions/available-for-menu', [SessionController::class, 'getAvailableSessionsForMenuOrdering']);
+    Route::apiResource('sessions', SessionController::class)->except(['destroy']);
 
     // Reservations
     // Important: unpaid route must be before apiResource to avoid route model binding conflict

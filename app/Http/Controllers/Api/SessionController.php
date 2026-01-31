@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSessionRequest;
 use App\Http\Resources\SessionResource;
 use App\Models\Branch;
+use App\Models\Reservation;
 use App\Models\Session;
 use App\Services\SessionService;
+use App\Enums\PaymentStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Cache;
@@ -157,53 +159,61 @@ class SessionController extends Controller
 
     /**
      * Get available sessions for menu ordering (within ±5 hours)
+     * Returns sessions from user's paid reservations within ±5 hours
      */
     public function getAvailableSessionsForMenuOrdering(Request $request): AnonymousResourceCollection
     {
+        $user = $request->user();
         $branchId = $request->get('branch_id');
         
-        if (!$branchId) {
-            return SessionResource::collection(collect());
-        }
-
         $now = TimezoneHelper::now();
         $fiveHoursBefore = $now->copy()->subHours(5);
         $fiveHoursAfter = $now->copy()->addHours(5);
 
-        $query = Session::query()
-            ->with(['branch', 'hall', 'sessionTemplate'])
-            ->where('branch_id', $branchId)
-            ->whereIn('status', ['upcoming', 'ongoing'])
-            ->where(function ($q) use ($fiveHoursBefore, $fiveHoursAfter) {
+        // Get user's paid reservations where session is within ±5 hours
+        $reservations = Reservation::query()
+            ->with([
+                'session.branch',
+                'session.hall',
+                'session.sessionTemplate'
+            ])
+            ->where('user_id', $user->id)
+            ->where('payment_status', PaymentStatus::PAID)
+            ->whereNull('cancelled_at')
+            ->whereHas('session', function ($query) use ($fiveHoursBefore, $fiveHoursAfter, $branchId) {
                 // Check if session datetime is within ±5 hours
-                $q->where(function ($subQ) use ($fiveHoursBefore, $fiveHoursAfter) {
-                    // For same day sessions, check time range
-                    $subQ->where('date', $fiveHoursBefore->format('Y-m-d'))
-                        ->where('start_time', '>=', $fiveHoursBefore->format('H:i:s'))
-                        ->where('start_time', '<=', $fiveHoursAfter->format('H:i:s'));
-                })
-                ->orWhere(function ($subQ) use ($fiveHoursBefore, $fiveHoursAfter) {
-                    // For sessions between the date range
-                    $subQ->where('date', '>', $fiveHoursBefore->format('Y-m-d'))
-                        ->where('date', '<', $fiveHoursAfter->format('Y-m-d'));
-                })
-                ->orWhere(function ($subQ) use ($fiveHoursBefore, $fiveHoursAfter) {
-                    // For end date, check time
-                    $subQ->where('date', $fiveHoursAfter->format('Y-m-d'))
-                        ->where('start_time', '<=', $fiveHoursAfter->format('H:i:s'));
+                $query->where(function ($q) use ($fiveHoursBefore, $fiveHoursAfter) {
+                    $q->where(function ($subQ) use ($fiveHoursBefore, $fiveHoursAfter) {
+                        // For same day sessions, check time range
+                        $subQ->where('date', $fiveHoursBefore->format('Y-m-d'))
+                            ->where('start_time', '>=', $fiveHoursBefore->format('H:i:s'))
+                            ->where('start_time', '<=', $fiveHoursAfter->format('H:i:s'));
+                    })
+                    ->orWhere(function ($subQ) use ($fiveHoursBefore, $fiveHoursAfter) {
+                        // For sessions between the date range
+                        $subQ->where('date', '>', $fiveHoursBefore->format('Y-m-d'))
+                            ->where('date', '<', $fiveHoursAfter->format('Y-m-d'));
+                    })
+                    ->orWhere(function ($subQ) use ($fiveHoursBefore, $fiveHoursAfter) {
+                        // For end date, check time
+                        $subQ->where('date', $fiveHoursAfter->format('Y-m-d'))
+                            ->where('start_time', '<=', $fiveHoursAfter->format('H:i:s'));
+                    });
                 });
+                
+                // Filter by branch_id if provided
+                if ($branchId) {
+                    $query->where('branch_id', $branchId);
+                }
             })
-            ->orderBy('date')
-            ->orderBy('start_time');
-
-        $sessions = $this->sessionService->getPaginatedSessionsWithAvailability(
-            $query,
-            100 // Get more sessions for selection
-        );
+            ->get();
 
         // Filter by actual datetime (combining date and time)
         // Note: session date and time are stored in database, we need to interpret them in Iran timezone
-        $filteredSessions = $sessions->getCollection()->filter(function ($session) use ($fiveHoursBefore, $fiveHoursAfter) {
+        $filteredReservations = $reservations->filter(function ($reservation) use ($fiveHoursBefore, $fiveHoursAfter) {
+            $session = $reservation->session;
+            if (!$session) return false;
+            
             $sessionDateTime = TimezoneHelper::createFromDateAndTime(
                 $session->date->format('Y-m-d'),
                 $session->start_time // createFromDateAndTime handles both H:i and H:i:s formats
@@ -211,8 +221,17 @@ class SessionController extends Controller
             return $sessionDateTime->between($fiveHoursBefore, $fiveHoursAfter);
         });
 
-        // Create new paginator with filtered results
-        $sessions->setCollection($filteredSessions);
+        // Extract unique sessions from filtered reservations
+        $sessions = $filteredReservations->map(function ($reservation) {
+            return $reservation->session;
+        })->filter()->unique('id')->values();
+
+        // Calculate available spots for each session
+        // getAvailableSpots will handle expiration of unpaid reservations internally
+        $sessions->each(function ($session) {
+            $session->refresh();
+            $session->available_spots = $this->sessionService->getAvailableSpots($session);
+        });
 
         return SessionResource::collection($sessions);
     }
