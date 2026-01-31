@@ -184,5 +184,67 @@ class ReservationController extends Controller
             
         return ReservationResource::collection($reservations);
     }
+
+    /**
+     * Get active reservations for menu ordering (within ±5 hours)
+     */
+    public function getActiveReservationsForMenuOrdering(Request $request): AnonymousResourceCollection
+    {
+        $user = $request->user();
+        $now = Carbon::now();
+        $fiveHoursBefore = $now->copy()->subHours(5);
+        $fiveHoursAfter = $now->copy()->addHours(5);
+
+        // Get reservations where session is within ±5 hours
+        $reservations = Reservation::query()
+            ->with([
+                'session.branch',
+                'session.hall',
+                'session.sessionTemplate',
+                'paymentTransaction',
+                'orders'
+            ])
+            ->where('user_id', $user->id)
+            ->where('payment_status', PaymentStatus::PENDING)
+            ->whereNull('cancelled_at')
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', now());
+            })
+            ->whereHas('session', function ($query) use ($fiveHoursBefore, $fiveHoursAfter) {
+                // Check if session datetime is within ±5 hours
+                $query->where(function ($q) use ($fiveHoursBefore, $fiveHoursAfter) {
+                    $q->where(function ($subQ) use ($fiveHoursBefore, $fiveHoursAfter) {
+                        // For same day sessions, check time range
+                        $subQ->where('date', $fiveHoursBefore->format('Y-m-d'))
+                            ->where('start_time', '>=', $fiveHoursBefore->format('H:i:s'))
+                            ->where('start_time', '<=', $fiveHoursAfter->format('H:i:s'));
+                    })
+                    ->orWhere(function ($subQ) use ($fiveHoursBefore, $fiveHoursAfter) {
+                        // For sessions between the date range
+                        $subQ->where('date', '>', $fiveHoursBefore->format('Y-m-d'))
+                            ->where('date', '<', $fiveHoursAfter->format('Y-m-d'));
+                    })
+                    ->orWhere(function ($subQ) use ($fiveHoursBefore, $fiveHoursAfter) {
+                        // For end date, check time
+                        $subQ->where('date', $fiveHoursAfter->format('Y-m-d'))
+                            ->where('start_time', '<=', $fiveHoursAfter->format('H:i:s'));
+                    });
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Filter by actual datetime (combining date and time)
+        $reservations = $reservations->filter(function ($reservation) use ($fiveHoursBefore, $fiveHoursAfter) {
+            $session = $reservation->session;
+            if (!$session) return false;
+            
+            $sessionDateTime = Carbon::parse($session->date->format('Y-m-d') . ' ' . $session->start_time);
+            return $sessionDateTime->between($fiveHoursBefore, $fiveHoursAfter);
+        });
+
+        return ReservationResource::collection($reservations);
+    }
 }
 

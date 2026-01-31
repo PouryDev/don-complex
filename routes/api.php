@@ -61,10 +61,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Sessions
     Route::apiResource('sessions', SessionController::class)->except(['destroy']);
+    Route::get('/sessions/available-for-menu', [SessionController::class, 'getAvailableSessionsForMenuOrdering']);
 
     // Reservations
     // Important: unpaid route must be before apiResource to avoid route model binding conflict
     Route::get('/reservations/unpaid', [ReservationController::class, 'unpaid']);
+    Route::get('/reservations/active-for-menu', [ReservationController::class, 'getActiveReservationsForMenuOrdering']);
     Route::apiResource('reservations', ReservationController::class)->except(['update']);
     Route::post('/sessions/{session}/reservations', [ReservationController::class, 'store']);
 
@@ -73,6 +75,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/reservations/{reservation}/orders', [OrderController::class, 'store']);
     Route::put('/orders/{order}', [OrderController::class, 'update']);
     Route::delete('/orders/{order}', [OrderController::class, 'destroy']);
+    Route::post('/orders/menu', [OrderController::class, 'createMenuOrder']);
 
     // Payment routes
     Route::post('/payments/{paymentTransaction}/initiate', [PaymentController::class, 'initiate']);

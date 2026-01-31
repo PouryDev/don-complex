@@ -88,6 +88,7 @@ export const orderService = {
     getOrders: () => api.get('/orders').then(res => res.data),
     getOrder: (id) => api.get(`/orders/${id}`).then(res => res.data),
     createOrder: (data) => api.post('/orders', data).then(res => res.data),
+    createMenuOrder: (data) => api.post('/orders/menu', data).then(res => res.data),
 };
 
 // Reservation Order Service (for reservation food orders)
@@ -275,6 +276,15 @@ export const branchService = {
 
 // Session Service
 export const sessionService = {
+    getAvailableSessionsForMenuOrdering: (branchId) => {
+        const params = branchId ? { branch_id: branchId } : {};
+        return api.get('/sessions/available-for-menu', { params }).then(res => {
+            if (res.data && res.data.data) {
+                return res.data.data;
+            }
+            return res.data;
+        });
+    },
     getSessions: (params = {}) => {
         const queryParams = new URLSearchParams();
         Object.keys(params).forEach(key => {
@@ -341,6 +351,15 @@ export const reservationService = {
         }
         return res.data;
     }),
+    getActiveReservationsForMenuOrdering: (branchId = null) => {
+        const params = branchId ? { branch_id: branchId } : {};
+        return api.get('/reservations/active-for-menu', { params }).then(res => {
+            if (res.data && res.data.data) {
+                return res.data.data;
+            }
+            return res.data;
+        });
+    },
     createReservation: (sessionId, numberOfPeople, orderItems = null, orderNotes = null) => {
         const data = {
             number_of_people: numberOfPeople,

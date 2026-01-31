@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { menuService, branchService } from '../services/api';
 import Loading from '../Components/Loading';
 import Select from '../Components/Select';
-import { getCategoryIcon, WarningIcon, SearchIcon } from '../Components/Icons';
+import { getCategoryIcon, WarningIcon, SearchIcon, PlusIcon, MinusIcon } from '../Components/Icons';
+import MenuOrderCheckout from '../Components/MenuOrderCheckout';
 
 function Menu() {
     const [selectedCategory, setSelectedCategory] = useState('all');
@@ -18,6 +19,8 @@ function Menu() {
     const [currentPage, setCurrentPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const observerTarget = useRef(null);
+    const [cart, setCart] = useState({}); // { menuItemId: quantity }
+    const [showCheckout, setShowCheckout] = useState(false);
 
     useEffect(() => {
         fetchBranches();
@@ -196,6 +199,44 @@ function Menu() {
         return new Intl.NumberFormat('fa-IR').format(price);
     };
 
+    const handleAddToCart = (item) => {
+        setCart(prev => {
+            const currentQty = prev[item.id] || 0;
+            return { ...prev, [item.id]: currentQty + 1 };
+        });
+    };
+
+    const handleRemoveFromCart = (itemId) => {
+        setCart(prev => {
+            const newCart = { ...prev };
+            if (newCart[itemId] > 1) {
+                newCart[itemId] = newCart[itemId] - 1;
+            } else {
+                delete newCart[itemId];
+            }
+            return newCart;
+        });
+    };
+
+    const getCartCount = () => {
+        return Object.values(cart).reduce((sum, qty) => sum + qty, 0);
+    };
+
+    const getCartItems = () => {
+        return Object.entries(cart)
+            .filter(([_, qty]) => qty > 0)
+            .map(([itemId, quantity]) => {
+                const item = menuItems.find(mi => mi.id === parseInt(itemId));
+                if (!item) return null;
+                return {
+                    ...item,
+                    quantity,
+                    total: item.price * quantity
+                };
+            })
+            .filter(item => item !== null);
+    };
+
     if (initialLoading && !branchId) {
         return <Loading />;
     }
@@ -219,6 +260,20 @@ function Menu() {
 
     return (
         <div className="space-y-6">
+            {/* Cart Button - Fixed Position */}
+            {getCartCount() > 0 && (
+                <div className="fixed bottom-6 left-6 right-6 sm:left-auto sm:right-6 z-50 max-w-sm mx-auto sm:mx-0">
+                    <button
+                        onClick={() => setShowCheckout(true)}
+                        className="w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-4 px-6 rounded-xl font-bold text-lg shadow-2xl hover:from-red-700 hover:to-red-800 transition-all duration-200 flex items-center justify-center gap-3"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span>مشاهده سبد خرید ({getCartCount().toLocaleString('fa-IR')})</span>
+                    </button>
+                </div>
+            )}
 
             {/* Branch Selector */}
             {branches.length > 0 && (
@@ -302,10 +357,31 @@ function Menu() {
                                 <p className="text-xs sm:text-sm text-gray-300 mb-3 sm:mb-2 line-clamp-2 leading-relaxed">
                                     {item.description || 'بدون توضیحات'}
                                 </p>
-                                <div className="flex items-center mt-auto">
+                                <div className="flex items-center justify-between mt-auto">
                                     <span className="text-base sm:text-lg font-bold text-red-400">
                                         {formatPrice(item.price)} تومان
                                     </span>
+                                    <div className="flex items-center gap-2">
+                                        {cart[item.id] > 0 && (
+                                            <>
+                                                <button
+                                                    onClick={() => handleRemoveFromCart(item.id)}
+                                                    className="w-8 h-8 flex items-center justify-center bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                                >
+                                                    <MinusIcon />
+                                                </button>
+                                                <span className="text-white font-bold min-w-[24px] text-center">
+                                                    {cart[item.id]?.toLocaleString('fa-IR') || 0}
+                                                </span>
+                                            </>
+                                        )}
+                                        <button
+                                            onClick={() => handleAddToCart(item)}
+                                            className="w-8 h-8 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                        >
+                                            <PlusIcon />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -336,6 +412,19 @@ function Menu() {
                 <div className="text-center py-12">
                     <Loading />
                 </div>
+            )}
+
+            {/* Checkout Modal */}
+            {showCheckout && (
+                <MenuOrderCheckout
+                    cartItems={getCartItems()}
+                    branchId={branchId}
+                    onClose={() => setShowCheckout(false)}
+                    onOrderPlaced={() => {
+                        setCart({});
+                        setShowCheckout(false);
+                    }}
+                />
             )}
         </div>
     );
