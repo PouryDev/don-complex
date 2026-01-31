@@ -154,12 +154,25 @@ function SessionDetails() {
         return session.price * numberOfPeople;
     };
 
+    const calculateMinimumCafeOrder = () => {
+        if (!session) return 0;
+        const discountPerPerson = 10000; // 10,000 tomans discount per person
+        const minimumPerPerson = Math.max(0, session.price - discountPerPerson);
+        return minimumPerPerson * numberOfPeople;
+    };
+
     const calculateFoodTotal = () => {
         return foodTotal;
     };
 
+    const calculateCafeOrderPayable = () => {
+        const actualOrderTotal = calculateFoodTotal();
+        const minimumRequired = calculateMinimumCafeOrder();
+        return Math.max(actualOrderTotal, minimumRequired);
+    };
+
     const calculateGrandTotal = () => {
-        return calculateTicketTotal() + calculateFoodTotal();
+        return calculateTicketTotal() + calculateCafeOrderPayable();
     };
 
     const handleFoodSelectionChange = (items) => {
@@ -387,6 +400,38 @@ function SessionDetails() {
                                 </div>
                             </div>
                         )}
+                        
+                        {/* Cafe Order Payable - Show minimum charge if orders are less than minimum */}
+                        {(() => {
+                            const actualOrderTotal = calculateFoodTotal();
+                            const minimumRequired = calculateMinimumCafeOrder();
+                            const cafeOrderPayable = calculateCafeOrderPayable();
+                            const needsBankCafe = actualOrderTotal < minimumRequired;
+                            
+                            return (
+                                <div className="space-y-2 pb-2 border-b border-gray-700">
+                                    {needsBankCafe && (
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-gray-400">بانک کافه</span>
+                                            <span className="text-yellow-400 font-semibold">
+                                                {formatPrice(minimumRequired - actualOrderTotal)} تومان
+                                            </span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-gray-400">مجموع سفارش کافه</span>
+                                        <span className="text-orange-400 font-semibold">
+                                            {formatPrice(cafeOrderPayable)} تومان
+                                        </span>
+                                    </div>
+                                    {needsBankCafe && (
+                                        <div className="text-xs text-yellow-300 pr-2 mt-1">
+                                            حداقل سفارش کافه: {formatPrice(minimumRequired)} تومان
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
                         
                         {/* Grand Total */}
                         <div className="flex justify-between items-center pt-2 border-t border-gray-700">

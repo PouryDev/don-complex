@@ -58,21 +58,71 @@ class Reservation extends Model
     }
 
     /**
-     * Get total amount including reservation price and orders
+     * Get minimum cafe order amount required
+     * Formula: (session.price - 10000) * number_of_people
      */
-    public function getTotalAmount(): float
+    public function getMinimumCafeOrderAmount(): float
     {
-        // Calculate reservation price (session price * number of people)
-        $sessionPrice = $this->session->price * $this->number_of_people;
+        if (!$this->relationLoaded('session')) {
+            $this->load('session');
+        }
         
-        // Calculate orders total
-        $ordersTotal = $this->orders()
+        $sessionPricePerPerson = (float) $this->session->price;
+        $discountPerPerson = 10000; // 10,000 tomans discount per person
+        $minimumPerPerson = max(0, $sessionPricePerPerson - $discountPerPerson);
+        
+        return (float) ($minimumPerPerson * $this->number_of_people);
+    }
+
+    /**
+     * Get total amount of cafe orders
+     */
+    public function getCafeOrderTotal(): float
+    {
+        return (float) $this->orders()
             ->whereNull('deleted_at')
             ->where('status', '!=', \App\Enums\OrderStatus::CANCELLED)
             ->get()
             ->sum('total_amount');
+    }
+
+    /**
+     * Get cafe order payable amount (max of actual orders or minimum required)
+     */
+    public function getCafeOrderPayable(): float
+    {
+        $cafeOrderTotal = $this->getCafeOrderTotal();
+        $minimumCafeOrder = $this->getMinimumCafeOrderAmount();
         
-        return (float) ($sessionPrice + $ordersTotal);
+        return (float) max($cafeOrderTotal, $minimumCafeOrder);
+    }
+
+    /**
+     * Get ticket price (session price * number of people)
+     */
+    public function getTicketPrice(): float
+    {
+        if (!$this->relationLoaded('session')) {
+            $this->load('session');
+        }
+        
+        return (float) ($this->session->price * $this->number_of_people);
+    }
+
+    /**
+     * Get total amount including reservation price and cafe orders
+     * New pricing logic:
+     * - Ticket price: session.price * number_of_people
+     * - Minimum cafe order: (session.price - 10000) * number_of_people
+     * - Cafe order payable: max(actual cafe orders, minimum cafe order)
+     * - Total: ticket price + cafe order payable
+     */
+    public function getTotalAmount(): float
+    {
+        $ticketPrice = $this->getTicketPrice();
+        $cafeOrderPayable = $this->getCafeOrderPayable();
+        
+        return (float) ($ticketPrice + $cafeOrderPayable);
     }
 
     /**

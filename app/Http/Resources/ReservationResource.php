@@ -41,6 +41,22 @@ class ReservationResource extends JsonResource
                 $this->relationLoaded('session'),
                 fn() => $this->getTotalAmount()
             ),
+            'ticket_price' => $this->when(
+                $this->relationLoaded('session'),
+                fn() => $this->getTicketPrice()
+            ),
+            'minimum_cafe_order_amount' => $this->when(
+                $this->relationLoaded('session'),
+                fn() => $this->getMinimumCafeOrderAmount()
+            ),
+            'cafe_order_total' => $this->when(
+                $this->relationLoaded('orders'),
+                fn() => $this->getCafeOrderTotal()
+            ),
+            'cafe_order_payable' => $this->when(
+                $this->relationLoaded('session'),
+                fn() => $this->getCafeOrderPayable()
+            ),
         ];
     }
 }
