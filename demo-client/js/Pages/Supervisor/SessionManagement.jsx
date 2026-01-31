@@ -125,9 +125,15 @@ function SessionManagement() {
 
         try {
             setSubmitting(true);
+            // Normalize start_time to HH:mm format (remove seconds if present)
+            let startTime = templateForm.start_time;
+            if (startTime && startTime.length > 5) {
+                startTime = startTime.substring(0, 5);
+            }
+            
             const templateData = {
                 day_of_week: parseInt(templateForm.day_of_week),
-                start_time: templateForm.start_time,
+                start_time: startTime,
                 price: parseFloat(templateForm.price),
                 max_participants: parseInt(templateForm.max_participants),
                 is_active: templateForm.is_active,
@@ -167,10 +173,16 @@ function SessionManagement() {
     const handleCreateSession = async () => {
         try {
             setSubmitting(true);
+            // Normalize start_time to HH:mm format (remove seconds if present)
+            let startTime = sessionForm.start_time;
+            if (startTime && startTime.length > 5) {
+                startTime = startTime.substring(0, 5);
+            }
+            
             const sessionData = {
                 hall_id: parseInt(sessionForm.hall_id),
                 date: sessionForm.date,
-                start_time: sessionForm.start_time,
+                start_time: startTime,
                 price: parseFloat(sessionForm.price),
                 max_participants: parseInt(sessionForm.max_participants),
                 status: sessionForm.status,

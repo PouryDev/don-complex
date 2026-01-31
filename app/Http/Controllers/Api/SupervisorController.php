@@ -635,13 +635,28 @@ class SupervisorController extends Controller
             abort(403, 'You can only create session templates for halls in your branch');
         }
 
+        // Normalize start_time if it includes seconds (H:i:s -> H:i)
+        $requestData = $request->all();
+        if (isset($requestData['start_time']) && preg_match('/^\d{2}:\d{2}:\d{2}$/', $requestData['start_time'])) {
+            $requestData['start_time'] = substr($requestData['start_time'], 0, 5); // Remove seconds
+            $request->merge($requestData);
+        }
+
         $validated = $request->validate([
             'day_of_week' => ['required', 'integer', 'min:0', 'max:6'],
-            'start_time' => ['required', 'date_format:H:i'],
+            'start_time' => ['required', 'regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9](:([0-5][0-9]))?$/'],
             'price' => ['required', 'numeric', 'min:0'],
             'max_participants' => ['required', 'integer', 'min:1'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
+
+        // Normalize start_time to H:i:s format if provided
+        if (isset($validated['start_time'])) {
+            $timeParts = explode(':', $validated['start_time']);
+            if (count($timeParts) === 2) {
+                $validated['start_time'] = $validated['start_time'] . ':00';
+            }
+        }
 
         // Set hall_id automatically
         $validated['hall_id'] = $hall->id;
@@ -669,13 +684,28 @@ class SupervisorController extends Controller
             abort(403, 'You can only update session templates for halls in your branch');
         }
 
+        // Normalize start_time if it includes seconds (H:i:s -> H:i)
+        $requestData = $request->all();
+        if (isset($requestData['start_time']) && preg_match('/^\d{2}:\d{2}:\d{2}$/', $requestData['start_time'])) {
+            $requestData['start_time'] = substr($requestData['start_time'], 0, 5); // Remove seconds
+            $request->merge($requestData);
+        }
+
         $validated = $request->validate([
             'day_of_week' => ['sometimes', 'integer', 'min:0', 'max:6'],
-            'start_time' => ['sometimes', 'date_format:H:i'],
+            'start_time' => ['sometimes', 'regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9](:([0-5][0-9]))?$/'],
             'price' => ['sometimes', 'numeric', 'min:0'],
             'max_participants' => ['sometimes', 'integer', 'min:1'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
+
+        // Normalize start_time to H:i:s format if provided
+        if (isset($validated['start_time'])) {
+            $timeParts = explode(':', $validated['start_time']);
+            if (count($timeParts) === 2) {
+                $validated['start_time'] = $validated['start_time'] . ':00';
+            }
+        }
 
         $sessionTemplate->update($validated);
         $sessionTemplate->load('hall');
