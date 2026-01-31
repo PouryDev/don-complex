@@ -50,13 +50,17 @@ class SessionController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Supervisor can only see sessions in their branch
-        if ($request->user()->isSupervisor()) {
-            $query->where('branch_id', $request->user()->branch->id);
-        }
-        // Game master can only see sessions in their branch
-        elseif ($request->user()->isGameMaster()) {
-            $query->where('branch_id', $request->user()->branch->id);
+        // Only filter by branch for management, not for booking
+        // If for_booking parameter is not set or false, apply branch filter for supervisors/game masters
+        if (!$request->has('for_booking') || !$request->boolean('for_booking')) {
+            // Supervisor can only see sessions in their branch (for management)
+            if ($request->user()->isSupervisor()) {
+                $query->where('branch_id', $request->user()->branch->id);
+            }
+            // Game master can only see sessions in their branch
+            elseif ($request->user()->isGameMaster()) {
+                $query->where('branch_id', $request->user()->branch->id);
+            }
         }
 
         $perPage = $request->get('per_page', 15);

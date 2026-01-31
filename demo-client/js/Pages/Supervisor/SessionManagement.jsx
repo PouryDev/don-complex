@@ -232,17 +232,17 @@ function SessionManagement() {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold text-white mb-2">مدیریت سانس‌ها</h1>
-                <p className="text-gray-400">مدیریت قالب‌های سانس و ایجاد سانس دستی</p>
+        <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
+            <div className="mb-4 sm:mb-6">
+                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">مدیریت سانس‌ها</h1>
+                <p className="text-sm sm:text-base text-gray-400">مدیریت قالب‌های سانس و ایجاد سانس دستی</p>
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-2 border-b border-red-900/50">
+            <div className="flex gap-1 sm:gap-2 border-b border-red-900/50 overflow-x-auto">
                 <button
                     onClick={() => setActiveTab('templates')}
-                    className={`px-6 py-3 font-semibold transition-all ${
+                    className={`px-3 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold transition-all whitespace-nowrap ${
                         activeTab === 'templates'
                             ? 'text-red-400 border-b-2 border-red-400'
                             : 'text-gray-400 hover:text-white'
@@ -252,7 +252,7 @@ function SessionManagement() {
                 </button>
                 <button
                     onClick={() => setActiveTab('create')}
-                    className={`px-6 py-3 font-semibold transition-all ${
+                    className={`px-3 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold transition-all whitespace-nowrap ${
                         activeTab === 'create'
                             ? 'text-red-400 border-b-2 border-red-400'
                             : 'text-gray-400 hover:text-white'
@@ -264,14 +264,14 @@ function SessionManagement() {
 
             {/* Templates Tab */}
             {activeTab === 'templates' && (
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                     {/* Hall Selection */}
-                    <div className="cafe-card rounded-xl p-4">
-                        <label className="block text-sm text-gray-400 mb-2">انتخاب سالن</label>
+                    <div className="cafe-card rounded-xl p-3 sm:p-4">
+                        <label className="block text-xs sm:text-sm text-gray-400 mb-2">انتخاب سالن</label>
                         <select
                             value={selectedHallId || ''}
                             onChange={(e) => setSelectedHallId(e.target.value ? parseInt(e.target.value) : null)}
-                            className="w-full px-4 py-2 bg-gray-800 text-white rounded-lg border border-red-900/50 focus:border-red-600 focus:outline-none"
+                            className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base bg-gray-800 text-white rounded-lg border border-red-900/50 focus:border-red-600 focus:outline-none"
                         >
                             <option value="">انتخاب سالن</option>
                             {halls.map((hall) => (
@@ -285,11 +285,11 @@ function SessionManagement() {
                     {/* Templates List */}
                     {selectedHallId && (
                         <>
-                            <div className="flex justify-between items-center">
-                                <h2 className="text-xl font-semibold text-white">قالب‌های سانس</h2>
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
+                                <h2 className="text-lg sm:text-xl font-semibold text-white">قالب‌های سانس</h2>
                                 <button
                                     onClick={handleCreateTemplate}
-                                    className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all font-semibold"
+                                    className="w-full sm:w-auto px-4 py-2 text-sm sm:text-base bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all font-semibold"
                                 >
                                     افزودن قالب جدید
                                 </button>
@@ -307,49 +307,49 @@ function SessionManagement() {
                                         templates.map((template) => (
                                             <div
                                                 key={template.id}
-                                                className="cafe-card rounded-xl p-5"
+                                                className="cafe-card rounded-xl p-3 sm:p-5"
                                             >
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex-1 grid grid-cols-2 md:grid-cols-5 gap-4">
+                                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+                                                    <div className="flex-1 w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
                                                         <div>
-                                                            <p className="text-sm text-gray-400">روز هفته</p>
-                                                            <p className="text-white font-semibold">
+                                                            <p className="text-xs sm:text-sm text-gray-400">روز هفته</p>
+                                                            <p className="text-sm sm:text-base text-white font-semibold">
                                                                 {getDayName(template.day_of_week)}
                                                             </p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm text-gray-400">زمان شروع</p>
-                                                            <p className="text-white font-semibold">{template.start_time}</p>
+                                                            <p className="text-xs sm:text-sm text-gray-400">زمان شروع</p>
+                                                            <p className="text-sm sm:text-base text-white font-semibold">{template.start_time}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm text-gray-400">قیمت</p>
-                                                            <p className="text-white font-semibold">
+                                                            <p className="text-xs sm:text-sm text-gray-400">قیمت</p>
+                                                            <p className="text-sm sm:text-base text-white font-semibold">
                                                                 {new Intl.NumberFormat('fa-IR').format(template.price)} تومان
                                                             </p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm text-gray-400">ظرفیت</p>
-                                                            <p className="text-white font-semibold">{template.max_participants} نفر</p>
+                                                            <p className="text-xs sm:text-sm text-gray-400">ظرفیت</p>
+                                                            <p className="text-sm sm:text-base text-white font-semibold">{template.max_participants} نفر</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm text-gray-400">وضعیت</p>
-                                                            <p className={`font-semibold ${
+                                                            <p className="text-xs sm:text-sm text-gray-400">وضعیت</p>
+                                                            <p className={`text-sm sm:text-base font-semibold ${
                                                                 template.is_active ? 'text-green-400' : 'text-gray-400'
                                                             }`}>
                                                                 {template.is_active ? 'فعال' : 'غیرفعال'}
                                                             </p>
                                                         </div>
                                                     </div>
-                                                    <div className="flex gap-2">
+                                                    <div className="flex gap-2 w-full sm:w-auto">
                                                         <button
                                                             onClick={() => handleEditTemplate(template)}
-                                                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all font-semibold"
+                                                            className="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-sm sm:text-base bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all font-semibold"
                                                         >
                                                             ویرایش
                                                         </button>
                                                         <button
                                                             onClick={() => handleDeleteTemplate(template.id)}
-                                                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all font-semibold"
+                                                            className="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-sm sm:text-base bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all font-semibold"
                                                         >
                                                             حذف
                                                         </button>
@@ -367,10 +367,10 @@ function SessionManagement() {
 
             {/* Create Session Tab */}
             {activeTab === 'create' && (
-                <div className="cafe-card rounded-xl p-6 space-y-4">
-                    <h2 className="text-xl font-semibold text-white mb-4">ایجاد سانس دستی</h2>
+                <div className="cafe-card rounded-xl p-4 sm:p-6 space-y-4">
+                    <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4">ایجاد سانس دستی</h2>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                         <div>
                             <label className="block text-sm text-gray-400 mb-2">سالن *</label>
                             <select
@@ -512,9 +512,9 @@ function SessionManagement() {
 
             {/* Template Modal */}
             {showTemplateModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="cafe-card rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-                        <h2 className="text-xl font-semibold text-white mb-4">
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
+                    <div className="cafe-card rounded-xl p-4 sm:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+                        <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4">
                             {editingTemplate ? 'ویرایش قالب سانس' : 'ایجاد قالب سانس جدید'}
                         </h2>
 

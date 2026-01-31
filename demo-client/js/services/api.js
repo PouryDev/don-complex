@@ -248,8 +248,13 @@ api.interceptors.response.use(
 // Branch Service
 export const branchService = {
     getBranches: (params = {}) => {
+        // Add for_booking parameter to show all branches for booking
+        if (!params.hasOwnProperty('for_booking')) {
+            params.for_booking = true;
+        }
         const queryParams = new URLSearchParams();
         if (params.per_page) queryParams.append('per_page', params.per_page);
+        if (params.for_booking) queryParams.append('for_booking', '1');
         const queryString = queryParams.toString();
         return api.get(`/branches${queryString ? '?' + queryString : ''}`).then(res => {
             // Handle paginated response

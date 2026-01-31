@@ -17,22 +17,26 @@ class BranchController extends Controller
         $user = $request->user();
         $perPage = $request->get('per_page', 15);
         
-        // Supervisor can only see their own branch
-        if ($user->isSupervisor()) {
-            $branch = Branch::with('gameMasters')->find($user->branch_id);
-            if (!$branch) {
-                return BranchResource::collection(collect());
+        // Only filter by branch for management, not for booking
+        // If for_booking parameter is not set or false, apply branch filter
+        if (!$request->has('for_booking') || !$request->boolean('for_booking')) {
+            // Supervisor can only see their own branch (for management)
+            if ($user->isSupervisor()) {
+                $branch = Branch::with('gameMasters')->find($user->branch_id);
+                if (!$branch) {
+                    return BranchResource::collection(collect());
+                }
+                return BranchResource::collection(collect([$branch]));
             }
-            return BranchResource::collection(collect([$branch]));
-        }
-        
-        // Game master can only see their own branch - no caching needed for single branch
-        if ($user->isGameMaster()) {
-            $branch = Branch::with('gameMasters')->find($user->branch_id);
-            if (!$branch) {
-                return BranchResource::collection(collect());
+            
+            // Game master can only see their own branch - no caching needed for single branch
+            if ($user->isGameMaster()) {
+                $branch = Branch::with('gameMasters')->find($user->branch_id);
+                if (!$branch) {
+                    return BranchResource::collection(collect());
+                }
+                return BranchResource::collection(collect([$branch]));
             }
-            return BranchResource::collection(collect([$branch]));
         }
 
         // Cache branches list for admins (5 minutes)
