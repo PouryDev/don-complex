@@ -28,7 +28,9 @@ class SessionService
             $dayOfWeek = $currentDate->dayOfWeek;
 
             foreach ($templates as $template) {
-                if ($template->day_of_week == $dayOfWeek) {
+                // If day_of_week is null, apply template to all days
+                // Otherwise, only apply if it matches the current day
+                if ($template->day_of_week === null || $template->day_of_week == $dayOfWeek) {
                     $session = $this->createSessionFromTemplate($template, $currentDate);
                     if ($session) {
                         $sessions->push($session);

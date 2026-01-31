@@ -643,7 +643,7 @@ class SupervisorController extends Controller
         }
 
         $validated = $request->validate([
-            'day_of_week' => ['required', 'integer', 'min:0', 'max:6'],
+            'day_of_week' => ['nullable', 'integer', 'min:0', 'max:6'],
             'start_time' => ['required', 'regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9](:([0-5][0-9]))?$/'],
             'price' => ['required', 'numeric', 'min:0'],
             'max_participants' => ['required', 'integer', 'min:1'],
@@ -692,7 +692,7 @@ class SupervisorController extends Controller
         }
 
         $validated = $request->validate([
-            'day_of_week' => ['sometimes', 'integer', 'min:0', 'max:6'],
+            'day_of_week' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:6'],
             'start_time' => ['sometimes', 'regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9](:([0-5][0-9]))?$/'],
             'price' => ['sometimes', 'numeric', 'min:0'],
             'max_participants' => ['sometimes', 'integer', 'min:1'],

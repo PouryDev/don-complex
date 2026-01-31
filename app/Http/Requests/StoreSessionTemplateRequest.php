@@ -15,7 +15,7 @@ class StoreSessionTemplateRequest extends FormRequest
     {
         return [
             'hall_id' => ['required', 'exists:halls,id'],
-            'day_of_week' => ['required', 'integer', 'min:0', 'max:6'],
+            'day_of_week' => ['nullable', 'integer', 'min:0', 'max:6'],
             'start_time' => ['required', 'date_format:H:i'],
             'price' => ['required', 'numeric', 'min:0'],
             'max_participants' => ['required', 'integer', 'min:1'],

@@ -19,7 +19,7 @@ function SessionManagement() {
     
     // Template form state
     const [templateForm, setTemplateForm] = useState({
-        day_of_week: 0,
+        day_of_week: null,
         start_time: '',
         price: '',
         max_participants: '',
@@ -96,7 +96,7 @@ function SessionManagement() {
     const handleCreateTemplate = () => {
         setEditingTemplate(null);
         setTemplateForm({
-            day_of_week: 0,
+            day_of_week: null,
             start_time: '',
             price: '',
             max_participants: '',
@@ -108,7 +108,7 @@ function SessionManagement() {
     const handleEditTemplate = (template) => {
         setEditingTemplate(template);
         setTemplateForm({
-            day_of_week: template.day_of_week,
+            day_of_week: template.day_of_week ?? null,
             start_time: template.start_time,
             price: template.price.toString(),
             max_participants: template.max_participants.toString(),
@@ -132,7 +132,9 @@ function SessionManagement() {
             }
             
             const templateData = {
-                day_of_week: parseInt(templateForm.day_of_week),
+                day_of_week: templateForm.day_of_week === null || templateForm.day_of_week === '' 
+                    ? null 
+                    : parseInt(templateForm.day_of_week),
                 start_time: startTime,
                 price: parseFloat(templateForm.price),
                 max_participants: parseInt(templateForm.max_participants),
@@ -218,6 +220,9 @@ function SessionManagement() {
     };
 
     const getDayName = (dayOfWeek) => {
+        if (dayOfWeek === null || dayOfWeek === undefined) {
+            return 'همه روزها';
+        }
         const days = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
         return days[dayOfWeek] || '';
     };
@@ -423,7 +428,7 @@ function SessionManagement() {
                                     <option value="">بدون قالب</option>
                                     {templates.filter(t => t.hall_id === parseInt(sessionForm.hall_id)).map((template) => (
                                         <option key={template.id} value={template.id}>
-                                            {getDayName(template.day_of_week)} - {template.start_time}
+                                            {getDayName(template.day_of_week ?? null)} - {template.start_time}
                                         </option>
                                     ))}
                                 </select>
@@ -515,12 +520,16 @@ function SessionManagement() {
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm text-gray-400 mb-2">روز هفته *</label>
+                                <label className="block text-sm text-gray-400 mb-2">روز هفته</label>
                                 <select
-                                    value={templateForm.day_of_week}
-                                    onChange={(e) => setTemplateForm({ ...templateForm, day_of_week: parseInt(e.target.value) })}
+                                    value={templateForm.day_of_week ?? ''}
+                                    onChange={(e) => {
+                                        const value = e.target.value === '' ? null : parseInt(e.target.value);
+                                        setTemplateForm({ ...templateForm, day_of_week: value });
+                                    }}
                                     className="w-full px-4 py-2 bg-gray-800 text-white rounded-lg border border-red-900/50 focus:border-red-600 focus:outline-none"
                                 >
+                                    <option value="">همه روزها</option>
                                     {[0, 1, 2, 3, 4, 5, 6].map((day) => (
                                         <option key={day} value={day}>
                                             {getDayName(day)}
