@@ -47,6 +47,11 @@ class ReservationController extends Controller
         // Users can only see their own reservations
         if ($request->user()->isCustomer()) {
             $query->where('reservations.user_id', $request->user()->id);
+        } elseif ($request->user()->isSupervisor()) {
+            // Supervisor can see reservations in their branch
+            $query->join('game_sessions', 'reservations.session_id', '=', 'game_sessions.id')
+                  ->where('game_sessions.branch_id', $request->user()->branch->id)
+                  ->select('reservations.*');
         } elseif ($request->user()->isGameMaster()) {
             // Use join instead of whereHas for better performance
             $query->join('game_sessions', 'reservations.session_id', '=', 'game_sessions.id')

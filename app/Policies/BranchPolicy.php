@@ -10,12 +10,17 @@ class BranchPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin() || $user->isGameMaster();
+        return $user->isAdmin() || $user->isGameMaster() || $user->isSupervisor();
     }
 
     public function view(User $user, Branch $branch): bool
     {
         if ($user->isAdmin()) {
+            return true;
+        }
+
+        // Supervisor can view their own branch
+        if ($user->isSupervisor() && $user->branch?->id === $branch->id) {
             return true;
         }
 
@@ -31,6 +36,11 @@ class BranchPolicy
     public function update(User $user, Branch $branch): bool
     {
         if ($user->isAdmin()) {
+            return true;
+        }
+
+        // Supervisor can update their own branch
+        if ($user->isSupervisor() && $user->branch?->id === $branch->id) {
             return true;
         }
 

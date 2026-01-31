@@ -50,8 +50,12 @@ class SessionController extends Controller
             $query->where('status', $request->status);
         }
 
+        // Supervisor can only see sessions in their branch
+        if ($request->user()->isSupervisor()) {
+            $query->where('branch_id', $request->user()->branch->id);
+        }
         // Game master can only see sessions in their branch
-        if ($request->user()->isGameMaster()) {
+        elseif ($request->user()->isGameMaster()) {
             $query->where('branch_id', $request->user()->branch->id);
         }
 
@@ -86,8 +90,12 @@ class SessionController extends Controller
 
         $validated = $request->validated();
 
+        // If supervisor, ensure they're creating session in their branch
+        if ($request->user()->isSupervisor()) {
+            $validated['branch_id'] = $request->user()->branch->id;
+        }
         // If game master, ensure they're creating session in their branch
-        if ($request->user()->isGameMaster()) {
+        elseif ($request->user()->isGameMaster()) {
             $validated['branch_id'] = $request->user()->branch->id;
         }
 
