@@ -146,7 +146,9 @@ function SessionDetails() {
     };
 
     const formatPrice = (price) => {
-        return new Intl.NumberFormat('fa-IR').format(price);
+        // Round to integer and format with Persian numbers and thousand separators
+        const roundedPrice = Math.round(price);
+        return new Intl.NumberFormat('fa-IR').format(roundedPrice);
     };
 
     const calculateTicketTotal = () => {

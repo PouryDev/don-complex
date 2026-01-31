@@ -140,6 +140,12 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [], onTotalC
             .filter(item => item !== null);
     };
 
+    const formatPrice = (price) => {
+        // Round to integer and format with Persian numbers and thousand separators
+        const roundedPrice = Math.round(price);
+        return new Intl.NumberFormat('fa-IR').format(roundedPrice);
+    };
+
     const filteredMenuItems = selectedCategory === 'all'
         ? menuItems
         : menuItems.filter(item => item.category_id === selectedCategory);
@@ -240,7 +246,7 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [], onTotalC
                                             </p>
                                         )}
                                         <p className="text-lg font-bold text-blue-600 mt-2">
-                                            {item.price.toLocaleString('fa-IR')} تومان
+                                            {formatPrice(item.price)} تومان
                                         </p>
                                     </div>
 
@@ -296,7 +302,7 @@ function MenuSelector({ branchId, onSelectionChange, initialItems = [], onTotalC
                                 تعداد آیتم‌ها: <span className="font-bold text-white">{getTotalItems().toLocaleString('fa-IR')}</span>
                             </p>
                             <p className="text-lg font-bold text-blue-600 mt-1">
-                                مجموع: {getTotal().toLocaleString('fa-IR')} تومان
+                                مجموع: {formatPrice(getTotal())} تومان
                             </p>
                         </div>
                     </div>
