@@ -109,4 +109,9 @@ class User extends Authenticatable
     {
         return $this->role === UserRole::CASHIER;
     }
+
+    public function isSupervisor(): bool
+    {
+        return $this->role === UserRole::SUPERVISOR;
+    }
 }

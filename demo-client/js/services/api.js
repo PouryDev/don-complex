@@ -541,5 +541,66 @@ export const cashierService = {
     getStats: () => api.get('/cashier/stats').then(res => res.data),
 };
 
+// Supervisor Service
+export const supervisorService = {
+    getSessions: (params = {}) => {
+        const queryParams = new URLSearchParams();
+        Object.keys(params).forEach(key => {
+            if (params[key] !== null && params[key] !== undefined) {
+                queryParams.append(key, params[key]);
+            }
+        });
+        const queryString = queryParams.toString();
+        return api.get(`/supervisor/sessions${queryString ? '?' + queryString : ''}`).then(res => {
+            if (res.data && res.data.data) {
+                return res.data;
+            }
+            return res.data;
+        });
+    },
+    getSessionReservations: (sessionId, params = {}) => {
+        const queryParams = new URLSearchParams();
+        Object.keys(params).forEach(key => {
+            if (params[key] !== null && params[key] !== undefined) {
+                queryParams.append(key, params[key]);
+            }
+        });
+        const queryString = queryParams.toString();
+        return api.get(`/supervisor/sessions/${sessionId}/reservations${queryString ? '?' + queryString : ''}`).then(res => {
+            if (res.data && res.data.data) {
+                return res.data;
+            }
+            return res.data;
+        });
+    },
+    getReservation: (id) => api.get(`/supervisor/reservations/${id}`).then(res => {
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return res.data;
+    }),
+    validateReservation: (reservationId) => api.post(`/supervisor/reservations/${reservationId}/validate`).then(res => {
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return res.data;
+    }),
+    registerGameResult: (reservationId, data) => api.post(`/supervisor/reservations/${reservationId}/game-result`, data).then(res => {
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return res.data;
+    }),
+    selectBestPlayer: (sessionId, reservationId) => api.post(`/supervisor/sessions/${sessionId}/best-player`, {
+        reservation_id: reservationId
+    }).then(res => {
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return res.data;
+    }),
+    getStats: () => api.get('/supervisor/stats').then(res => res.data),
+};
+
 export default api;
 

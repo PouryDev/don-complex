@@ -9,7 +9,8 @@ export default defineConfig({
             input: [
                 'demo-client/css/app.css', 
                 'demo-client/js/app.jsx',
-                'demo-client/js/cashier-app.jsx'
+                'demo-client/js/cashier-app.jsx',
+                'demo-client/js/supervisor-app.jsx'
             ],
             refresh: true,
         }),

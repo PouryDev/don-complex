@@ -8,5 +8,6 @@ enum UserRole: string
     case GAME_MASTER = 'game_master';
     case ADMIN = 'admin';
     case CASHIER = 'cashier';
+    case SUPERVISOR = 'supervisor';
 }
 

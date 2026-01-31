@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\FeedController;
 use App\Http\Controllers\Api\FormResponseController;
 use App\Http\Controllers\Api\FreeTicketController;
 use App\Http\Controllers\Api\CashierController;
+use App\Http\Controllers\Api\SupervisorController;
 use App\Http\Controllers\Api\GameMasterController;
 use App\Http\Controllers\Api\HallController;
 use App\Http\Controllers\Api\MenuItemController;
@@ -116,6 +117,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/reservations/{reservation}/orders', [CashierController::class, 'getOrders']);
         Route::get('/transactions', [CashierController::class, 'getTransactions']);
         Route::get('/stats', [CashierController::class, 'getStats']);
+    });
+
+    // Supervisor routes
+    Route::prefix('supervisor')->group(function () {
+        Route::get('/sessions', [SupervisorController::class, 'sessions']);
+        Route::get('/sessions/{session}/reservations', [SupervisorController::class, 'sessionReservations']);
+        Route::get('/reservations/{reservation}', [SupervisorController::class, 'showReservation']);
+        Route::post('/reservations/{reservation}/validate', [SupervisorController::class, 'validateReservation']);
+        Route::post('/reservations/{reservation}/game-result', [SupervisorController::class, 'registerGameResult']);
+        Route::post('/sessions/{session}/best-player', [SupervisorController::class, 'selectBestPlayer']);
+        Route::get('/stats', [SupervisorController::class, 'getStats']);
     });
 
     // Admin routes
