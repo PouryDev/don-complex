@@ -254,5 +254,73 @@ class ReservationController extends Controller
 
         return ReservationResource::collection($reservations);
     }
+
+    /**
+     * Get active session (paid reservation where session started less than 1 hour ago)
+     */
+    public function getActiveSession(Request $request)
+    {
+        $user = $request->user();
+        $now = TimezoneHelper::now();
+        $oneHourAgo = $now->copy()->subHour();
+
+        // Get paid reservations where session started within the last hour
+        $reservations = Reservation::query()
+            ->with([
+                'session.branch',
+                'session.hall',
+                'session.sessionTemplate',
+                'paymentTransaction',
+                'orders.orderItems.menuItem.category'
+            ])
+            ->where('user_id', $user->id)
+            ->where('payment_status', PaymentStatus::PAID)
+            ->whereNull('cancelled_at')
+            ->whereHas('session', function ($query) use ($oneHourAgo, $now) {
+                // Check if session datetime is within the last hour
+                $query->where(function ($q) use ($oneHourAgo, $now) {
+                    $q->where(function ($subQ) use ($oneHourAgo, $now) {
+                        // For same day sessions, check time range
+                        $subQ->where('date', $oneHourAgo->format('Y-m-d'))
+                            ->where('start_time', '>=', $oneHourAgo->format('H:i:s'))
+                            ->where('start_time', '<=', $now->format('H:i:s'));
+                    })
+                    ->orWhere(function ($subQ) use ($oneHourAgo, $now) {
+                        // For sessions between the date range
+                        $subQ->where('date', '>', $oneHourAgo->format('Y-m-d'))
+                            ->where('date', '<', $now->format('Y-m-d'));
+                    })
+                    ->orWhere(function ($subQ) use ($oneHourAgo, $now) {
+                        // For today, check if time is before now
+                        $subQ->where('date', $now->format('Y-m-d'))
+                            ->where('start_time', '<=', $now->format('H:i:s'));
+                    });
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Filter by actual datetime (combining date and time)
+        // Only include sessions that have started (not in the future) and within last hour
+        $activeReservation = $reservations->first(function ($reservation) use ($oneHourAgo, $now) {
+            $session = $reservation->session;
+            if (!$session) return false;
+            
+            // Parse session date and time as if they are in Iran timezone
+            $sessionDateTime = TimezoneHelper::createFromDateAndTime(
+                $session->date->format('Y-m-d'),
+                $session->start_time
+            );
+            
+            // Session must have started (not in the future) and be within last hour
+            return $sessionDateTime->lte($now) && $sessionDateTime->gte($oneHourAgo);
+        });
+
+        if (!$activeReservation) {
+            return response()->json(['data' => null]);
+        }
+
+        return new ReservationResource($activeReservation);
+    }
 }
 

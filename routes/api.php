@@ -68,6 +68,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Important: unpaid route must be before apiResource to avoid route model binding conflict
     Route::get('/reservations/unpaid', [ReservationController::class, 'unpaid']);
     Route::get('/reservations/active-for-menu', [ReservationController::class, 'getActiveReservationsForMenuOrdering']);
+    Route::get('/reservations/active-session', [ReservationController::class, 'getActiveSession']);
     Route::apiResource('reservations', ReservationController::class)->except(['update']);
     Route::post('/sessions/{session}/reservations', [ReservationController::class, 'store']);
 

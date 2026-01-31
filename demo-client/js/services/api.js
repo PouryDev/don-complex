@@ -360,6 +360,13 @@ export const reservationService = {
             return res.data;
         });
     },
+    getActiveSession: () => api.get('/reservations/active-session').then(res => {
+        // Handle single resource response
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return res.data;
+    }),
     createReservation: (sessionId, numberOfPeople, orderItems = null, orderNotes = null) => {
         const data = {
             number_of_people: numberOfPeople,

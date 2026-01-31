@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
-import { authService, reservationService } from '../services/api';
+import { authService, reservationService, menuService, orderService } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 import Loading from '../Components/Loading';
 import ConfirmDialog from '../Components/ConfirmDialog';
 import Input from '../Components/Input';
 import CountdownTimer from '../Components/CountdownTimer';
-import { EditIcon, CalendarIcon, CashIcon, ShoppingCartIcon, CheckIcon, StarIcon } from '../Components/Icons';
+import { EditIcon, CalendarIcon, CashIcon, ShoppingCartIcon, CheckIcon, StarIcon, PlusIcon, MinusIcon, getCategoryIcon } from '../Components/Icons';
 
 // Icon Components
 const InvoiceIcon = () => (
@@ -95,11 +95,18 @@ function Profile() {
     const [dataLoading, setDataLoading] = useState(true);
     const [unpaidReservations, setUnpaidReservations] = useState([]);
     const [loadingUnpaid, setLoadingUnpaid] = useState(false);
+    const [activeSession, setActiveSession] = useState(null);
+    const [loadingActiveSession, setLoadingActiveSession] = useState(false);
+    const [menuItems, setMenuItems] = useState([]);
+    const [loadingMenuItems, setLoadingMenuItems] = useState(false);
+    const [cart, setCart] = useState({}); // { menuItemId: quantity }
+    const [submittingOrder, setSubmittingOrder] = useState(false);
 
     useEffect(() => {
         if (user) {
             fetchStats();
             fetchUnpaidReservations();
+            fetchActiveSession();
         } else {
             setDataLoading(false);
         }
@@ -134,6 +141,38 @@ function Profile() {
         }
     };
 
+    const fetchActiveSession = async () => {
+        try {
+            setLoadingActiveSession(true);
+            const session = await reservationService.getActiveSession();
+            setActiveSession(session);
+            
+            // If active session exists, fetch menu items for that branch
+            if (session && session.session && session.session.branch_id) {
+                fetchMenuItems(session.session.branch_id);
+            }
+        } catch (err) {
+            console.error('Error fetching active session:', err);
+            setActiveSession(null);
+        } finally {
+            setLoadingActiveSession(false);
+        }
+    };
+
+    const fetchMenuItems = async (branchId) => {
+        try {
+            setLoadingMenuItems(true);
+            const data = await menuService.getMenuItems(branchId, { per_page: 100 });
+            const items = Array.isArray(data) ? data : (data.data || []);
+            setMenuItems(items);
+        } catch (err) {
+            console.error('Error fetching menu items:', err);
+            setMenuItems([]);
+        } finally {
+            setLoadingMenuItems(false);
+        }
+    };
+
     const formatDate = (dateString) => {
         if (!dateString) return '';
         const date = new Date(dateString);
@@ -152,6 +191,90 @@ function Profile() {
 
     const formatPrice = (price) => {
         return new Intl.NumberFormat('fa-IR').format(price);
+    };
+
+    const handleAddToCart = (item) => {
+        setCart(prev => {
+            const currentQty = prev[item.id] || 0;
+            return { ...prev, [item.id]: currentQty + 1 };
+        });
+    };
+
+    const handleRemoveFromCart = (itemId) => {
+        setCart(prev => {
+            const newCart = { ...prev };
+            if (newCart[itemId] > 1) {
+                newCart[itemId] = newCart[itemId] - 1;
+            } else {
+                delete newCart[itemId];
+            }
+            return newCart;
+        });
+    };
+
+    const getCartItems = () => {
+        return Object.entries(cart)
+            .filter(([_, qty]) => qty > 0)
+            .map(([itemId, quantity]) => {
+                const item = menuItems.find(mi => mi.id === parseInt(itemId));
+                if (!item) return null;
+                return {
+                    ...item,
+                    quantity,
+                    total: item.price * quantity
+                };
+            })
+            .filter(item => item !== null);
+    };
+
+    const getCartTotal = () => {
+        return getCartItems().reduce((sum, item) => sum + item.total, 0);
+    };
+
+    const calculateMinimumCafeOrder = () => {
+        if (!activeSession || !activeSession.session) return 0;
+        const sessionPricePerPerson = parseFloat(activeSession.session.price);
+        const discountPerPerson = 10000;
+        const minimumPerPerson = Math.max(0, sessionPricePerPerson - discountPerPerson);
+        return minimumPerPerson * activeSession.number_of_people;
+    };
+
+    const handleSubmitOrder = async () => {
+        if (!activeSession) return;
+        
+        const cartItems = getCartItems();
+        if (cartItems.length === 0) {
+            showToast('لطفا حداقل یک آیتم به سبد خرید اضافه کنید', 'error');
+            return;
+        }
+
+        setSubmittingOrder(true);
+        try {
+            const orderData = {
+                reservation_id: activeSession.id,
+                items: cartItems.map(item => ({
+                    menu_item_id: item.id,
+                    quantity: item.quantity,
+                })),
+                notes: null,
+            };
+
+            await orderService.createMenuOrder(orderData);
+            
+            // Clear cart
+            setCart({});
+            
+            // Refresh active session to show new orders
+            await fetchActiveSession();
+            
+            showToast('سفارش شما با موفقیت ثبت شد!', 'success');
+        } catch (err) {
+            const errorMessage = err.response?.data?.message || 'خطا در ثبت سفارش. لطفا دوباره تلاش کنید.';
+            showToast(errorMessage, 'error');
+            console.error('Error submitting order:', err);
+        } finally {
+            setSubmittingOrder(false);
+        }
     };
 
     const isReservationExpired = (reservation) => {
@@ -499,6 +622,218 @@ function Profile() {
                                 </motion.div>
                             );
                         })}
+                    </div>
+                </div>
+            )}
+
+            {/* Active Session Section */}
+            {loadingActiveSession ? (
+                <div className="cafe-card rounded-2xl p-6">
+                    <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+                    </div>
+                </div>
+            ) : activeSession && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between px-2">
+                        <h3 className="text-lg font-semibold text-white">سانس فعال شما</h3>
+                        <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-semibold">
+                            در حال بازی
+                        </span>
+                    </div>
+                    
+                    {/* Active Session Card */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="cafe-card rounded-2xl p-5 border-2 border-green-500/30 bg-gradient-to-br from-green-500/10 via-transparent to-green-600/10"
+                    >
+                        {activeSession.session && (
+                            <>
+                                {activeSession.session.branch && (
+                                    <h4 className="text-lg font-bold text-white mb-2">
+                                        {activeSession.session.branch.name}
+                                    </h4>
+                                )}
+                                
+                                <div className="space-y-2 text-sm text-gray-300 mb-4">
+                                    <div className="flex items-center gap-2 text-white/90">
+                                        <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <p>
+                                            {formatDate(activeSession.session.date)} - {formatTime(activeSession.session.start_time)}
+                                        </p>
+                                    </div>
+                                    
+                                    {activeSession.session.hall && (
+                                        <div className="flex items-center gap-2">
+                                            <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                            </svg>
+                                            <p>سالن: {activeSession.session.hall.name}</p>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="flex items-center gap-2">
+                                        <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                        </svg>
+                                        <p>تعداد نفرات: <span className="font-semibold text-white">{activeSession.number_of_people}</span></p>
+                                    </div>
+                                </div>
+
+                                {/* Current Orders */}
+                                {activeSession.orders && activeSession.orders.length > 0 && (
+                                    <div className="mb-4 pt-4 border-t border-green-500/20">
+                                        <h5 className="text-sm font-semibold text-white mb-2">سفارش‌های فعلی:</h5>
+                                        <div className="space-y-1">
+                                            {activeSession.orders.map((order) => (
+                                                order.order_items && order.order_items.map((orderItem, idx) => (
+                                                    <div key={idx} className="text-xs text-gray-300">
+                                                        {orderItem.menu_item?.name} × {orderItem.quantity}
+                                                    </div>
+                                                ))
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Minimum Cafe Order Info */}
+                                <div className="mb-4 pt-4 border-t border-green-500/20">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm text-gray-300">حداقل سفارش کافه:</span>
+                                        <span className="text-sm font-bold text-white">
+                                            {formatPrice(calculateMinimumCafeOrder())} تومان
+                                        </span>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </motion.div>
+
+                    {/* Menu Ordering Section */}
+                    <div className="cafe-card rounded-2xl p-5">
+                        <h4 className="text-lg font-semibold text-white mb-4">سفارش منو</h4>
+                        
+                        {loadingMenuItems ? (
+                            <div className="flex items-center justify-center py-8">
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-500"></div>
+                            </div>
+                        ) : menuItems.length === 0 ? (
+                            <p className="text-gray-400 text-sm text-center py-4">منویی برای این شعبه یافت نشد</p>
+                        ) : (
+                            <>
+                                {/* Menu Items Grid */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 max-h-96 overflow-y-auto">
+                                    {menuItems.map((item) => {
+                                        const CategoryIcon = getCategoryIcon(item.category?.name || '');
+                                        return (
+                                            <div
+                                                key={item.id}
+                                                className="bg-gray-800 rounded-lg p-3 flex items-center justify-between"
+                                            >
+                                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                    <CategoryIcon className="w-6 h-6 text-red-400 flex-shrink-0" />
+                                                    <div className="min-w-0 flex-1">
+                                                        <h5 className="text-sm font-semibold text-white truncate">{item.name}</h5>
+                                                        <p className="text-xs text-gray-400">{formatPrice(item.price)} تومان</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {cart[item.id] > 0 && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => handleRemoveFromCart(item.id)}
+                                                                className="w-7 h-7 flex items-center justify-center bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                                            >
+                                                                <MinusIcon className="w-4 h-4" />
+                                                            </button>
+                                                            <span className="text-white font-bold text-sm min-w-[20px] text-center">
+                                                                {cart[item.id]?.toLocaleString('fa-IR') || 0}
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                    <button
+                                                        onClick={() => handleAddToCart(item)}
+                                                        className="w-7 h-7 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                                    >
+                                                        <PlusIcon className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Cart Summary */}
+                                {getCartItems().length > 0 && (
+                                    <div className="mb-4 pt-4 border-t border-gray-700">
+                                        <h5 className="text-sm font-semibold text-white mb-2">سبد خرید:</h5>
+                                        <div className="space-y-2 mb-3">
+                                            {getCartItems().map((item) => {
+                                                const CategoryIcon = getCategoryIcon(item.category?.name || '');
+                                                return (
+                                                    <div key={item.id} className="flex items-center justify-between text-sm">
+                                                        <div className="flex items-center gap-2">
+                                                            <CategoryIcon className="w-4 h-4 text-red-400" />
+                                                            <span className="text-gray-300">{item.name}</span>
+                                                            <span className="text-gray-500">× {item.quantity}</span>
+                                                        </div>
+                                                        <span className="text-white font-semibold">{formatPrice(item.total)} تومان</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <div className="flex items-center justify-between pt-2 border-t border-gray-700">
+                                            <span className="text-sm text-gray-300">جمع کل:</span>
+                                            <span className="text-lg font-bold text-white">
+                                                {formatPrice(getCartTotal())} تومان
+                                            </span>
+                                        </div>
+                                        
+                                        {/* Minimum Order Check */}
+                                        {getCartTotal() < calculateMinimumCafeOrder() && (
+                                            <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                                                <p className="text-xs text-blue-400">
+                                                    سفارش شما کمتر از حداقل سفارش کافه است. برای سانس فعال، نیاز به پرداخت اضافی نیست.
+                                                </p>
+                                            </div>
+                                        )}
+                                        
+                                        {getCartTotal() >= calculateMinimumCafeOrder() && (
+                                            <div className="mt-3 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                                                <p className="text-xs text-green-400">
+                                                    سفارش شما از حداقل سفارش کافه بیشتر است. نیاز به پرداخت اضافی نیست.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Submit Button */}
+                                <button
+                                    onClick={handleSubmitOrder}
+                                    disabled={submittingOrder || getCartItems().length === 0}
+                                    className="w-full bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 text-white py-3 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-xl flex items-center justify-center gap-2"
+                                >
+                                    {submittingOrder ? (
+                                        <>
+                                            <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            در حال ثبت...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <ShoppingCartIcon className="w-5 h-5" />
+                                            ثبت سفارش
+                                        </>
+                                    )}
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
             )}

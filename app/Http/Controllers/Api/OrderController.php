@@ -226,9 +226,10 @@ class OrderController extends Controller
                 // Create order for the reservation
                 $order = $this->orderService->createOrder($reservation, $items, $notes);
 
-                // Recalculate payment transaction amount
+                // Recalculate payment transaction amount only if reservation is still pending
+                // For paid reservations (active sessions), no payment recalculation is needed
                 $reservation->load('paymentTransaction');
-                if ($reservation->paymentTransaction) {
+                if ($reservation->paymentTransaction && $reservation->payment_status === PaymentStatus::PENDING) {
                     $this->paymentService->recalculateTransactionAmount($reservation);
                 }
 
@@ -236,6 +237,12 @@ class OrderController extends Controller
                 $minimumCafeOrder = $reservation->getMinimumCafeOrderAmount();
                 $cafeOrderTotal = $reservation->getCafeOrderTotal();
                 $cafeOrderDeficit = max(0, $minimumCafeOrder - $cafeOrderTotal);
+                
+                // For paid reservations (active sessions), if order is less than minimum, no payment needed
+                $requiresPayment = true;
+                if ($reservation->payment_status === PaymentStatus::PAID && $cafeOrderTotal < $minimumCafeOrder) {
+                    $requiresPayment = false;
+                }
 
                 // Reload order with relationships
                 $order->load(['orderItems.menuItem.category', 'reservation.session']);
@@ -250,6 +257,7 @@ class OrderController extends Controller
                         'cafe_order_total' => $cafeOrderTotal,
                         'cafe_order_deficit' => $cafeOrderDeficit,
                         'has_deficit' => $cafeOrderDeficit > 0,
+                        'requires_payment' => $requiresPayment,
                     ],
                 ], 201);
             });
