@@ -8,6 +8,7 @@ use App\Models\Session;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Helpers\TimezoneHelper;
 
 class ReservationService
 {
@@ -38,12 +39,13 @@ class ReservationService
             }
 
             // Create the reservation with 15 minutes expiration time
+            // Note: expires_at is stored in UTC, but we calculate it from Iran timezone
             $reservation = Reservation::create([
                 'user_id' => $user->id,
                 'session_id' => $lockedSession->id,
                 'number_of_people' => $numberOfPeople,
                 'payment_status' => PaymentStatus::PENDING,
-                'expires_at' => Carbon::now()->addMinutes(15),
+                'expires_at' => TimezoneHelper::now()->addMinutes(15)->utc(),
             ]);
 
             // Update the session's pending participants count atomically
@@ -105,8 +107,9 @@ class ReservationService
         }
 
         return DB::transaction(function () use ($reservation) {
+            // cancelled_at is stored as UTC
             $reservation->update([
-                'cancelled_at' => now(),
+                'cancelled_at' => TimezoneHelper::now()->utc(),
             ]);
 
             // Decrement session participants based on payment status
@@ -141,11 +144,12 @@ class ReservationService
     {
         $expiredCount = 0;
 
+        // expires_at is stored as UTC, so we compare with UTC
         $expiredReservations = Reservation::where('session_id', $session->id)
             ->where('payment_status', PaymentStatus::PENDING)
             ->whereNull('cancelled_at')
             ->whereNotNull('expires_at')
-            ->where('expires_at', '<=', now())
+            ->where('expires_at', '<=', TimezoneHelper::now()->utc())
             ->lockForUpdate()
             ->get();
 
@@ -156,9 +160,11 @@ class ReservationService
         DB::transaction(function () use ($session, $expiredReservations, &$expiredCount) {
             $totalExpiredParticipants = 0;
 
+            // cancelled_at is stored as UTC
+            $nowUTC = TimezoneHelper::now()->utc();
             foreach ($expiredReservations as $reservation) {
                 $reservation->update([
-                    'cancelled_at' => now(),
+                    'cancelled_at' => $nowUTC,
                 ]);
                 
                 // Cancel and soft delete all orders for this reservation
@@ -201,15 +207,19 @@ class ReservationService
                     $session->increment('current_participants', $reservation->number_of_people);
 
                     // Clear expiration time and auto-validate paid reservation
+                    // validated_at is stored as UTC
+                    $nowUTC = TimezoneHelper::now()->utc();
                     $reservation->update([
                         'expires_at' => null,
-                        'validated_at' => now(),
+                        'validated_at' => $nowUTC,
                         'validated_by' => null, // System auto-validation for paid reservations
                     ]);
                 } elseif (!$reservation->validated_at) {
                     // If reservation was already paid (no expires_at) but not validated, auto-validate it
+                    // validated_at is stored as UTC
+                    $nowUTC = TimezoneHelper::now()->utc();
                     $reservation->update([
-                        'validated_at' => now(),
+                        'validated_at' => $nowUTC,
                         'validated_by' => null, // System auto-validation for paid reservations
                     ]);
                 }
@@ -231,8 +241,9 @@ class ReservationService
             $session = Session::lockForUpdate()->findOrFail($reservation->session_id);
 
             // Mark reservation as cancelled (fraud)
+            // cancelled_at is stored as UTC
             $reservation->update([
-                'cancelled_at' => now(),
+                'cancelled_at' => TimezoneHelper::now()->utc(),
             ]);
 
             // If reservation was paid, decrement from current_participants to restore capacity

@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Helpers\TimezoneHelper;
 
 class CashierController extends Controller
 {
@@ -285,24 +286,29 @@ class CashierController extends Controller
             ]);
         }
 
-        $today = Carbon::today();
-        $todayEnd = Carbon::today()->endOfDay();
+        $today = TimezoneHelper::today();
+        $todayEnd = TimezoneHelper::today()->endOfDay();
+        $todayFormatted = $today->format('Y-m-d');
 
         // Today's reservations count
+        // Note: We interpret date as if it is in Iran timezone
         $todayReservations = Reservation::query()
             ->join('game_sessions', 'reservations.session_id', '=', 'game_sessions.id')
             ->where('game_sessions.branch_id', $branch->id)
-            ->whereDate('game_sessions.date', $today)
+            ->where('game_sessions.date', $todayFormatted)
             ->whereNull('reservations.cancelled_at')
             ->count();
 
         // Today's revenue (from paid transactions)
+        // Note: created_at is stored as UTC, so we need to convert to UTC for comparison
+        $todayStartUTC = $today->copy()->startOfDay()->utc();
+        $todayEndUTC = $todayEnd->copy()->endOfDay()->utc();
         $todayRevenue = PaymentTransaction::query()
             ->join('reservations', 'payment_transactions.reservation_id', '=', 'reservations.id')
             ->join('game_sessions', 'reservations.session_id', '=', 'game_sessions.id')
             ->where('game_sessions.branch_id', $branch->id)
             ->where('payment_transactions.status', PaymentStatus::PAID)
-            ->whereBetween('payment_transactions.created_at', [$today, $todayEnd])
+            ->whereBetween('payment_transactions.created_at', [$todayStartUTC, $todayEndUTC])
             ->sum('payment_transactions.amount');
 
         // Pending reservations count

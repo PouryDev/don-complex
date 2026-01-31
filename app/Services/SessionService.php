@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use App\Helpers\TimezoneHelper;
 
 class SessionService
 {
@@ -179,12 +180,13 @@ class SessionService
 
         DB::transaction(function () use ($sessionIds) {
             // Find all expired reservations for these sessions
+            // expires_at is stored as UTC, so we compare with UTC
             $expiredReservations = DB::table('reservations')
                 ->whereIn('session_id', $sessionIds)
                 ->where('payment_status', 'pending')
                 ->whereNull('cancelled_at')
                 ->whereNotNull('expires_at')
-                ->where('expires_at', '<=', now())
+                ->where('expires_at', '<=', TimezoneHelper::now()->utc())
                 ->lockForUpdate()
                 ->get();
 
@@ -199,11 +201,13 @@ class SessionService
                 });
 
             // Mark reservations as cancelled
+            // cancelled_at and updated_at are stored as UTC
+            $nowUTC = TimezoneHelper::now()->utc();
             DB::table('reservations')
                 ->whereIn('id', $expiredReservations->pluck('id'))
                 ->update([
-                    'cancelled_at' => now(),
-                    'updated_at' => now(),
+                    'cancelled_at' => $nowUTC,
+                    'updated_at' => $nowUTC,
                 ]);
 
             // Update pending_participants for each affected session
@@ -214,9 +218,10 @@ class SessionService
                     ->decrement('pending_participants', $totalExpiredParticipants);
                 
                 // Update updated_at to invalidate cache
+                // updated_at is stored as UTC
                 DB::table('game_sessions')
                     ->where('id', $sessionId)
-                    ->update(['updated_at' => now()]);
+                    ->update(['updated_at' => TimezoneHelper::now()->utc()]);
             }
         });
     }

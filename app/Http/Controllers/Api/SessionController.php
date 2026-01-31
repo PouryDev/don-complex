@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
+use App\Helpers\TimezoneHelper;
 
 class SessionController extends Controller
 {
@@ -165,7 +166,7 @@ class SessionController extends Controller
             return SessionResource::collection(collect());
         }
 
-        $now = Carbon::now();
+        $now = TimezoneHelper::now();
         $fiveHoursBefore = $now->copy()->subHours(5);
         $fiveHoursAfter = $now->copy()->addHours(5);
 
@@ -201,8 +202,12 @@ class SessionController extends Controller
         );
 
         // Filter by actual datetime (combining date and time)
+        // Note: session date and time are stored in database, we need to interpret them in Iran timezone
         $filteredSessions = $sessions->getCollection()->filter(function ($session) use ($fiveHoursBefore, $fiveHoursAfter) {
-            $sessionDateTime = Carbon::parse($session->date->format('Y-m-d') . ' ' . $session->start_time);
+            $sessionDateTime = TimezoneHelper::createFromDateAndTime(
+                $session->date->format('Y-m-d'),
+                $session->start_time . ':00' // Ensure time has seconds
+            );
             return $sessionDateTime->between($fiveHoursBefore, $fiveHoursAfter);
         });
 

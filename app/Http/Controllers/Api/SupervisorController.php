@@ -17,6 +17,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Helpers\TimezoneHelper;
 
 class SupervisorController extends Controller
 {
@@ -58,31 +59,39 @@ class SupervisorController extends Controller
         }
 
         if ($request->has('status')) {
-            $today = Carbon::today();
-            $now = Carbon::now();
+            $today = TimezoneHelper::today();
+            $now = TimezoneHelper::now();
             $threeHoursAgo = $now->copy()->subHours(3);
+            
+            // Format dates for database comparison (date field is stored as Y-m-d)
+            $todayFormatted = $today->format('Y-m-d');
+            $nowTimeFormatted = $now->format('H:i:s');
+            $threeHoursAgoFormatted = $threeHoursAgo->format('Y-m-d H:i:s');
             
             if ($request->status === 'upcoming') {
                 // Filter for upcoming sessions (future date or today with future time)
-                $query->where(function($q) use ($today, $now) {
-                    $q->where('date', '>', $today)
-                      ->orWhere(function($q2) use ($today, $now) {
-                          $q2->where('date', $today)
-                             ->where('start_time', '>', $now->format('H:i:s'));
+                // Note: We interpret date and start_time as if they are in Iran timezone
+                $query->where(function($q) use ($todayFormatted, $nowTimeFormatted) {
+                    $q->where('date', '>', $todayFormatted)
+                      ->orWhere(function($q2) use ($todayFormatted, $nowTimeFormatted) {
+                          $q2->where('date', $todayFormatted)
+                             ->where('start_time', '>', $nowTimeFormatted);
                       });
                 });
             } elseif ($request->status === 'ongoing') {
                 // Filter for ongoing sessions (today, start time passed, but less than 3 hours ago)
-                $query->where('date', $today)
-                      ->where('start_time', '<=', $now->format('H:i:s'))
-                      ->whereRaw("TIMESTAMP(CONCAT(date, ' ', start_time)) >= ?", [$threeHoursAgo->format('Y-m-d H:i:s')]);
+                // Note: We interpret date and start_time as if they are in Iran timezone
+                $query->where('date', $todayFormatted)
+                      ->where('start_time', '<=', $nowTimeFormatted)
+                      ->whereRaw("TIMESTAMP(CONCAT(date, ' ', start_time)) >= ?", [$threeHoursAgoFormatted]);
             } elseif ($request->status === 'completed') {
                 // Filter for completed sessions (past date or more than 3 hours ago today)
-                $query->where(function($q) use ($today, $threeHoursAgo) {
-                    $q->where('date', '<', $today)
-                      ->orWhere(function($q2) use ($today, $threeHoursAgo) {
-                          $q2->where('date', $today)
-                             ->whereRaw("TIMESTAMP(CONCAT(date, ' ', start_time)) < ?", [$threeHoursAgo->format('Y-m-d H:i:s')]);
+                // Note: We interpret date and start_time as if they are in Iran timezone
+                $query->where(function($q) use ($todayFormatted, $threeHoursAgoFormatted) {
+                    $q->where('date', '<', $todayFormatted)
+                      ->orWhere(function($q2) use ($todayFormatted, $threeHoursAgoFormatted) {
+                          $q2->where('date', $todayFormatted)
+                             ->whereRaw("TIMESTAMP(CONCAT(date, ' ', start_time)) < ?", [$threeHoursAgoFormatted]);
                       });
                 });
             } else {
@@ -428,13 +437,15 @@ class SupervisorController extends Controller
             ]);
         }
 
-        $today = Carbon::today();
-        $todayEnd = Carbon::today()->endOfDay();
+        $today = TimezoneHelper::today();
+        $todayEnd = TimezoneHelper::today()->endOfDay();
+        $todayFormatted = $today->format('Y-m-d');
 
         // Today's sessions count
+        // Note: We interpret date as if it is in Iran timezone
         $todaySessions = Session::query()
             ->where('branch_id', $branch->id)
-            ->whereDate('date', $today)
+            ->where('date', $todayFormatted)
             ->count();
 
         // Pending validations (reservations that need validation)
@@ -444,22 +455,25 @@ class SupervisorController extends Controller
             ->whereNull('reservations.validated_at')
             ->whereNull('reservations.cancelled_at')
             ->where('reservations.payment_status', 'paid')
-            ->whereDate('game_sessions.date', '<=', $today)
+            ->where('game_sessions.date', '<=', $todayFormatted)
             ->count();
 
         // Completed games (sessions with best player selected)
         $completedGames = Session::query()
             ->where('branch_id', $branch->id)
             ->whereNotNull('best_player_metadata')
-            ->whereDate('date', $today)
+            ->where('date', $todayFormatted)
             ->count();
 
         // Validated reservations today
+        // Note: validated_at is stored as UTC datetime, so we need to compare in UTC
+        $todayStartUTC = $today->copy()->startOfDay()->utc();
+        $todayEndUTC = $today->copy()->endOfDay()->utc();
         $validatedReservations = Reservation::query()
             ->join('game_sessions', 'reservations.session_id', '=', 'game_sessions.id')
             ->where('game_sessions.branch_id', $branch->id)
             ->whereNotNull('reservations.validated_at')
-            ->whereDate('reservations.validated_at', $today)
+            ->whereBetween('reservations.validated_at', [$todayStartUTC, $todayEndUTC])
             ->count();
 
         return response()->json([
@@ -509,19 +523,23 @@ class SupervisorController extends Controller
         // Get time period from request (default: today)
         $period = $request->get('period', 'today'); // today, week, month
         $startDate = null;
-        $endDate = Carbon::today()->endOfDay();
+        $endDate = TimezoneHelper::today()->endOfDay();
 
         switch ($period) {
             case 'week':
-                $startDate = Carbon::now()->startOfWeek();
+                $startDate = TimezoneHelper::now()->startOfWeek();
                 break;
             case 'month':
-                $startDate = Carbon::now()->startOfMonth();
+                $startDate = TimezoneHelper::now()->startOfMonth();
                 break;
             default: // today
-                $startDate = Carbon::today();
+                $startDate = TimezoneHelper::today();
                 break;
         }
+        
+        // Convert to UTC for database comparison (validated_at is stored as UTC)
+        $startDateUTC = $startDate->copy()->startOfDay()->utc();
+        $endDateUTC = $endDate->copy()->endOfDay()->utc();
 
         // Get all Game Masters in the branch
         $gameMasters = \App\Models\User::where('role', \App\Enums\UserRole::GAME_MASTER)
@@ -529,13 +547,13 @@ class SupervisorController extends Controller
             ->get();
 
         // Calculate validation counts for each Game Master
-        $gameMasterStats = $gameMasters->map(function ($gameMaster) use ($branch, $startDate, $endDate) {
+        $gameMasterStats = $gameMasters->map(function ($gameMaster) use ($branch, $startDateUTC, $endDateUTC) {
             $validatedCount = Reservation::query()
                 ->join('game_sessions', 'reservations.session_id', '=', 'game_sessions.id')
                 ->where('game_sessions.branch_id', $branch->id)
                 ->where('reservations.validated_by', $gameMaster->id)
                 ->whereNotNull('reservations.validated_at')
-                ->whereBetween('reservations.validated_at', [$startDate, $endDate])
+                ->whereBetween('reservations.validated_at', [$startDateUTC, $endDateUTC])
                 ->count();
 
             return [

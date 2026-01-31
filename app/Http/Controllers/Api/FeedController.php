@@ -8,7 +8,8 @@ use App\Models\FeedItem;
 use App\Services\CoinService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
+use Carbon\Carbon;
+use App\Helpers\TimezoneHelper;
 use Illuminate\Support\Facades\Cache;
 
 class FeedController extends Controller
@@ -30,7 +31,8 @@ class FeedController extends Controller
         
         // Cache feed items for 10 minutes
         $feedItems = Cache::remember($cacheKey, 600, function () use ($perPage) {
-            $now = Carbon::now();
+            // scheduled_at is stored as UTC, so we compare with UTC
+            $now = TimezoneHelper::now()->utc();
 
             // Get active feed items that are scheduled (or have no schedule)
             // Use select to only get needed columns for better performance
@@ -109,7 +111,8 @@ class FeedController extends Controller
         
         // Cache individual feed items for 10 minutes
         $feedItem = Cache::remember($cacheKey, 600, function () use ($modelClass, $id) {
-            $now = Carbon::now();
+            // scheduled_at is stored as UTC, so we compare with UTC
+            $now = TimezoneHelper::now()->utc();
 
             // Find the feed item by feedable type and id
             return FeedItem::with('feedable')
@@ -203,12 +206,15 @@ class FeedController extends Controller
         $item = $feedItem->feedable;
 
         // Check if user already viewed this item today
-        $today = Carbon::today();
+        // created_at is stored as UTC, so we need to convert to UTC for comparison
+        $today = TimezoneHelper::today();
+        $todayStartUTC = $today->copy()->startOfDay()->utc();
+        $todayEndUTC = $today->copy()->endOfDay()->utc();
         $existingView = \App\Models\CoinTransaction::where('user_id', $user->id)
             ->where('source', 'feed_view')
             ->where('related_type', $modelClass)
             ->where('related_id', $id)
-            ->whereDate('created_at', $today)
+            ->whereBetween('created_at', [$todayStartUTC, $todayEndUTC])
             ->first();
 
         if ($existingView) {

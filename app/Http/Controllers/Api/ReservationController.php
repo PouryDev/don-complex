@@ -16,6 +16,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
+use App\Helpers\TimezoneHelper;
 
 class ReservationController extends Controller
 {
@@ -177,8 +178,9 @@ class ReservationController extends Controller
             ->where('user_id', $user->id)
             ->where('payment_status', PaymentStatus::PENDING)
             ->whereNull('cancelled_at')
-            ->where('expires_at', '>', now())
-            ->where('created_at', '>=', now()->subMinutes(15))
+            // expires_at and created_at are stored as UTC, so we compare with UTC
+            ->where('expires_at', '>', TimezoneHelper::now()->utc())
+            ->where('created_at', '>=', TimezoneHelper::now()->utc()->subMinutes(15))
             ->orderBy('expires_at', 'asc')
             ->get();
             
@@ -191,7 +193,7 @@ class ReservationController extends Controller
     public function getActiveReservationsForMenuOrdering(Request $request): AnonymousResourceCollection
     {
         $user = $request->user();
-        $now = Carbon::now();
+        $now = TimezoneHelper::now();
         $fiveHoursBefore = $now->copy()->subHours(5);
         $fiveHoursAfter = $now->copy()->addHours(5);
 
@@ -208,8 +210,9 @@ class ReservationController extends Controller
             ->where('payment_status', PaymentStatus::PENDING)
             ->whereNull('cancelled_at')
             ->where(function ($query) {
+                // expires_at is stored as UTC, so we compare with UTC
                 $query->whereNull('expires_at')
-                    ->orWhere('expires_at', '>', now());
+                    ->orWhere('expires_at', '>', TimezoneHelper::now()->utc());
             })
             ->whereHas('session', function ($query) use ($fiveHoursBefore, $fiveHoursAfter) {
                 // Check if session datetime is within ±5 hours
@@ -236,11 +239,16 @@ class ReservationController extends Controller
             ->get();
 
         // Filter by actual datetime (combining date and time)
+        // Note: session date and time are stored in database, we need to interpret them in Iran timezone
         $reservations = $reservations->filter(function ($reservation) use ($fiveHoursBefore, $fiveHoursAfter) {
             $session = $reservation->session;
             if (!$session) return false;
             
-            $sessionDateTime = Carbon::parse($session->date->format('Y-m-d') . ' ' . $session->start_time);
+            // Parse session date and time as if they are in Iran timezone
+            $sessionDateTime = TimezoneHelper::createFromDateAndTime(
+                $session->date->format('Y-m-d'),
+                $session->start_time . ':00' // Ensure time has seconds
+            );
             return $sessionDateTime->between($fiveHoursBefore, $fiveHoursAfter);
         });
 

@@ -6,6 +6,7 @@ use App\Services\SessionService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Helpers\TimezoneHelper;
 
 class SessionResource extends JsonResource
 {
@@ -57,9 +58,16 @@ class SessionResource extends JsonResource
             return 'cancelled';
         }
 
-        $now = Carbon::now();
-        $sessionDate = Carbon::parse($this->date->format('Y-m-d'));
-        $sessionDateTime = Carbon::parse($this->date->format('Y-m-d') . ' ' . $this->start_time);
+        $now = TimezoneHelper::now();
+        // Parse session date and time as if they are in Iran timezone
+        $sessionDate = TimezoneHelper::createFromDateAndTime(
+            $this->date->format('Y-m-d'),
+            '00:00:00'
+        )->startOfDay();
+        $sessionDateTime = TimezoneHelper::createFromDateAndTime(
+            $this->date->format('Y-m-d'),
+            $this->start_time . ':00' // Ensure time has seconds
+        );
 
         // If session date is in the past, it's completed
         if ($sessionDate->isPast() && !$sessionDate->isToday()) {
