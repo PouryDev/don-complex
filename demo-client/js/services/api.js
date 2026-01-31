@@ -600,6 +600,18 @@ export const supervisorService = {
         return res.data;
     }),
     getStats: () => api.get('/supervisor/stats').then(res => res.data),
+    getGameMasters: () => api.get('/supervisor/game-masters').then(res => res.data),
+    getGameMasterStats: (period = 'today') => api.get('/supervisor/game-master-stats', {
+        params: { period }
+    }).then(res => res.data),
+    assignGameMaster: (sessionId, gameMasterId) => api.post(`/supervisor/sessions/${sessionId}/assign-game-master`, {
+        game_master_id: gameMasterId
+    }).then(res => {
+        if (res.data && res.data.data) {
+            return res.data.data;
+        }
+        return res.data;
+    }),
 };
 
 export default api;

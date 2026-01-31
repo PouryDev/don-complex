@@ -44,14 +44,27 @@ class SupervisorController extends Controller
             return SessionResource::collection(collect());
         }
 
-        $query = $branch->sessions()->with(['branch', 'hall', 'sessionTemplate']);
+        $query = $branch->sessions()->with(['branch', 'hall', 'sessionTemplate', 'gameMaster']);
 
         if ($request->has('date')) {
             $query->where('date', $request->date);
         }
 
         if ($request->has('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'upcoming') {
+                // Fix: Filter out past sessions when status is "upcoming"
+                $today = Carbon::today();
+                $now = Carbon::now();
+                $query->where(function($q) use ($today, $now) {
+                    $q->where('date', '>', $today)
+                      ->orWhere(function($q2) use ($today, $now) {
+                          $q2->where('date', $today)
+                             ->where('start_time', '>', $now->format('H:i:s'));
+                      });
+                });
+            } else {
+                $query->where('status', $request->status);
+            }
         }
 
         $perPage = $request->get('per_page', 15);
@@ -79,6 +92,7 @@ class SupervisorController extends Controller
                 'session.branch',
                 'session.hall',
                 'session.sessionTemplate',
+                'session.gameMaster',
                 'user',
                 'paymentTransaction',
                 'validator'
@@ -222,7 +236,7 @@ class SupervisorController extends Controller
             'best_player_metadata' => $metadata,
         ]);
 
-        $session->load(['branch', 'hall', 'sessionTemplate']);
+        $session->load(['branch', 'hall', 'sessionTemplate', 'gameMaster']);
 
         return new SessionResource($session);
     }
@@ -284,6 +298,130 @@ class SupervisorController extends Controller
             'completed_games' => $completedGames,
             'validated_reservations' => $validatedReservations,
         ]);
+    }
+
+    /**
+     * Get list of Game Masters in supervisor's branch
+     */
+    public function getGameMasters(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $user = $request->user();
+        $branch = $user->branch;
+
+        if (!$branch) {
+            return response()->json(['game_masters' => []]);
+        }
+
+        $gameMasters = \App\Models\User::where('role', \App\Enums\UserRole::GAME_MASTER)
+            ->where('branch_id', $branch->id)
+            ->get(['id', 'name', 'email']);
+
+        return response()->json([
+            'game_masters' => $gameMasters,
+        ]);
+    }
+
+    /**
+     * Get Game Master statistics
+     */
+    public function getGameMasterStats(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $user = $request->user();
+        $branch = $user->branch;
+
+        if (!$branch) {
+            return response()->json([
+                'game_masters' => [],
+                'top_game_master' => null,
+            ]);
+        }
+
+        // Get time period from request (default: today)
+        $period = $request->get('period', 'today'); // today, week, month
+        $startDate = null;
+        $endDate = Carbon::today()->endOfDay();
+
+        switch ($period) {
+            case 'week':
+                $startDate = Carbon::now()->startOfWeek();
+                break;
+            case 'month':
+                $startDate = Carbon::now()->startOfMonth();
+                break;
+            default: // today
+                $startDate = Carbon::today();
+                break;
+        }
+
+        // Get all Game Masters in the branch
+        $gameMasters = \App\Models\User::where('role', \App\Enums\UserRole::GAME_MASTER)
+            ->where('branch_id', $branch->id)
+            ->get();
+
+        // Calculate validation counts for each Game Master
+        $gameMasterStats = $gameMasters->map(function ($gameMaster) use ($branch, $startDate, $endDate) {
+            $validatedCount = Reservation::query()
+                ->join('game_sessions', 'reservations.session_id', '=', 'game_sessions.id')
+                ->where('game_sessions.branch_id', $branch->id)
+                ->where('reservations.validated_by', $gameMaster->id)
+                ->whereNotNull('reservations.validated_at')
+                ->whereBetween('reservations.validated_at', [$startDate, $endDate])
+                ->count();
+
+            return [
+                'id' => $gameMaster->id,
+                'name' => $gameMaster->name,
+                'email' => $gameMaster->email,
+                'validated_count' => $validatedCount,
+            ];
+        })->sortByDesc('validated_count')->values();
+
+        // Find top Game Master
+        $topGameMaster = $gameMasterStats->firstWhere('validated_count', $gameMasterStats->max('validated_count'));
+
+        return response()->json([
+            'game_masters' => $gameMasterStats,
+            'top_game_master' => $topGameMaster && $topGameMaster['validated_count'] > 0 ? $topGameMaster : null,
+            'period' => $period,
+        ]);
+    }
+
+    /**
+     * Assign Game Master to a session
+     */
+    public function assignGameMaster(Request $request, Session $session)
+    {
+        // Ensure the session belongs to the supervisor's branch
+        if ($session->branch_id !== $request->user()->branch->id) {
+            abort(403, 'You can only assign game masters to sessions in your branch');
+        }
+
+        $validated = $request->validate([
+            'game_master_id' => 'required|exists:users,id',
+        ]);
+
+        // Verify the user is a Game Master
+        $gameMaster = \App\Models\User::findOrFail($validated['game_master_id']);
+        if (!$gameMaster->isGameMaster()) {
+            return response()->json([
+                'message' => 'کاربر انتخاب شده Game Master نیست',
+            ], 400);
+        }
+
+        // Verify the Game Master belongs to the same branch
+        if ($gameMaster->branch_id !== $session->branch_id) {
+            return response()->json([
+                'message' => 'Game Master باید متعلق به همان شعبه باشد',
+            ], 400);
+        }
+
+        $session->update([
+            'game_master_id' => $validated['game_master_id'],
+        ]);
+
+        $session->load(['branch', 'hall', 'sessionTemplate', 'gameMaster']);
+
+        return new SessionResource($session);
     }
 }
 

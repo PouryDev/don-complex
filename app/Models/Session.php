@@ -18,6 +18,7 @@ class Session extends Model
         'branch_id',
         'hall_id',
         'session_template_id',
+        'game_master_id',
         'date',
         'start_time',
         'price',
@@ -51,5 +52,10 @@ class Session extends Model
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);
+    }
+
+    public function gameMaster(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'game_master_id');
     }
 }

@@ -128,6 +128,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/reservations/{reservation}/game-result', [SupervisorController::class, 'registerGameResult']);
         Route::post('/sessions/{session}/best-player', [SupervisorController::class, 'selectBestPlayer']);
         Route::get('/stats', [SupervisorController::class, 'getStats']);
+        Route::get('/game-masters', [SupervisorController::class, 'getGameMasters']);
+        Route::get('/game-master-stats', [SupervisorController::class, 'getGameMasterStats']);
+        Route::post('/sessions/{session}/assign-game-master', [SupervisorController::class, 'assignGameMaster']);
     });
 
     // Admin routes

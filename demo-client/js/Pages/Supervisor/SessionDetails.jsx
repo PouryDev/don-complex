@@ -7,6 +7,7 @@ import Loading from '../../Components/Loading';
 import ReservationCard from '../../Components/Supervisor/ReservationCard';
 import GameResultModal from '../../Components/Supervisor/GameResultModal';
 import BestPlayerModal from '../../Components/Supervisor/BestPlayerModal';
+import AssignGameMasterModal from '../../Components/Supervisor/AssignGameMasterModal';
 import { formatPersianDateOnly } from '../../utils/dateUtils';
 
 function SessionDetails() {
@@ -18,6 +19,7 @@ function SessionDetails() {
     const [reservations, setReservations] = useState([]);
     const [showGameResultModal, setShowGameResultModal] = useState(false);
     const [showBestPlayerModal, setShowBestPlayerModal] = useState(false);
+    const [showAssignGameMasterModal, setShowAssignGameMasterModal] = useState(false);
     const [selectedReservation, setSelectedReservation] = useState(null);
     const [pagination, setPagination] = useState({
         current_page: 1,
@@ -77,6 +79,20 @@ function SessionDetails() {
         }
     };
 
+    const handleAssignGameMasterSuccess = () => {
+        fetchReservations(pagination.current_page);
+        if (session) {
+            // Refresh session data
+            fetchSession();
+        }
+    };
+
+    const fetchSession = async () => {
+        // This will be called to refresh session data
+        // For now, we'll refetch reservations which includes session data
+        fetchReservations(pagination.current_page);
+    };
+
     if (loading && !session) {
         return <Loading />;
     }
@@ -104,12 +120,20 @@ function SessionDetails() {
                     </h1>
                 </div>
                 {session && (
-                    <button
-                        onClick={() => setShowBestPlayerModal(true)}
-                        className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all font-semibold"
-                    >
-                        انتخاب Best Player
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setShowAssignGameMasterModal(true)}
+                            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-semibold"
+                        >
+                            انتساب Game Master
+                        </button>
+                        <button
+                            onClick={() => setShowBestPlayerModal(true)}
+                            className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all font-semibold"
+                        >
+                            انتخاب Best Player
+                        </button>
+                    </div>
                 )}
             </div>
 
@@ -137,6 +161,12 @@ function SessionDetails() {
                             <p className="text-sm text-gray-400">Best Player</p>
                             <p className="text-white font-medium">
                                 {session.best_player_metadata ? '✓ انتخاب شده' : 'انتخاب نشده'}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-400">Game Master</p>
+                            <p className="text-white font-medium">
+                                {session.game_master ? session.game_master.name : 'انتساب نشده'}
                             </p>
                         </div>
                     </div>
@@ -203,6 +233,14 @@ function SessionDetails() {
                     reservations={reservations}
                     onClose={() => setShowBestPlayerModal(false)}
                     onSuccess={handleBestPlayerSuccess}
+                />
+            )}
+
+            {showAssignGameMasterModal && session && (
+                <AssignGameMasterModal
+                    session={session}
+                    onClose={() => setShowAssignGameMasterModal(false)}
+                    onSuccess={handleAssignGameMasterSuccess}
                 />
             )}
         </div>

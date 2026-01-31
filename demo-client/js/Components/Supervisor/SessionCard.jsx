@@ -80,6 +80,12 @@ function SessionCard({ session, onViewDetails }) {
                         {session.best_player_metadata ? '✓' : '-'}
                     </p>
                 </div>
+                <div>
+                    <p className="text-sm text-gray-400">Game Master</p>
+                    <p className="text-white font-semibold">
+                        {session.game_master ? session.game_master.name : '-'}
+                    </p>
+                </div>
             </div>
 
             <div className="pt-4 border-t border-red-900/50">

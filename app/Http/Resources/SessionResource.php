@@ -30,6 +30,13 @@ class SessionResource extends JsonResource
             'branch' => $this->whenLoaded('branch', new BranchResource($this->branch)),
             'hall' => $this->whenLoaded('hall', new HallResource($this->hall)),
             'session_template' => $this->whenLoaded('sessionTemplate', new SessionTemplateResource($this->sessionTemplate)),
+            'game_master' => $this->whenLoaded('gameMaster', function () {
+                return [
+                    'id' => $this->gameMaster->id,
+                    'name' => $this->gameMaster->name,
+                    'email' => $this->gameMaster->email,
+                ];
+            }),
         ];
     }
 }
