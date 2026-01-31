@@ -19,7 +19,6 @@ class Session extends Model
         'hall_id',
         'session_template_id',
         'game_master_id',
-        'best_player_metadata',
         'date',
         'start_time',
         'price',
@@ -27,12 +26,14 @@ class Session extends Model
         'current_participants',
         'pending_participants',
         'status',
+        'best_player_metadata',
     ];
 
     protected $casts = [
         'date' => 'date',
         'price' => 'decimal:2',
         'status' => SessionStatus::class,
+        'best_player_metadata' => 'array',
     ];
 
     public function branch(): BelongsTo

@@ -200,9 +200,17 @@ class ReservationService
                     // Increment current_participants
                     $session->increment('current_participants', $reservation->number_of_people);
 
-                    // Clear expiration time
+                    // Clear expiration time and auto-validate paid reservation
                     $reservation->update([
                         'expires_at' => null,
+                        'validated_at' => now(),
+                        'validated_by' => null, // System auto-validation for paid reservations
+                    ]);
+                } elseif (!$reservation->validated_at) {
+                    // If reservation was already paid (no expires_at) but not validated, auto-validate it
+                    $reservation->update([
+                        'validated_at' => now(),
+                        'validated_by' => null, // System auto-validation for paid reservations
                     ]);
                 }
             }

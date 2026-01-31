@@ -5,21 +5,28 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ReservationResource;
 use App\Http\Resources\SessionResource;
+use App\Http\Resources\SessionTemplateResource;
+use App\Models\Hall;
 use App\Models\Reservation;
 use App\Models\Session;
+use App\Models\SessionTemplate;
+use App\Services\ReservationService;
 use App\Services\SessionService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class SupervisorController extends Controller
 {
     protected SessionService $sessionService;
+    protected ReservationService $reservationService;
 
-    public function __construct(SessionService $sessionService)
+    public function __construct(SessionService $sessionService, ReservationService $reservationService)
     {
         $this->sessionService = $sessionService;
+        $this->reservationService = $reservationService;
         $this->middleware(function ($request, $next) {
             if (!$request->user()->isSupervisor()) {
                 abort(403, 'Only supervisors can access this resource');
@@ -128,25 +135,130 @@ class SupervisorController extends Controller
     }
 
     /**
-     * Validate a reservation
+     * Create a new session for supervisor's branch
      */
-    public function validateReservation(Request $request, Reservation $reservation)
+    public function createSession(Request $request): SessionResource
+    {
+        $user = $request->user();
+        $branch = $user->branch;
+
+        if (!$branch) {
+            abort(403, 'Supervisor must be assigned to a branch');
+        }
+
+        $validated = $request->validate([
+            'hall_id' => ['required', 'exists:halls,id'],
+            'session_template_id' => ['nullable', 'exists:session_templates,id'],
+            'game_master_id' => ['nullable', 'exists:users,id'],
+            'date' => ['required', 'date', 'after_or_equal:today'],
+            'start_time' => ['required', 'date_format:H:i'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'max_participants' => ['required', 'integer', 'min:1'],
+            'status' => ['sometimes', 'in:upcoming,ongoing,completed,cancelled'],
+        ]);
+
+        // Verify hall belongs to supervisor's branch
+        $hall = Hall::findOrFail($validated['hall_id']);
+        if ($hall->branch_id !== $branch->id) {
+            return response()->json([
+                'message' => 'سالن انتخاب شده متعلق به شعبه شما نیست',
+            ], 403);
+        }
+
+        // Verify game master belongs to supervisor's branch if provided
+        if (isset($validated['game_master_id'])) {
+            $gameMaster = \App\Models\User::findOrFail($validated['game_master_id']);
+            if (!$gameMaster->isGameMaster() || $gameMaster->branch_id !== $branch->id) {
+                return response()->json([
+                    'message' => 'Game Master انتخاب شده متعلق به شعبه شما نیست',
+                ], 403);
+            }
+        }
+
+        // Set branch_id automatically
+        $validated['branch_id'] = $branch->id;
+
+        $session = Session::create($validated);
+        $session->load(['branch', 'hall', 'sessionTemplate', 'gameMaster']);
+
+        // Clear session availability cache
+        Cache::forget("session_available_spots_{$session->id}_" . $session->updated_at->timestamp);
+
+        return new SessionResource($session);
+    }
+
+    /**
+     * Update a session
+     */
+    public function updateSession(Request $request, Session $session): SessionResource
+    {
+        // Ensure the session belongs to the supervisor's branch
+        if ($session->branch_id !== $request->user()->branch->id) {
+            abort(403, 'You can only update sessions in your branch');
+        }
+
+        $validated = $request->validate([
+            'hall_id' => ['sometimes', 'exists:halls,id'],
+            'session_template_id' => ['nullable', 'exists:session_templates,id'],
+            'game_master_id' => ['nullable', 'exists:users,id'],
+            'date' => ['sometimes', 'date', 'after_or_equal:today'],
+            'start_time' => ['sometimes', 'date_format:H:i'],
+            'price' => ['sometimes', 'numeric', 'min:0'],
+            'max_participants' => ['sometimes', 'integer', 'min:1'],
+            'status' => ['sometimes', 'in:upcoming,ongoing,completed,cancelled'],
+        ]);
+
+        // Verify hall belongs to supervisor's branch if provided
+        if (isset($validated['hall_id'])) {
+            $hall = Hall::findOrFail($validated['hall_id']);
+            if ($hall->branch_id !== $request->user()->branch->id) {
+                return response()->json([
+                    'message' => 'سالن انتخاب شده متعلق به شعبه شما نیست',
+                ], 403);
+            }
+        }
+
+        // Verify game master belongs to supervisor's branch if provided
+        if (isset($validated['game_master_id'])) {
+            $gameMaster = \App\Models\User::findOrFail($validated['game_master_id']);
+            if (!$gameMaster->isGameMaster() || $gameMaster->branch_id !== $request->user()->branch->id) {
+                return response()->json([
+                    'message' => 'Game Master انتخاب شده متعلق به شعبه شما نیست',
+                ], 403);
+            }
+        }
+
+        $oldTimestamp = $session->updated_at->timestamp;
+        $session->update($validated);
+        $session->load(['branch', 'hall', 'sessionTemplate', 'gameMaster']);
+
+        // Clear session availability cache
+        Cache::forget("session_available_spots_{$session->id}_{$oldTimestamp}");
+
+        return new SessionResource($session);
+    }
+
+    /**
+     * Cancel a reservation
+     */
+    public function cancelReservation(Request $request, Reservation $reservation)
     {
         // Ensure the reservation's session belongs to the supervisor's branch
         if ($reservation->session->branch_id !== $request->user()->branch->id) {
-            abort(403, 'You can only validate reservations for sessions in your branch');
+            abort(403, 'You can only cancel reservations for sessions in your branch');
         }
 
-        if ($reservation->validated_at) {
+        if ($reservation->cancelled_at) {
             return response()->json([
-                'message' => 'این رزرو قبلاً تایید شده است',
+                'message' => 'این رزرو قبلاً لغو شده است',
             ], 400);
         }
 
-        $reservation->update([
-            'validated_at' => now(),
-            'validated_by' => $request->user()->id,
-        ]);
+        $this->reservationService->cancelReservation($reservation);
+
+        // Clear session availability cache
+        $session = $reservation->session;
+        Cache::forget("session_available_spots_{$session->id}_" . $session->updated_at->timestamp);
 
         // Eager load all nested relationships
         $reservation->load([
@@ -422,6 +534,116 @@ class SupervisorController extends Controller
         $session->load(['branch', 'hall', 'sessionTemplate', 'gameMaster']);
 
         return new SessionResource($session);
+    }
+
+    /**
+     * Get session templates for a hall in supervisor's branch
+     */
+    public function getSessionTemplates(Request $request, Hall $hall): AnonymousResourceCollection
+    {
+        $user = $request->user();
+        $branch = $user->branch;
+
+        if (!$branch) {
+            abort(403, 'Supervisor must be assigned to a branch');
+        }
+
+        // Verify hall belongs to supervisor's branch
+        if ($hall->branch_id !== $branch->id) {
+            abort(403, 'You can only view session templates for halls in your branch');
+        }
+
+        $perPage = $request->get('per_page', 15);
+        $templates = $hall->sessionTemplates()->paginate($perPage);
+
+        return SessionTemplateResource::collection($templates);
+    }
+
+    /**
+     * Create a session template for a hall in supervisor's branch
+     */
+    public function createSessionTemplate(Request $request, Hall $hall): SessionTemplateResource
+    {
+        $user = $request->user();
+        $branch = $user->branch;
+
+        if (!$branch) {
+            abort(403, 'Supervisor must be assigned to a branch');
+        }
+
+        // Verify hall belongs to supervisor's branch
+        if ($hall->branch_id !== $branch->id) {
+            abort(403, 'You can only create session templates for halls in your branch');
+        }
+
+        $validated = $request->validate([
+            'day_of_week' => ['required', 'integer', 'min:0', 'max:6'],
+            'start_time' => ['required', 'date_format:H:i'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'max_participants' => ['required', 'integer', 'min:1'],
+            'is_active' => ['sometimes', 'boolean'],
+        ]);
+
+        // Set hall_id automatically
+        $validated['hall_id'] = $hall->id;
+
+        $template = SessionTemplate::create($validated);
+        $template->load('hall');
+
+        return new SessionTemplateResource($template);
+    }
+
+    /**
+     * Update a session template
+     */
+    public function updateSessionTemplate(Request $request, SessionTemplate $sessionTemplate): SessionTemplateResource
+    {
+        $user = $request->user();
+        $branch = $user->branch;
+
+        if (!$branch) {
+            abort(403, 'Supervisor must be assigned to a branch');
+        }
+
+        // Verify template's hall belongs to supervisor's branch
+        if ($sessionTemplate->hall->branch_id !== $branch->id) {
+            abort(403, 'You can only update session templates for halls in your branch');
+        }
+
+        $validated = $request->validate([
+            'day_of_week' => ['sometimes', 'integer', 'min:0', 'max:6'],
+            'start_time' => ['sometimes', 'date_format:H:i'],
+            'price' => ['sometimes', 'numeric', 'min:0'],
+            'max_participants' => ['sometimes', 'integer', 'min:1'],
+            'is_active' => ['sometimes', 'boolean'],
+        ]);
+
+        $sessionTemplate->update($validated);
+        $sessionTemplate->load('hall');
+
+        return new SessionTemplateResource($sessionTemplate);
+    }
+
+    /**
+     * Delete a session template
+     */
+    public function deleteSessionTemplate(Request $request, SessionTemplate $sessionTemplate)
+    {
+        $user = $request->user();
+        $branch = $user->branch;
+
+        if (!$branch) {
+            abort(403, 'Supervisor must be assigned to a branch');
+        }
+
+        // Verify template's hall belongs to supervisor's branch
+        if ($sessionTemplate->hall->branch_id !== $branch->id) {
+            abort(403, 'You can only delete session templates for halls in your branch');
+        }
+
+        $sessionTemplate->delete();
+
+        return response()->json(['message' => 'Session template deleted successfully']);
     }
 }
 

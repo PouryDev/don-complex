@@ -37,6 +37,7 @@ class SessionResource extends JsonResource
                     'email' => $this->gameMaster->email,
                 ];
             }),
+            'best_player_metadata' => $this->best_player_metadata,
         ];
     }
 }

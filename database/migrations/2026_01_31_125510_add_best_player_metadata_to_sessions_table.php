@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sessions', function (Blueprint $table) {
+        Schema::table('game_sessions', function (Blueprint $table) {
             $table->json('best_player_metadata')->nullable();
         });
     }
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('sessions', function (Blueprint $table) {
+        Schema::table('game_sessions', function (Blueprint $table) {
             $table->dropColumn('best_player_metadata');
         });
     }
