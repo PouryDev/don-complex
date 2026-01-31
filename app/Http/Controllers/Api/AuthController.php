@@ -20,7 +20,7 @@ class AuthController extends Controller
             'phone' => ['required', 'string', 'max:20', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'email' => ['nullable', 'string', 'email', 'max:255', 'unique:users'],
-            'role' => ['sometimes', 'in:customer,game_master,admin'],
+            'role' => ['sometimes', 'in:customer,game_master,admin,cashier'],
         ]);
 
         $user = User::create([
@@ -30,6 +30,11 @@ class AuthController extends Controller
             'email' => $validated['email'] ?? null,
             'role' => $validated['role'] ?? UserRole::CUSTOMER,
         ]);
+
+        // Load branch for game masters and cashiers
+        if (($user->isGameMaster() || $user->isCashier()) && !$user->relationLoaded('branch')) {
+            $user->load('branch');
+        }
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
@@ -54,6 +59,11 @@ class AuthController extends Controller
             ]);
         }
 
+        // Load branch for game masters and cashiers
+        if (($user->isGameMaster() || $user->isCashier()) && !$user->relationLoaded('branch')) {
+            $user->load('branch');
+        }
+
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
@@ -73,9 +83,9 @@ class AuthController extends Controller
     {
         $user = $request->user();
         
-        // Load branch if user is a game master (might be needed for business logic)
+        // Load branch if user is a game master or cashier (needed for business logic)
         // No caching needed as user is already loaded from token and this is fast
-        if ($user->isGameMaster() && !$user->relationLoaded('branch')) {
+        if (($user->isGameMaster() || $user->isCashier()) && !$user->relationLoaded('branch')) {
             $user->load('branch');
         }
         
@@ -93,8 +103,8 @@ class AuthController extends Controller
 
         $user->update($validated);
 
-        // Load branch if user is a game master
-        if ($user->isGameMaster() && !$user->relationLoaded('branch')) {
+        // Load branch if user is a game master or cashier
+        if (($user->isGameMaster() || $user->isCashier()) && !$user->relationLoaded('branch')) {
             $user->load('branch');
         }
 

@@ -22,8 +22,13 @@ class CashierController extends Controller
     {
         $this->paymentService = $paymentService;
         $this->middleware(function ($request, $next) {
-            if (!$request->user()->isCashier()) {
+            $user = $request->user();
+            if (!$user->isCashier()) {
                 abort(403, 'Only cashiers can access this resource');
+            }
+            // Ensure branch is loaded for cashier
+            if (!$user->relationLoaded('branch')) {
+                $user->load('branch');
             }
             return $next($request);
         });
