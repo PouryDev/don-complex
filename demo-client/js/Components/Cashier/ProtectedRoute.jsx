@@ -24,3 +24,4 @@ function CashierProtectedRoute({ children }) {
 
 export default CashierProtectedRoute;
 
+

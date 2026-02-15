@@ -24,3 +24,4 @@ function SupervisorProtectedRoute({ children }) {
 
 export default SupervisorProtectedRoute;
 
+

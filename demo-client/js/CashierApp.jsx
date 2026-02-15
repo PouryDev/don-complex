@@ -70,3 +70,4 @@ function CashierApp() {
 
 export default CashierApp;
 
+

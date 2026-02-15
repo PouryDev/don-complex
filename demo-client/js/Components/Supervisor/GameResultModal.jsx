@@ -115,3 +115,4 @@ function GameResultModal({ reservation, onClose, onSuccess }) {
 
 export default GameResultModal;
 
+

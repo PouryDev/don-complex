@@ -116,3 +116,4 @@ function CashierLayout() {
 
 export default CashierLayout;
 
+
